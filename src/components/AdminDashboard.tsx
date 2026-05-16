@@ -40,7 +40,7 @@ const AdminDashboard: React.FC = () => {
   const [isEditingShop, setIsEditingShop] = useState(false);
   const [editingShopId, setEditingShopId] = useState<string | null>(null);
   const [newShop, setNewShop] = useState({ name: '', slug: '', plan_type: 'Básica', login_email: '', login_password: '' });
-  const [editShop, setEditShop] = useState({ name: '', slug: '', plan_type: 'Básica', login_email: '', login_password: '' });
+  const [editShop, setEditShop] = useState({ name: '', slug: '', plan_type: 'Básica', login_email: '', login_password: '', subscription_ends_at: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
@@ -95,23 +95,42 @@ const AdminDashboard: React.FC = () => {
 
   const openEditModal = (shop: any) => {
     setEditingShopId(shop.id);
+    
+    // Format date for <input type="date"> which requires YYYY-MM-DD
+    let formattedDate = '';
+    if (shop.subscription_ends_at) {
+      const d = new Date(shop.subscription_ends_at);
+      if (!isNaN(d.getTime())) {
+        formattedDate = d.toISOString().split('T')[0];
+      }
+    }
+
     setEditShop({
       name: shop.name,
       slug: shop.slug,
       plan_type: shop.plan_type || 'Básica',
       login_email: shop.login_email || '',
-      login_password: shop.login_password || ''
+      login_password: shop.login_password || '',
+      subscription_ends_at: formattedDate
     });
     setIsEditingShop(true);
   };
 
   const handleEditShop = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Convert back to full ISO string for Supabase timestamp
+    let finalDate = undefined;
+    if (editShop.subscription_ends_at) {
+      finalDate = new Date(editShop.subscription_ends_at).toISOString();
+    }
+
     const { error } = await supabase.from('shops').update({
       name: editShop.name,
       slug: editShop.slug,
       login_email: editShop.login_email,
-      login_password: editShop.login_password
+      login_password: editShop.login_password,
+      subscription_ends_at: finalDate
     }).eq('id', editingShopId);
 
     if (!error) {
@@ -576,6 +595,15 @@ const AdminDashboard: React.FC = () => {
                   required type="text" 
                   value={editShop.login_password} 
                   onChange={e => setEditShop({ ...editShop, login_password: e.target.value })}
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>DATA DE VENCIMENTO</label>
+                <input 
+                  required type="date" 
+                  value={editShop.subscription_ends_at} 
+                  onChange={e => setEditShop({ ...editShop, subscription_ends_at: e.target.value })}
                   style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
                 />
               </div>
