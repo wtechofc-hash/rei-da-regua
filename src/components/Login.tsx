@@ -6,31 +6,42 @@ const Login: React.FC = () => {
   const { setAuth, config } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Para propósitos de teste/demonstração, vamos definir o papel baseado no email ou apenas um padrão
-    // No futuro, isso viria de uma verificação real no banco de dados
-    let role: UserRole = 'owner';
-    let userId = '1';
+    if (isRegistering) {
+      // Simulação de registro
+      // No futuro usar: await supabase.auth.signUp({ email, password, options: { data: { name, phone } } })
+      setTimeout(() => {
+        setAuth('customer', 'new-user');
+        setIsLoading(false);
+      }, 1500);
+    } else {
+      // Simulação de login
+      let role: UserRole = 'owner';
+      let userId = '1';
 
-    if (email.includes('pro')) {
-      role = 'professional';
-      userId = '2';
-    } else if (email.includes('cli')) {
-      role = 'customer';
-      userId = 'c1';
+      if (email.includes('pro')) {
+        role = 'professional';
+        userId = '2';
+      } else if (email.includes('cli')) {
+        role = 'customer';
+        userId = 'c1';
+      }
+      
+      setTimeout(() => {
+        setAuth(role, userId);
+        setIsLoading(false);
+      }, 1500);
     }
-    
-    setTimeout(() => {
-      setAuth(role, userId);
-      setIsLoading(false);
-    }, 1500);
   };
 
   return (
@@ -92,14 +103,55 @@ const Login: React.FC = () => {
                <img src={config?.logoUrl || "/logo3.png"} style={{ width: '100%', height: 'auto', mixBlendMode: 'screen' }} alt="Logo" />
             </div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: '800', color: 'white', marginBottom: '0.5rem' }}>
-              Bem-vindo de volta!
+              {isRegistering ? 'Crie sua conta' : 'Bem-vindo de volta!'}
             </h1>
             <p style={{ color: '#888', fontSize: '0.9rem' }}>
-              Faça login para acessar sua conta.
+              {isRegistering ? 'Preencha os dados para começar.' : 'Faça login para acessar sua conta.'}
             </p>
           </div>
 
-          <form onSubmit={handleLogin} style={{ display: 'grid', gap: '1.5rem' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.5rem' }}>
+            {isRegistering && (
+              <>
+                {/* Input Name */}
+                <div>
+                  <label style={{ fontSize: '0.85rem', color: '#ccc', fontWeight: '600', display: 'block', marginBottom: '0.75rem' }}>
+                    Nome Completo
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <User size={18} style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
+                    <input 
+                      required type="text" placeholder="Como podemos te chamar?" 
+                      value={name} onChange={e => setName(e.target.value)}
+                      style={{ 
+                        width: '100%', padding: '1.1rem 1.1rem 1.1rem 3.5rem', borderRadius: '14px', 
+                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', 
+                        color: 'white', outline: 'none', transition: 'all 0.2s', fontSize: '0.95rem'
+                      }} 
+                    />
+                  </div>
+                </div>
+
+                {/* Input Phone */}
+                <div>
+                  <label style={{ fontSize: '0.85rem', color: '#ccc', fontWeight: '600', display: 'block', marginBottom: '0.75rem' }}>
+                    Telefone
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <User size={18} style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
+                    <input 
+                      required type="text" placeholder="(00) 00000-0000" 
+                      value={phone} onChange={e => setPhone(e.target.value)}
+                      style={{ 
+                        width: '100%', padding: '1.1rem 1.1rem 1.1rem 3.5rem', borderRadius: '14px', 
+                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', 
+                        color: 'white', outline: 'none', transition: 'all 0.2s', fontSize: '0.95rem'
+                      }} 
+                    />
+                  </div>
+                </div>
+              </>
+            )}
             {/* Input Email */}
             <div>
               <label style={{ fontSize: '0.85rem', color: '#ccc', fontWeight: '600', display: 'block', marginBottom: '0.75rem' }}>
@@ -184,9 +236,23 @@ const Login: React.FC = () => {
               {isLoading ? (
                 <div style={{ width: '20px', height: '20px', border: '2px solid rgba(0,0,0,0.1)', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               ) : (
-                <>Entrar</>
+                <>{isRegistering ? 'Criar Conta' : 'Entrar'}</>
               )}
             </button>
+
+            <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+              <button 
+                type="button"
+                onClick={() => setIsRegistering(!isRegistering)}
+                style={{ background: 'transparent', border: 'none', color: '#888', fontSize: '0.9rem', cursor: 'pointer' }}
+              >
+                {isRegistering ? (
+                  <>Já tem uma conta? <span style={{ color: 'var(--accent-gold)', fontWeight: '700' }}>Fazer login</span></>
+                ) : (
+                  <>Não tem uma conta? <span style={{ color: 'var(--accent-gold)', fontWeight: '700' }}>Criar conta agora</span></>
+                )}
+              </button>
+            </div>
           </form>
 
           <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
