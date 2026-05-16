@@ -62,6 +62,7 @@ interface AppContextType {
   role: UserRole | null;
   userId: string | null;
   shopId: string | null;
+  shopData: any;
   setAuth: (role: UserRole | null, userId: string | null, shopId?: string | null) => void;
   logout: () => void;
   services: Service[];
@@ -106,6 +107,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [shopData, setShopData] = useState<any>(null);
   const [config, setConfig] = useState({
     businessName: 'Barbearia Premium',
     logoUrl: '/logo3.png',
@@ -155,6 +157,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const fetchData = async () => {
       try {
         const query = shopId ? (q: any) => q.eq('shop_id', shopId) : (q: any) => q;
+
+        // Fetch Shop Data
+        if (shopId) {
+          const { data: sData } = await supabase.from('shops').select('*').eq('id', shopId).maybeSingle();
+          if (sData) setShopData(sData);
+        }
 
         // Fetch Services
         const { data: servicesData } = await query(supabase.from('services').select('*'));
@@ -318,7 +326,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <AppContext.Provider value={{
-      role, userId, shopId, setAuth, logout, services, products, appointments, profiles, clients,
+      role, userId, shopId, shopData, setAuth, logout, services, products, appointments, profiles, clients,
       addService, updateService, deleteService,
       addProduct, updateProduct, deleteProduct,
       addAppointment, updateAppointment, deleteAppointment,

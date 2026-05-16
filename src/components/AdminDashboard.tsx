@@ -31,7 +31,10 @@ const AdminDashboard: React.FC = () => {
   });
   
   const [isAddingShop, setIsAddingShop] = useState(false);
-  const [newShop, setNewShop] = useState({ name: '', slug: '', plan_type: 'Básica' });
+  const [isEditingShop, setIsEditingShop] = useState(false);
+  const [editingShopId, setEditingShopId] = useState<string | null>(null);
+  const [newShop, setNewShop] = useState({ name: '', slug: '', plan_type: 'Básica', login_email: '', login_password: '' });
+  const [editShop, setEditShop] = useState({ name: '', slug: '', plan_type: 'Básica', login_email: '', login_password: '' });
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -67,6 +70,8 @@ const AdminDashboard: React.FC = () => {
       name: newShop.name,
       slug: newShop.slug,
       plan_type: newShop.plan_type,
+      login_email: newShop.login_email,
+      login_password: newShop.login_password,
       subscription_ends_at: now.toISOString(),
       subscription_status: 'active'
     }]).select();
@@ -74,12 +79,43 @@ const AdminDashboard: React.FC = () => {
     if (data) {
       setShops([data[0], ...shops]);
       setIsAddingShop(false);
-      setNewShop({ name: '', slug: '', plan_type: 'Básica' });
+      setNewShop({ name: '', slug: '', plan_type: 'Básica', login_email: '', login_password: '' });
       alert("Lojista criado com sucesso!");
     } else if (error) {
       alert("Erro ao criar lojista: " + error.message);
     }
   };
+
+  const openEditModal = (shop: any) => {
+    setEditingShopId(shop.id);
+    setEditShop({
+      name: shop.name,
+      slug: shop.slug,
+      plan_type: shop.plan_type || 'Básica',
+      login_email: shop.login_email || '',
+      login_password: shop.login_password || ''
+    });
+    setIsEditingShop(true);
+  };
+
+  const handleEditShop = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { error } = await supabase.from('shops').update({
+      name: editShop.name,
+      slug: editShop.slug,
+      login_email: editShop.login_email,
+      login_password: editShop.login_password
+    }).eq('id', editingShopId);
+
+    if (!error) {
+      alert("Dados atualizados com sucesso!");
+      setIsEditingShop(false);
+      loadData();
+    } else {
+      alert("Erro: " + error.message);
+    }
+  };
+
 
   const handleSaveConfig = async () => {
     const { error } = await supabase.from('system_config').upsert({
@@ -208,8 +244,8 @@ const AdminDashboard: React.FC = () => {
               return (
                 <div key={shop.id} className="premium-card" style={{ padding: '1.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>{shop.name}</h3>
+                    <div onClick={() => openEditModal(shop)} style={{ cursor: 'pointer' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', textDecoration: 'underline' }}>{shop.name}</h3>
                       <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--accent-gold)' }}>Plano: {shop.plan_type}</p>
                     </div>
                     <button 
@@ -386,6 +422,26 @@ const AdminDashboard: React.FC = () => {
                   style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
                 />
               </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>E-MAIL DE LOGIN</label>
+                <input 
+                  required type="email" 
+                  value={newShop.login_email} 
+                  onChange={e => setNewShop({ ...newShop, login_email: e.target.value })}
+                  placeholder="admin@barbearia.com"
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>SENHA</label>
+                <input 
+                  required type="text" 
+                  value={newShop.login_password} 
+                  onChange={e => setNewShop({ ...newShop, login_password: e.target.value })}
+                  placeholder="senha123"
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button type="button" onClick={() => setIsAddingShop(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid #222', color: '#555', borderRadius: '12px', fontWeight: '700' }}>Cancelar</button>
                 <button type="submit" className="gold-button" style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: '800' }}>Criar (30 Dias Grátis)</button>
@@ -394,7 +450,59 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Shop Modal */}
+      {isEditingShop && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Editar Lojista</h2>
+            <form onSubmit={handleEditShop} style={{ display: 'grid', gap: '1.5rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>NOME DA BARBEARIA</label>
+                <input 
+                  required type="text" 
+                  value={editShop.name} 
+                  onChange={e => setEditShop({ ...editShop, name: e.target.value })}
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>SLUG (URL)</label>
+                <input 
+                  required type="text" 
+                  value={editShop.slug} 
+                  onChange={e => setEditShop({ ...editShop, slug: e.target.value.toLowerCase().replace(/\\s+/g, '-') })}
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>E-MAIL DE LOGIN</label>
+                <input 
+                  required type="email" 
+                  value={editShop.login_email} 
+                  onChange={e => setEditShop({ ...editShop, login_email: e.target.value })}
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>SENHA</label>
+                <input 
+                  required type="text" 
+                  value={editShop.login_password} 
+                  onChange={e => setEditShop({ ...editShop, login_password: e.target.value })}
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setIsEditingShop(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid #222', color: '#555', borderRadius: '12px', fontWeight: '700' }}>Cancelar</button>
+                <button type="submit" className="gold-button" style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: '800' }}>Salvar Alterações</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 };
 

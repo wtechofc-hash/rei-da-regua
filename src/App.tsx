@@ -7,12 +7,15 @@ import {
   Package, 
   BarChart3, 
   Settings, 
+  Settings as SettingsIcon, 
   Menu, 
   User, 
   Plus,
   LogOut
 } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
+import AdminDashboard from './components/AdminDashboard';
+import Settings from './components/Settings';
 import './index.css';
 
 export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais';
@@ -78,8 +81,8 @@ const MORE_NAV = [
 ];
 
 const AppContent: React.FC = () => {
-  const { role, userId, profiles = [], appointments = [], logout, clearProNotifications, config } = useApp();
-  const [page, setPage] = useState<Page>('dashboard');
+  const { role, userId, shopData, setAuth, logout, profiles = [], appointments = [], clearProNotifications, config } = useApp();
+  const [page, setPage] = useState<Page>('agendamentos');
   const [moreOpen, setMoreOpen] = useState(false);
   
   const currentProfile = profiles.find(p => p.id === userId) ?? profiles.find(p => p.role === role) ?? profiles[0];
@@ -118,13 +121,7 @@ const AppContent: React.FC = () => {
       case 'clientes':      return <Clients />;
       case 'relatorios':    return <Reports />;
       case 'profissionais': return <Professionals />;
-      case 'configuracoes': return (
-        <div className="animate-fade-in premium-card" style={{ padding: '2rem' }}>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>Configurações</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Ajustes do sistema e perfil.</p>
-          <button onClick={logout} className="gold-button" style={{ marginTop: '2rem', background: '#ff4444', color: 'white' }}>Sair da Conta</button>
-        </div>
-      );
+      case 'configuracoes': return <Settings />;
       default: 
         if (role === 'customer') return <Storefront />;
         return <Dashboard onViewAll={() => setPage('agendamentos')} />;
@@ -146,6 +143,31 @@ const AppContent: React.FC = () => {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         
+        {/* Impersonation Banner */}
+        {role === 'owner' && userId === 'admin-support' && (
+          <div style={{ background: '#ffaa00', color: '#000', padding: '8px 15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '800', zIndex: 1000 }}>
+            <span style={{ fontSize: '0.8rem' }}>⚠️ Você está acessando a loja como Super Admin.</span>
+            <button 
+              onClick={() => setAuth('superadmin', '0')}
+              style={{ background: 'rgba(0,0,0,0.2)', border: 'none', padding: '4px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '900', color: '#000', fontSize: '0.75rem' }}
+            >
+              Voltar ao Painel ADM
+            </button>
+          </div>
+        )}
+
+        {/* Subscription Banner */}
+        {role === 'owner' && shopData && shopData.subscription_status === 'suspended' && (
+          <div style={{ background: '#ff4444', color: '#fff', padding: '8px 15px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '800', zIndex: 999 }}>
+            <span style={{ fontSize: '0.8rem' }}>⚠️ Sua assinatura está SUSPENSA. Por favor, regularize o pagamento para continuar usando a plataforma.</span>
+          </div>
+        )}
+        {role === 'owner' && shopData && shopData.subscription_status === 'active' && new Date(shopData.subscription_ends_at) < new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) && (
+          <div style={{ background: '#ffaa00', color: '#000', padding: '8px 15px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '800', zIndex: 999 }}>
+            <span style={{ fontSize: '0.8rem' }}>⏳ Sua assinatura expira em breve ({new Date(shopData.subscription_ends_at).toLocaleDateString()}).</span>
+          </div>
+        )}
+
         <header id="header-mobile" style={{
           display: 'none', alignItems: 'center', justifyContent: 'space-between',
           padding: '0.75rem 1.25rem', background: 'rgba(10, 10, 10, 0.95)',

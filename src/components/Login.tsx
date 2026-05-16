@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, LogIn, Eye, EyeOff, Shield, User } from 'lucide-react';
 import { useApp, UserRole } from '../context/AppContext';
+import { supabase } from '../lib/supabase';
 
 const Login: React.FC = () => {
   const { setAuth, config } = useApp();
@@ -19,31 +20,46 @@ const Login: React.FC = () => {
     
     if (isRegistering) {
       // Simulação de registro
-      // No futuro usar: await supabase.auth.signUp({ email, password, options: { data: { name, phone } } })
       setTimeout(() => {
         setAuth('customer', 'new-user');
         setIsLoading(false);
       }, 1500);
     } else {
-      // Simulação de login
-      let role: UserRole = 'owner';
-      let userId = '1';
-
       if (email === 'admin@admin.com') {
-        role = 'superadmin';
-        userId = '0';
-      } else if (email.includes('pro')) {
+        setTimeout(() => {
+          setAuth('superadmin', '0');
+          setIsLoading(false);
+        }, 1500);
+        return;
+      }
+
+      // Check against logistas (shops table)
+      const { data: shopMatch } = await supabase
+        .from('shops')
+        .select('id')
+        .eq('login_email', email)
+        .eq('login_password', password)
+        .maybeSingle();
+
+      if (shopMatch) {
+        setAuth('owner', 'owner-' + shopMatch.id, shopMatch.id);
+        setIsLoading(false);
+        return;
+      }
+
+      // Simulação fallback
+      let role: UserRole = 'customer';
+      let userId = 'c1';
+
+      if (email.includes('pro')) {
         role = 'professional';
         userId = '2';
-      } else if (email.includes('cli')) {
-        role = 'customer';
-        userId = 'c1';
       }
       
       setTimeout(() => {
         setAuth(role, userId);
         setIsLoading(false);
-      }, 1500);
+      }, 1000);
     }
   };
 
