@@ -25,7 +25,10 @@ const Login: React.FC = () => {
         setIsLoading(false);
       }, 1500);
     } else {
-      if (email === 'admin@admin.com') {
+      const trimmedEmail = email.trim().toLowerCase();
+      const trimmedPassword = password.trim();
+
+      if (trimmedEmail === 'wtechofc@gmail.com' && trimmedPassword === 'Nb@19032025') {
         setTimeout(() => {
           setAuth('superadmin', '0');
           setIsLoading(false);
@@ -37,8 +40,8 @@ const Login: React.FC = () => {
       const { data: shopMatch } = await supabase
         .from('shops')
         .select('id')
-        .ilike('login_email', email.trim())
-        .eq('login_password', password.trim())
+        .ilike('login_email', trimmedEmail)
+        .eq('login_password', trimmedPassword)
         .maybeSingle();
 
       if (shopMatch) {
@@ -47,27 +50,8 @@ const Login: React.FC = () => {
         return;
       }
 
-      // Simulação fallback
-      let role: UserRole | null = null;
-      let userId = '';
-
-      if (email.includes('pro')) {
-        role = 'professional';
-        userId = '2';
-      } else if (email.includes('cli')) {
-        role = 'customer';
-        userId = 'c1';
-      }
-
-      if (role) {
-        setTimeout(() => {
-          setAuth(role, userId);
-          setIsLoading(false);
-        }, 1000);
-      } else {
-        setIsLoading(false);
-        alert("E-mail ou senha incorretos.");
-      }
+      setIsLoading(false);
+      alert("E-mail ou senha incorretos.");
     }
   };
 
