@@ -134,13 +134,15 @@ const AppContent: React.FC = () => {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', width: '100vw', background: 'var(--bg-primary)', color: 'white', overflow: 'hidden' }}>
 
-      <div id="sb-desktop">
-        <ErrorBoundary>
-          <Suspense fallback={<div style={{ width: '240px', background: '#0a0a0a', height: '100vh' }} />}>
-            <Sidebar activePage={page} setActivePage={setPage} notificationCount={notificationCount} />
-          </Suspense>
-        </ErrorBoundary>
-      </div>
+      {role !== 'superadmin' && (
+        <div id="sb-desktop">
+          <ErrorBoundary>
+            <Suspense fallback={<div style={{ width: '240px', background: '#0a0a0a', height: '100vh' }} />}>
+              <Sidebar activePage={page} setActivePage={setPage} notificationCount={notificationCount} />
+            </Suspense>
+          </ErrorBoundary>
+        </div>
+      )}
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         
@@ -179,8 +181,9 @@ const AppContent: React.FC = () => {
       </div>
 
       {/* Mobile Nav */}
-      <nav id="nav-mobile" style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, height: '72px',
+      {role !== 'superadmin' && (
+        <nav id="nav-mobile" style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, height: '72px',
         background: 'rgba(10, 10, 10, 0.95)', backdropFilter: 'blur(10px)',
         borderTop: '1px solid rgba(255,255,255,0.06)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-around', zIndex: 1000
@@ -232,6 +235,7 @@ const AppContent: React.FC = () => {
           );
         })}
       </nav>
+      )}
 
       {/* More menu */}
       {moreOpen && (
