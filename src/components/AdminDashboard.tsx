@@ -223,6 +223,35 @@ const AdminDashboard: React.FC = () => {
     loadData();
   };
 
+  const handleDeleteShop = async (shopId: string, shopName: string, loginEmail: string) => {
+    if (!window.confirm(`Tem certeza que deseja EXCLUIR permanentemente a loja "${shopName}"? Esta ação não pode ser desfeita.`)) return;
+    
+    // Delete from shops table
+    const { error } = await supabase.from('shops').delete().eq('id', shopId);
+    
+    if (error) {
+      alert('Erro ao excluir loja: ' + error.message);
+      return;
+    }
+
+    // Also delete from Supabase Auth if email exists
+    if (loginEmail) {
+      try {
+        await fetch('https://oongrdgcdxqijonjroam.supabase.co/functions/v1/create-auth-user', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: loginEmail })
+        });
+      } catch (e) {
+        // Non-critical, just log
+        console.warn('Could not remove auth user:', e);
+      }
+    }
+
+    alert(`Loja "${shopName}" excluída com sucesso.`);
+    loadData();
+  };
+
   const enterShop = (shopId: string) => {
     setAuth('owner', 'admin-support', shopId);
   };
@@ -374,7 +403,7 @@ const AdminDashboard: React.FC = () => {
                       <button style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#00cc44', border: '1px solid #00cc44', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Phone size={16} /></button>
                       <button style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#3399ff', border: '1px solid #3399ff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><MessageSquare size={16} /></button>
                       <button onClick={() => openEditModal(shop)} style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#888', border: '1px solid #555', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Settings size={16} /></button>
-                      <button style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#ff4444', border: '1px solid #ff4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Trash2 size={16} /></button>
+                      <button onClick={() => handleDeleteShop(shop.id, shop.name, shop.login_email)} style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#ff4444', border: '1px solid #ff4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Trash2 size={16} /></button>
                       
                       <button onClick={() => enterShop(shop.id)} className="gold-button" style={{ padding: '8px 16px', borderRadius: '8px', fontWeight: '800', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
                         <LayoutDashboard size={14} /> Entrar

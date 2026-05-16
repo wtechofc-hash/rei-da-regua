@@ -43,7 +43,7 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: st
           <div style={{ background: '#1a0000', border: '1px solid #ff4444', borderRadius: '12px', padding: '1.5rem' }}>
             <h3 style={{ color: '#ff4444', marginBottom: '0.75rem', fontSize: '1rem' }}>Erro ao renderizar</h3>
             <pre style={{ fontSize: '0.72rem', color: '#ff8888', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{this.state.error}</pre>
-            <button onClick={() => this.setState({ error: null })} style={{ marginTop: '1rem', background: '#d4af37', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '8px', cursor: 'pointer', fontWeight: '700' }}>
+            <button onClick={() => window.location.reload()} style={{ marginTop: '1rem', background: '#d4af37', border: 'none', padding: '0.5rem 1.25rem', borderRadius: '8px', cursor: 'pointer', fontWeight: '700' }}>
               Tentar novamente
             </button>
           </div>
