@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 // Types
-export type UserRole = 'owner' | 'professional' | 'customer';
+export type UserRole = 'owner' | 'professional' | 'customer' | 'superadmin';
 
 export interface Profile {
   id: string;
@@ -60,7 +61,8 @@ export interface Client {
 interface AppContextType {
   role: UserRole | null;
   userId: string | null;
-  setAuth: (role: UserRole | null, userId: string | null) => void;
+  shopId: string | null;
+  setAuth: (role: UserRole | null, userId: string | null, shopId?: string | null) => void;
   logout: () => void;
   services: Service[];
   products: Product[];
@@ -98,6 +100,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [role, setRole] = useState<UserRole | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [shopId, setShopId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -112,15 +115,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const [isReady, setIsReady] = useState(false);
 
-  const setAuth = (newRole: UserRole | null, newId: string | null) => {
+  const setAuth = (newRole: UserRole | null, newId: string | null, newShopId: string | null = null) => {
     setRole(newRole);
     setUserId(newId);
+    setShopId(newShopId);
     if (newRole && newId) {
       localStorage.setItem('bb_current_role', newRole);
       localStorage.setItem('bb_current_userid', newId);
+      if (newShopId) localStorage.setItem('bb_current_shopid', newShopId);
     } else {
       localStorage.removeItem('bb_current_role');
       localStorage.removeItem('bb_current_userid');
+      localStorage.removeItem('bb_current_shopid');
     }
   };
 
@@ -138,68 +144,163 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const savedRole = localStorage.getItem('bb_current_role') as UserRole | null;
     const savedId = localStorage.getItem('bb_current_userid');
+    const savedShopId = localStorage.getItem('bb_current_shopid');
     if (savedRole && savedId) {
       setRole(savedRole);
       setUserId(savedId);
+      setShopId(savedShopId);
     }
 
-    setServices(load('bb_services', [
-      { id: 's1', name: 'Corte Degradê', description: 'Corte moderno', price: 50, commission: 30 },
-      { id: 's2', name: 'Barba Completa', description: 'Toalha quente', price: 40, commission: 30 }
-    ]));
-    setProducts(load('bb_products', [{ id: 'p1', name: 'Pomada', description: 'Efeito matte', price: 45, commission: 10, stock: 15 }]));
-    setClients(load('bb_clients', [{ id: 'c1', name: 'José Silva', phone: '(11) 98888-7777', totalSpent: 0, appointmentsCount: 0 }]));
-    setProfiles(load('bb_profiles', [
-      { id: '1', name: 'Marcos Villas', role: 'owner', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcos' },
-      { id: '2', name: 'Rafael Silva', role: 'professional', commission: 30, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rafael' }
-    ]));
-    setAppointments(load('bb_appointments', []));
-    
-    const savedConfig = localStorage.getItem('bb_config');
-    if (savedConfig) setConfig(JSON.parse(savedConfig));
+    // Load initial data from Supabase
+    const fetchData = async () => {
+      try {
+        const query = shopId ? (q: any) => q.eq('shop_id', shopId) : (q: any) => q;
 
-    setIsReady(true);
+        // Fetch Services
+        const { data: servicesData } = await query(supabase.from('services').select('*'));
+        if (servicesData) setServices(servicesData.map(s => ({
+          id: s.id, name: s.name, description: s.category || '', price: s.price, commission: 0 
+        })));
+
+        // Fetch Products
+        const { data: productsData } = await query(supabase.from('products').select('*'));
+        if (productsData) setProducts(productsData.map(p => ({
+          id: p.id, name: p.name, description: p.category || '', price: p.price, stock: p.stock, image: p.image_url, commission: 0
+        })));
+
+        // Fetch Clients
+        const { data: clientsData } = await query(supabase.from('clients').select('*'));
+        if (clientsData) setClients(clientsData.map(c => ({
+          id: c.id, name: c.name, phone: c.phone || '', email: c.email, lastVisit: c.last_visit, totalSpent: c.total_spent, appointmentsCount: 0
+        })));
+
+        // Fetch Professionals
+        const { data: prosData } = await query(supabase.from('professionals').select('*'));
+        if (prosData) setProfiles(prosData.map(p => ({
+          id: p.id, name: p.name, role: (p.role?.toLowerCase() === 'owner' ? 'owner' : 'professional') as UserRole, 
+          avatar: p.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`, commission: p.commission_rate
+        })));
+
+        // Fetch Appointments
+        const { data: apptsData } = await query(supabase.from('appointments').select('*, clients(name)'));
+        if (apptsData) setAppointments(apptsData.map(a => ({
+          id: a.id, clientId: a.client_id, clientName: (a.clients as any)?.name || 'Cliente', 
+          professionalId: a.professional_id, serviceId: a.service_id, date: a.date, time: a.time, 
+          status: a.status as any, priceAtTime: a.total_price || 0, commissionAtTime: 0
+        })));
+
+        // Fetch Config
+        const { data: configData } = await query(supabase.from('business_config').select('*')).single();
+        if (configData) setConfig({
+          businessName: configData.business_name,
+          logoUrl: configData.logo_url || '/logo3.png',
+          primaryColor: '#050505',
+          accentColor: configData.theme_color || '#d4af37'
+        });
+
+      } catch (error) {
+        console.error("Error fetching data from Supabase:", error);
+      } finally {
+        setIsReady(true);
+      }
+    };
+
+    fetchData();
   }, []);
 
   useEffect(() => {
     if (!isReady) return;
     localStorage.setItem('bb_services', JSON.stringify(services));
-    localStorage.setItem('bb_products', JSON.stringify(products));
-    localStorage.setItem('bb_appointments', JSON.stringify(appointments));
-    localStorage.setItem('bb_clients', JSON.stringify(clients));
-    localStorage.setItem('bb_profiles', JSON.stringify(profiles));
-    localStorage.setItem('bb_config', JSON.stringify(config));
-  }, [services, products, appointments, clients, profiles, config, isReady]);
+  const addService = async (s: Omit<Service, 'id'>) => {
+    const { data, error } = await supabase.from('services').insert([{ 
+      name: s.name, price: s.price, duration: 30, category: s.description 
+    }]).select();
+    if (data) setServices(prev => [...prev, { ...s, id: data[0].id }]);
+  };
+  const updateService = async (id: string, s: Partial<Service>) => {
+    await supabase.from('services').update({ name: s.name, price: s.price }).eq('id', id);
+    setServices(prev => prev.map(i => i.id === id ? {...i, ...s} : i));
+  };
+  const deleteService = async (id: string) => {
+    await supabase.from('services').delete().eq('id', id);
+    setServices(prev => prev.filter(s => s.id !== id));
+  };
 
-  // CRUD... (simplificado para brevidade, mas completo no arquivo real)
-  const addService = (s: Omit<Service, 'id'>) => setServices(prev => [...prev, { ...s, id: `s-${Date.now()}` }]);
-  const updateService = (id: string, s: Partial<Service>) => setServices(prev => prev.map(i => i.id === id ? {...i, ...s} : i));
-  const deleteService = (id: string) => setServices(prev => prev.filter(s => s.id !== id));
-  const addProduct = (p: Omit<Product, 'id'>) => setProducts(prev => [...prev, { ...p, id: `p-${Date.now()}` }]);
-  const updateProduct = (id: string, p: Partial<Product>) => setProducts(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
-  const deleteProduct = (id: string) => setProducts(prev => prev.filter(p => p.id !== id));
-  const addClient = (c: Omit<Client, 'id'>) => setClients(prev => [...prev, { ...c, id: `c-${Date.now()}` }]);
-  const updateClient = (id: string, c: Partial<Client>) => setClients(prev => prev.map(i => i.id === id ? {...i, ...c} : i));
-  const deleteClient = (id: string) => setClients(prev => prev.filter(c => c.id !== id));
-  const addProfile = (p: Omit<Profile, 'id'>) => setProfiles(prev => [...prev, { ...p, id: `pro-${Date.now()}` }]);
-  const updateProfile = (id: string, p: Partial<Profile>) => setProfiles(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
-  const deleteProfile = (id: string) => setProfiles(prev => prev.filter(p => p.id !== id));
+  const addProduct = async (p: Omit<Product, 'id'>) => {
+    const { data } = await supabase.from('products').insert([{ 
+      name: p.name, price: p.price, stock: p.stock, category: p.description, image_url: p.image 
+    }]).select();
+    if (data) setProducts(prev => [...prev, { ...p, id: data[0].id }]);
+  };
+  const updateProduct = async (id: string, p: Partial<Product>) => {
+    await supabase.from('products').update({ name: p.name, price: p.price, stock: p.stock }).eq('id', id);
+    setProducts(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
+  };
+  const deleteProduct = async (id: string) => {
+    await supabase.from('products').delete().eq('id', id);
+    setProducts(prev => prev.filter(p => p.id !== id));
+  };
+
+  const addClient = async (c: Omit<Client, 'id'>) => {
+    const { data } = await supabase.from('clients').insert([{ name: c.name, phone: c.phone, email: c.email }]).select();
+    if (data) setClients(prev => [...prev, { ...c, id: data[0].id }]);
+  };
+  const updateClient = async (id: string, c: Partial<Client>) => {
+    await supabase.from('clients').update({ name: c.name, phone: c.phone, email: c.email }).eq('id', id);
+    setClients(prev => prev.map(i => i.id === id ? {...i, ...c} : i));
+  };
+  const deleteClient = async (id: string) => {
+    await supabase.from('clients').delete().eq('id', id);
+    setClients(prev => prev.filter(c => c.id !== id));
+  };
+
+  const addProfile = async (p: Omit<Profile, 'id'>) => {
+    const { data } = await supabase.from('professionals').insert([{ 
+      name: p.name, role: p.role, photo_url: p.avatar, commission_rate: p.commission 
+    }]).select();
+    if (data) setProfiles(prev => [...prev, { ...p, id: data[0].id }]);
+  };
+  const updateProfile = async (id: string, p: Partial<Profile>) => {
+    await supabase.from('professionals').update({ name: p.name, role: p.role, photo_url: p.avatar, commission_rate: p.commission }).eq('id', id);
+    setProfiles(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
+  };
+  const deleteProfile = async (id: string) => {
+    await supabase.from('professionals').delete().eq('id', id);
+    setProfiles(prev => prev.filter(p => p.id !== id));
+  };
   
-  const addAppointment = (a: Omit<Appointment, 'id'>) => setAppointments(prev => [...prev, { ...a, id: `a-${Date.now()}`, isNewForPro: true }]);
-  const updateAppointment = (id: string, a: Partial<Appointment>) => setAppointments(prev => prev.map(i => i.id === id ? {...i, ...a} : i));
-  const deleteAppointment = (id: string) => setAppointments(prev => prev.filter(a => a.id !== id));
+  const addAppointment = async (a: Omit<Appointment, 'id'>) => {
+    const { data } = await supabase.from('appointments').insert([{ 
+      client_id: a.clientId, professional_id: a.professionalId, service_id: a.serviceId, 
+      date: a.date, time: a.time, status: a.status, total_price: a.priceAtTime 
+    }]).select();
+    if (data) setAppointments(prev => [...prev, { ...a, id: data[0].id, isNewForPro: true }]);
+  };
+  const updateAppointment = async (id: string, a: Partial<Appointment>) => {
+    await supabase.from('appointments').update({ status: a.status }).eq('id', id);
+    setAppointments(prev => prev.map(i => i.id === id ? {...i, ...a} : i));
+  };
+  const deleteAppointment = async (id: string) => {
+    await supabase.from('appointments').delete().eq('id', id);
+    setAppointments(prev => prev.filter(a => a.id !== id));
+  };
 
   const clearProNotifications = (proId: string) => {
     setAppointments(prev => prev.map(a => a.professionalId === proId ? { ...a, isNewForPro: false } : a));
   };
 
-  const updateAppointmentStatus = (id: string, status: Appointment['status']) => {
+  const updateAppointmentStatus = async (id: string, status: Appointment['status']) => {
+    await supabase.from('appointments').update({ status }).eq('id', id);
     setAppointments(prev => prev.map(a => {
       if (a.id === id) {
         if (status === 'completed' && a.status !== 'completed') {
-          setClients(cPrev => cPrev.map(c => c.id === a.clientId ? {
-            ...c, totalSpent: (c.totalSpent || 0) + (a.priceAtTime || 0), appointmentsCount: (c.appointmentsCount || 0) + 1, lastVisit: a.date
-          } : c));
+          const client = clients.find(c => c.id === a.clientId);
+          if (client) {
+            supabase.from('clients').update({ 
+              total_spent: (client.totalSpent || 0) + (a.priceAtTime || 0),
+              last_visit: a.date
+            }).eq('id', client.id).then();
+          }
         }
         return { ...a, status, isNewForPro: false };
       }
@@ -207,7 +308,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  const updateConfig = (newC: Partial<AppContextType['config']>) => setConfig(prev => ({ ...prev, ...newC }));
+  const updateConfig = async (newC: Partial<AppContextType['config']>) => {
+    const { data } = await supabase.from('business_config').select('id').single();
+    if (data?.id) {
+        await supabase.from('business_config').update({ 
+        business_name: newC.businessName, logo_url: newC.logoUrl, theme_color: newC.accentColor 
+        }).eq('id', data.id);
+    }
+    setConfig(prev => ({ ...prev, ...newC }));
+  };
 
   return (
     <AppContext.Provider value={{

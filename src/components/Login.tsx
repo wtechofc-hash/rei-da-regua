@@ -29,7 +29,10 @@ const Login: React.FC = () => {
       let role: UserRole = 'owner';
       let userId = '1';
 
-      if (email.includes('pro')) {
+      if (email === 'admin@admin.com') {
+        role = 'superadmin';
+        userId = '0';
+      } else if (email.includes('pro')) {
         role = 'professional';
         userId = '2';
       } else if (email.includes('cli')) {

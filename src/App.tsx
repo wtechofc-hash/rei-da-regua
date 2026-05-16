@@ -27,6 +27,7 @@ const Reports      = React.lazy(() => import('./components/Reports'));
 const Professionals = React.lazy(() => import('./components/Professionals'));
 const Storefront   = React.lazy(() => import('./components/Storefront'));
 const Login        = React.lazy(() => import('./components/Login'));
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: string | null }> {
   constructor(props: any) {
@@ -107,7 +108,8 @@ const AppContent: React.FC = () => {
 
   const renderPage = () => {
     switch (page) {
-      case 'dashboard':     
+      case 'dashboard':
+        if (role === 'superadmin') return <AdminDashboard />;
         if (role === 'customer') return <Storefront />;
         return <Dashboard onViewAll={() => setPage('agendamentos')} />;
       case 'agendamentos':  return <Appointments />;
