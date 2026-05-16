@@ -10,6 +10,8 @@ const Settings: React.FC = () => {
   const [receiptUrl, setReceiptUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
+  const [isSyncing, setIsSyncing] = useState(false);
+
   useEffect(() => {
     fetchGlobalConfig();
     if (contextShopData?.id) {
@@ -23,8 +25,10 @@ const Settings: React.FC = () => {
   };
 
   const fetchShopData = async () => {
+    setIsSyncing(true);
     const { data } = await supabase.from('shops').select('*').eq('id', contextShopData.id).single();
     if (data) setShopData(data);
+    setTimeout(() => setIsSyncing(false), 1000);
   };
 
   const handleUploadReceipt = async () => {
@@ -79,9 +83,12 @@ const Settings: React.FC = () => {
           {/* Left Info */}
           <div style={{ flex: 1, minWidth: '250px' }}>
             <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.2rem', color: 'white' }}>Status da Assinatura</h2>
-            <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              Dados sincronizados em tempo real <Power size={12}/>
-            </p>
+            <button 
+              onClick={fetchShopData}
+              style={{ background: 'transparent', border: 'none', padding: 0, color: '#888', fontSize: '0.85rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+            >
+              Dados sincronizados em tempo real <Power size={12} className={isSyncing ? 'animate-spin' : ''} />
+            </button>
             
             <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center', marginBottom: '2rem' }}>
               <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: isSuspended ? 'rgba(255,68,68,0.1)' : 'rgba(0,204,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -113,12 +120,12 @@ const Settings: React.FC = () => {
               PLANO {shopData?.plan_type || 'BÁSICA'}
             </span>
             
-            <div style={{ background: 'white', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '180px', height: '180px', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ background: 'white', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '180px', height: '180px', overflow: 'hidden', border: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
               {globalConfig?.basica?.url ? (
                 <img 
                   src={globalConfig.basica.url} 
                   alt="QR Code" 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.15)' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.4)' }}
                   onError={(e) => { (e.target as HTMLImageElement).src = 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg'; }}
                 />
               ) : (
