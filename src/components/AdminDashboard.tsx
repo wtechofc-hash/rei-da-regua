@@ -13,7 +13,8 @@ import {
   CheckCircle,
   XCircle,
   Trash2,
-  CalendarDays
+  CalendarDays,
+  LogOut
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useApp } from '../context/AppContext';
@@ -21,7 +22,7 @@ import { useApp } from '../context/AppContext';
 type Tab = 'lojistas' | 'clientes' | 'pagamentos' | 'configuracoes' | 'ganhos';
 
 const AdminDashboard: React.FC = () => {
-  const { setAuth } = useApp();
+  const { setAuth, logout } = useApp();
   const [activeTab, setActiveTab] = useState<Tab>('lojistas');
   const [shops, setShops] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -178,23 +179,32 @@ const AdminDashboard: React.FC = () => {
   const currentRevenue = payments.filter(p => p.status === 'approved').reduce((acc, curr) => acc + Number(curr.amount || 70), 0);
 
   return (
-    <div className="animate-fade-in" style={{ padding: '1rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div className="animate-fade-in" style={{ padding: '2rem', maxWidth: '1600px', margin: '0 auto', width: '100%' }}>
+      <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-gold)', marginBottom: '0.5rem' }}>
-            <ShieldCheck size={28} />
-            <h1 style={{ fontSize: '2rem', fontWeight: '900', margin: 0, letterSpacing: '-0.02em', color: 'white' }}>Painel Central ADM</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-gold)', marginBottom: '0.5rem' }}>
+            <ShieldCheck size={36} />
+            <h1 style={{ fontSize: '2.5rem', fontWeight: '900', margin: 0, letterSpacing: '-0.02em', color: 'white' }}>Painel Central ADM</h1>
           </div>
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Gestão global de Barbearias, Assinaturas e Clientes.</p>
+          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '1.1rem' }}>Gestão global de Barbearias, Assinaturas e Clientes.</p>
         </div>
         
-        <button 
-          onClick={() => setIsAddingShop(true)}
-          className="gold-button" 
-          style={{ padding: '0.75rem 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}
-        >
-          <Plus size={20} /> Novo Lojista
-        </button>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button 
+            onClick={() => setIsAddingShop(true)}
+            className="gold-button" 
+            style={{ padding: '0.75rem 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem' }}
+          >
+            <Plus size={22} /> Novo Lojista
+          </button>
+          
+          <button 
+            onClick={logout}
+            style={{ padding: '0.75rem 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem', background: 'rgba(255, 68, 68, 0.1)', color: '#ff4444', border: '1px solid rgba(255, 68, 68, 0.2)', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}
+          >
+            <LogOut size={20} /> Sair
+          </button>
+        </div>
       </header>
 
       {/* Tabs */}
@@ -210,16 +220,16 @@ const AdminDashboard: React.FC = () => {
             key={tab.id}
             onClick={() => setActiveTab(tab.id as Tab)}
             style={{
-              padding: '0.75rem 1rem', background: 'transparent', border: 'none',
+              padding: '1rem 1.5rem', background: 'transparent', border: 'none',
               color: activeTab === tab.id ? 'var(--accent-gold)' : '#888',
-              borderBottom: activeTab === tab.id ? '2px solid var(--accent-gold)' : '2px solid transparent',
-              fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
-              whiteSpace: 'nowrap', transition: 'all 0.2s'
+              borderBottom: activeTab === tab.id ? '3px solid var(--accent-gold)' : '3px solid transparent',
+              fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px',
+              whiteSpace: 'nowrap', transition: 'all 0.2s', fontSize: '1.1rem'
             }}
           >
-            <tab.icon size={18} />
+            <tab.icon size={22} />
             {tab.label}
-            {tab.badge ? <span style={{ background: '#ff4444', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.65rem' }}>{tab.badge}</span> : null}
+            {tab.badge ? <span style={{ background: '#ff4444', color: 'white', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem' }}>{tab.badge}</span> : null}
           </button>
         ))}
       </div>
