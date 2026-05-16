@@ -54,24 +54,39 @@ const Settings: React.FC = () => {
         </h2>
         <p style={{ color: '#aaa', marginBottom: '1.5rem' }}>
           Plano atual: <strong style={{ color: 'var(--accent-gold)' }}>{shopData?.plan_type || 'Básica'}</strong><br/>
-          Vencimento: <strong style={{ color: 'white' }}>{new Date(shopData?.subscription_ends_at).toLocaleDateString()}</strong>
+          Vencimento: <strong style={{ color: 'white' }}>{shopData?.subscription_ends_at ? new Date(shopData.subscription_ends_at).toLocaleDateString('pt-BR') : 'Indefinido'}</strong>
         </p>
 
         {globalConfig && globalConfig.basica && (
           <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1rem', color: 'var(--accent-gold)' }}>Pagar via PIX</h3>
             <p style={{ fontSize: '0.85rem', color: '#888', marginBottom: '1rem' }}>
-              Valor da mensalidade: <strong style={{ color: 'white', fontSize: '1rem' }}>R$ {globalConfig.basica.price?.toFixed(2)}</strong>
+              Valor da mensalidade: <strong style={{ color: 'white', fontSize: '1rem' }}>R$ {globalConfig.basica.price?.toFixed(2) || '0.00'}</strong>
             </p>
             
             <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-              {globalConfig.basica.url && (
+              {globalConfig.basica.url ? (
                 <div style={{ background: 'white', padding: '10px', borderRadius: '8px', display: 'inline-block' }}>
                   <img src={globalConfig.basica.url} alt="QR Code PIX" style={{ width: '150px', height: '150px', objectFit: 'contain' }} />
                 </div>
+              ) : (
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '150px', height: '150px', color: '#888', textAlign: 'center', fontSize: '0.8rem', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                  Sem QR Code
+                </div>
               )}
               <div style={{ flex: 1, minWidth: '200px' }}>
-                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '4px', fontWeight: '800' }}>CHAVE PIX</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '4px', fontWeight: '800' }}>RECEBEDOR</label>
+                    <input type="text" readOnly value={globalConfig.basica.receiver || 'Não informado'} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', background: '#111', border: '1px solid #222', color: 'white' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '4px', fontWeight: '800' }}>BANCO</label>
+                    <input type="text" readOnly value={globalConfig.basica.bank || 'Não informado'} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', background: '#111', border: '1px solid #222', color: 'white' }} />
+                  </div>
+                </div>
+
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '4px', fontWeight: '800' }}>CHAVE PIX (COPIA E COLA)</label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
                   <input type="text" readOnly value={globalConfig.basica.key || ''} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', background: '#111', border: '1px solid #222', color: 'var(--accent-gold)', fontWeight: '700' }} />
                 </div>
