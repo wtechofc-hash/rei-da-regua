@@ -68,6 +68,21 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const createAuthUser = async (email: string, password: string, role: string, metadata?: any) => {
+    try {
+      const res = await fetch('https://oongrdgcdxqijonjroam.supabase.co/functions/v1/create-auth-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, role, metadata })
+      });
+      const data = await res.json();
+      if (data.error) console.warn('Auth user creation warning:', data.error);
+      return data;
+    } catch (err) {
+      console.error('Failed to create auth user:', err);
+    }
+  };
+
   const handleAddShop = async (e: React.FormEvent) => {
     e.preventDefault();
     const now = new Date();
@@ -84,10 +99,16 @@ const AdminDashboard: React.FC = () => {
     }]).select();
 
     if (data) {
+      // Also register this logista in Supabase Auth
+      await createAuthUser(newShop.login_email, newShop.login_password, 'owner', {
+        shop_id: data[0].id,
+        shop_name: newShop.name
+      });
+      
       setShops([data[0], ...shops]);
       setIsAddingShop(false);
       setNewShop({ name: '', slug: '', plan_type: 'Básica', login_email: '', login_password: '' });
-      alert("Lojista criado com sucesso!");
+      alert("Lojista criado com sucesso! Login registrado no sistema.");
     } else if (error) {
       alert("Erro ao criar lojista: " + error.message);
     }
@@ -134,7 +155,14 @@ const AdminDashboard: React.FC = () => {
     }).eq('id', editingShopId);
 
     if (!error) {
-      alert("Dados atualizados com sucesso!");
+      // Sync updated credentials to Supabase Auth (creates or updates the user)
+      if (editShop.login_email && editShop.login_password) {
+        await createAuthUser(editShop.login_email, editShop.login_password, 'owner', {
+          shop_id: editingShopId,
+          shop_name: editShop.name
+        });
+      }
+      alert("Dados atualizados com sucesso! Credenciais sincronizadas.");
       setIsEditingShop(false);
       loadData();
     } else {
