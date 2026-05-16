@@ -208,9 +208,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (!isReady) return;
-    localStorage.setItem('bb_services', JSON.stringify(services));
+
   const addService = async (s: Omit<Service, 'id'>) => {
     const { data, error } = await supabase.from('services').insert([{ 
       name: s.name, price: s.price, duration: 30, category: s.description 
@@ -320,7 +318,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <AppContext.Provider value={{
-      role, userId, setAuth, logout, services, products, appointments, profiles, clients,
+      role, userId, shopId, setAuth, logout, services, products, appointments, profiles, clients,
       addService, updateService, deleteService,
       addProduct, updateProduct, deleteProduct,
       addAppointment, updateAppointment, deleteAppointment,
