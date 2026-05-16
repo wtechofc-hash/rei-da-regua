@@ -123,10 +123,24 @@ const Settings: React.FC = () => {
             <div style={{ background: 'white', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '180px', height: '180px', overflow: 'hidden', border: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
               {globalConfig?.basica?.url ? (
                 <img 
+                  key={globalConfig.basica.url}
                   src={globalConfig.basica.url} 
-                  alt="QR Code" 
+                  alt="QR Code de Pagamento" 
                   style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.35)' }}
-                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg'; }}
+                  onError={(e) => { 
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      const msg = document.createElement('div');
+                      msg.innerText = 'URL da Imagem Inválida no Painel ADM';
+                      msg.style.color = '#ff4444';
+                      msg.style.fontSize = '0.7rem';
+                      msg.style.textAlign = 'center';
+                      msg.style.padding = '10px';
+                      parent.appendChild(msg);
+                    }
+                  }}
                 />
               ) : (
                 <div style={{ color: '#888', fontSize: '0.8rem', textAlign: 'center' }}>Sem QR Code</div>
