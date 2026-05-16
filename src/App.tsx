@@ -80,7 +80,7 @@ const MORE_NAV = [
 
 const AppContent: React.FC = () => {
   const { role, userId, shopData, setAuth, logout, profiles = [], appointments = [], clearProNotifications, config } = useApp();
-  const [page, setPage] = useState<Page>('agendamentos');
+  const [page, setPage] = useState<Page>('dashboard');
   const [moreOpen, setMoreOpen] = useState(false);
   
   const currentProfile = profiles.find(p => p.id === userId) ?? profiles.find(p => p.role === role) ?? profiles[0];
@@ -108,9 +108,10 @@ const AppContent: React.FC = () => {
 
 
   const renderPage = () => {
+    if (role === 'superadmin') return <AdminDashboard />;
+    
     switch (page) {
       case 'dashboard':
-        if (role === 'superadmin') return <AdminDashboard />;
         if (role === 'customer') return <Storefront />;
         return <Dashboard onViewAll={() => setPage('agendamentos')} />;
       case 'agendamentos':  return <Appointments />;
