@@ -37,8 +37,8 @@ const Login: React.FC = () => {
       const { data: shopMatch } = await supabase
         .from('shops')
         .select('id')
-        .eq('login_email', email)
-        .eq('login_password', password)
+        .ilike('login_email', email.trim())
+        .eq('login_password', password.trim())
         .maybeSingle();
 
       if (shopMatch) {
@@ -48,18 +48,26 @@ const Login: React.FC = () => {
       }
 
       // Simulação fallback
-      let role: UserRole = 'customer';
-      let userId = 'c1';
+      let role: UserRole | null = null;
+      let userId = '';
 
       if (email.includes('pro')) {
         role = 'professional';
         userId = '2';
+      } else if (email.includes('cli')) {
+        role = 'customer';
+        userId = 'c1';
       }
-      
-      setTimeout(() => {
-        setAuth(role, userId);
+
+      if (role) {
+        setTimeout(() => {
+          setAuth(role, userId);
+          setIsLoading(false);
+        }, 1000);
+      } else {
         setIsLoading(false);
-      }, 1000);
+        alert("E-mail ou senha incorretos.");
+      }
     }
   };
 
