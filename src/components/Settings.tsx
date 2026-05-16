@@ -66,8 +66,15 @@ const Settings: React.FC = () => {
             
             <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
               {globalConfig.basica.url ? (
-                <div style={{ background: 'white', padding: '10px', borderRadius: '8px', display: 'inline-block' }}>
-                  <img src={globalConfig.basica.url} alt="QR Code PIX" style={{ width: '150px', height: '150px', objectFit: 'contain' }} />
+                <div style={{ background: 'white', padding: '10px', borderRadius: '8px', flexShrink: 0, width: '170px', height: '170px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <img 
+                    src={globalConfig.basica.url} 
+                    alt="QR Code PIX" 
+                    style={{ width: '150px', height: '150px', objectFit: 'contain' }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg'; // Fallback
+                    }}
+                  />
                 </div>
               ) : (
                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '150px', height: '150px', color: '#888', textAlign: 'center', fontSize: '0.8rem', border: '1px dashed rgba(255,255,255,0.1)' }}>
