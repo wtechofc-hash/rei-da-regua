@@ -90,7 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
               <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
               <span style={{ fontSize: '0.85rem', fontWeight: isActive ? '700' : '600' }}>{item.label}</span>
               
-              {item.badge > 0 && (
+              {(item.badge ?? 0) > 0 && (
                 <span style={{
                   position: 'absolute', right: '12px', background: '#ff4444', color: 'white',
                   fontSize: '0.65rem', fontWeight: '900', padding: '2px 6px', borderRadius: '6px',
