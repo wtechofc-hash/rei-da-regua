@@ -121,20 +121,20 @@ const Settings: React.FC = () => {
               PLANO {shopData?.plan_type || 'BÁSICA'}
             </span>
             
-            <div style={{ background: 'white', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '180px', height: '180px', overflow: 'hidden', border: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+            <div style={{ background: 'white', borderRadius: '16px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '180px', height: '180px', overflow: 'hidden', border: '1px solid #f0f0f0', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', padding: '12px' }}>
               {globalConfig?.basica?.url && !qrError ? (
                 <img 
                   key={globalConfig.basica.url}
                   src={globalConfig.basica.url} 
                   alt="QR Code de Pagamento" 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.35)' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   onError={() => setQrError(true)}
                 />
               ) : globalConfig?.basica?.key ? (
                 <QRCodeSVG 
                   value={globalConfig.basica.key} 
-                  size={180}
-                  level="H"
+                  size={156}
+                  level="M"
                   includeMargin={false}
                 />
               ) : (
