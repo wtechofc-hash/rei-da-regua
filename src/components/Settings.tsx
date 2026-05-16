@@ -104,12 +104,12 @@ const Settings: React.FC = () => {
               PLANO {shopData?.plan_type || 'BÁSICA'}
             </span>
             
-            <div style={{ background: 'white', padding: '12px', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '180px', height: '180px', overflow: 'hidden' }}>
+            <div style={{ background: 'white', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '180px', height: '180px', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.1)' }}>
               {globalConfig?.basica?.url ? (
                 <img 
                   src={globalConfig.basica.url} 
                   alt="QR Code" 
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   onError={(e) => { (e.target as HTMLImageElement).src = 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg'; }}
                 />
               ) : (
