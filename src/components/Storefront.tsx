@@ -9,7 +9,6 @@ import {
   Phone, 
   Share2, 
   ExternalLink,
-  ExternalLink,
   CheckCircle,
   LogOut
 } from 'lucide-react';
