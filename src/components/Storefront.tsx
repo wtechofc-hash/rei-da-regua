@@ -90,65 +90,83 @@ const Storefront: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '4rem' }} className="storefront-main-grid">
           
           <div className="storefront-content">
-            {/* Services */}
+            {/* Services Carousel */}
             <section style={{ marginBottom: '5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '3rem' }}>
-                <h2 style={{ fontSize: '2.2rem', fontWeight: '900', margin: 0 }}>Serviços</h2>
-                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, rgba(212,175,55,0.3), transparent)' }}></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '-0.02em' }}>Serviços em Destaque</h2>
+                <div style={{ fontSize: '0.85rem', color: 'var(--accent-gold)', fontWeight: '700', cursor: 'pointer' }}>Ver todos</div>
               </div>
               
-              <div style={{ display: 'grid', gap: '1.5rem' }}>
+              <div className="netflix-row" style={{ 
+                display: 'flex', gap: '1.5rem', overflowX: 'auto', paddingBottom: '1.5rem',
+                scrollbarWidth: 'none', msOverflowStyle: 'none'
+              }}>
                 {services.map(service => (
-                  <div key={service.id} className="premium-card" style={{ 
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2rem',
-                    border: selectedService === service.id ? '2px solid var(--accent-gold)' : '1px solid var(--glass-border)',
-                    background: selectedService === service.id ? 'rgba(212, 175, 55, 0.05)' : 'var(--bg-card)',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '8px' }}>{service.name}</h3>
-                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', maxWidth: '450px', lineHeight: '1.6' }}>{service.description}</p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '15px' }}>
-                        <p style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--accent-gold)', margin: 0 }}>
-                          R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                        <span style={{ fontSize: '0.8rem', color: '#555', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '6px' }}>
-                          <Clock size={12} style={{ marginRight: '4px' }} /> 45 min
-                        </span>
+                  <div key={service.id} onClick={() => setSelectedService(service.id)} style={{ 
+                    flex: '0 0 240px', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    position: 'relative'
+                  }} className="netflix-card">
+                    <div style={{ 
+                      aspectRatio: '2/3', borderRadius: '16px', overflow: 'hidden', 
+                      background: 'rgba(255,255,255,0.03)', border: selectedService === service.id ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.08)',
+                      position: 'relative', transition: 'all 0.3s'
+                    }}>
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}>
+                         <Scissors size={48} style={{ opacity: 0.2, color: 'var(--accent-gold)' }} />
+                      </div>
+                      
+                      {/* Gradient Overlay */}
+                      <div style={{ 
+                        position: 'absolute', inset: 0, 
+                        background: 'linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.9))',
+                        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '1.5rem'
+                      }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '4px', color: 'white' }}>{service.name}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)' }}>R$ {service.price}</span>
+                          <span style={{ fontSize: '0.75rem', color: '#888' }}>• 45m</span>
+                        </div>
                       </div>
                     </div>
-                    <button 
-                      onClick={() => setSelectedService(service.id)}
-                      className={selectedService === service.id ? "gold-button" : "premium-card"}
-                      style={{ padding: '1rem 2rem', fontSize: '0.9rem', fontWeight: '700', whiteSpace: 'nowrap', borderRadius: '12px' }}
-                    >
-                      {selectedService === service.id ? '✓ Selecionado' : 'Agendar'}
-                    </button>
                   </div>
                 ))}
               </div>
             </section>
 
-            {/* Products */}
+            {/* Products Carousel */}
             <section style={{ marginBottom: '5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '3rem' }}>
-                <h2 style={{ fontSize: '2.2rem', fontWeight: '900', margin: 0 }}>Produtos</h2>
-                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, rgba(212,175,55,0.3), transparent)' }}></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '-0.02em' }}>Produtos Premium</h2>
+                <div style={{ fontSize: '0.85rem', color: 'var(--accent-gold)', fontWeight: '700', cursor: 'pointer' }}>Ver todos</div>
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '2rem' }}>
+              <div className="netflix-row" style={{ 
+                display: 'flex', gap: '1.5rem', overflowX: 'auto', paddingBottom: '1.5rem',
+                scrollbarWidth: 'none', msOverflowStyle: 'none'
+              }}>
                 {products.map(product => (
-                  <div key={product.id} className="premium-card" style={{ textAlign: 'center', padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ width: '100%', height: '180px', background: 'rgba(255,255,255,0.02)', borderRadius: '20px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <Package size={64} style={{ opacity: 0.15, color: 'var(--accent-gold)' }} />
+                  <div key={product.id} style={{ 
+                    flex: '0 0 240px', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }} className="netflix-card">
+                    <div style={{ 
+                      aspectRatio: '2/3', borderRadius: '16px', overflow: 'hidden', 
+                      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                      position: 'relative'
+                    }}>
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                         <Package size={48} style={{ opacity: 0.15, color: 'var(--accent-gold)' }} />
+                      </div>
+                      
+                      {/* Gradient Overlay */}
+                      <div style={{ 
+                        position: 'absolute', inset: 0, 
+                        background: 'linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.9))',
+                        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '1.5rem'
+                      }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '4px', color: 'white' }}>{product.name}</h3>
+                        <p style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)', margin: 0 }}>R$ {product.price}</p>
+                      </div>
                     </div>
-                    <h4 style={{ fontWeight: '800', fontSize: '1.1rem', marginBottom: '10px' }}>{product.name}</h4>
-                    <p style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--accent-gold)', marginBottom: '1.5rem' }}>
-                      R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </p>
-                    <button className="premium-card" style={{ width: '100%', padding: '0.85rem', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '12px', fontSize: '0.85rem', fontWeight: '700', transition: 'all 0.2s' }}>
-                      Ver Detalhes
-                    </button>
                   </div>
                 ))}
               </div>
@@ -268,6 +286,19 @@ const Storefront: React.FC = () => {
           .storefront-main-grid { grid-template-columns: 1fr !important; gap: 3rem !important; }
           aside { position: static !important; }
         }
+        
+        .netflix-row::-webkit-scrollbar { display: none; }
+        
+        .netflix-card:hover {
+          transform: scale(1.05);
+          z-index: 10;
+        }
+        
+        .netflix-card:hover > div {
+          border-color: var(--accent-gold) !important;
+          box-shadow: 0 0 30px rgba(212,175,55,0.2);
+        }
+
         .premium-card:hover { border-color: rgba(212,175,55,0.3) !important; transform: translateY(-2px); }
       `}} />
     </div>
