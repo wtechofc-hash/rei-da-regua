@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
 import { Banknote, Upload, CheckCircle, ShieldAlert, Power, Clock, Copy, Plus } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const Settings: React.FC = () => {
   const { logout, shopData: contextShopData } = useApp();
@@ -9,7 +10,7 @@ const Settings: React.FC = () => {
   const [globalConfig, setGlobalConfig] = useState<any>(null);
   const [receiptUrl, setReceiptUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-
+  const [qrError, setQrError] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
@@ -120,30 +121,24 @@ const Settings: React.FC = () => {
               PLANO {shopData?.plan_type || 'BÁSICA'}
             </span>
             
-            <div style={{ background: 'white', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '180px', height: '180px', overflow: 'hidden', border: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-              {globalConfig?.basica?.url ? (
+            <div style={{ background: 'white', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '180px', height: '180px', overflow: 'hidden', border: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', padding: '10px' }}>
+              {globalConfig?.basica?.url && !qrError ? (
                 <img 
                   key={globalConfig.basica.url}
                   src={globalConfig.basica.url} 
                   alt="QR Code de Pagamento" 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.35)' }}
-                  onError={(e) => { 
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent) {
-                      const msg = document.createElement('div');
-                      msg.innerText = 'URL da Imagem Inválida no Painel ADM';
-                      msg.style.color = '#ff4444';
-                      msg.style.fontSize = '0.7rem';
-                      msg.style.textAlign = 'center';
-                      msg.style.padding = '10px';
-                      parent.appendChild(msg);
-                    }
-                  }}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  onError={() => setQrError(true)}
+                />
+              ) : globalConfig?.basica?.key ? (
+                <QRCodeSVG 
+                  value={globalConfig.basica.key} 
+                  size={160}
+                  level="H"
+                  includeMargin={false}
                 />
               ) : (
-                <div style={{ color: '#888', fontSize: '0.8rem', textAlign: 'center' }}>Sem QR Code</div>
+                <div style={{ color: '#888', fontSize: '0.7rem', textAlign: 'center' }}>Sem QR Code ou Chave PIX</div>
               )}
             </div>
 
