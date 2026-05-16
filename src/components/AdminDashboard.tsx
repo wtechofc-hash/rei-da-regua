@@ -2,168 +2,363 @@ import React, { useState, useEffect } from 'react';
 import { 
   Building2, 
   Users, 
-  QrCode, 
   Plus, 
   ExternalLink, 
   ShieldCheck, 
   LayoutDashboard,
   Search,
-  Key
+  Banknote,
+  Settings,
+  Landmark,
+  CheckCircle,
+  XCircle,
+  Trash2,
+  CalendarDays
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useApp } from '../context/AppContext';
 
-interface Shop {
-  id: string;
-  name: string;
-  slug: string;
-  qr_code_link: string;
-  active: boolean;
-  created_at: string;
-}
+type Tab = 'lojistas' | 'clientes' | 'pagamentos' | 'configuracoes' | 'ganhos';
 
 const AdminDashboard: React.FC = () => {
   const { setAuth } = useApp();
-  const [shops, setShops] = useState<Shop[]>([]);
-  const [clientsCount, setClientsCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<Tab>('lojistas');
+  const [shops, setShops] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [systemConfig, setSystemConfig] = useState<any>({
+    basica: { name: "Básica", price: 70, url: "", bank: "", receiver: "", key: "" }
+  });
+  
   const [isAddingShop, setIsAddingShop] = useState(false);
-  const [newShop, setNewShop] = useState({ name: '', slug: '' });
+  const [newShop, setNewShop] = useState({ name: '', slug: '', plan_type: 'Básica' });
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchShops();
-    fetchStats();
+    loadData();
   }, []);
 
-  const fetchShops = async () => {
-    const { data } = await supabase.from('shops').select('*').order('created_at', { ascending: false });
-    if (data) setShops(data);
-  };
+  const loadData = async () => {
+    // Fetch Shops
+    const { data: shopsData } = await supabase.from('shops').select('*').order('created_at', { ascending: false });
+    if (shopsData) setShops(shopsData);
 
-  const fetchStats = async () => {
-    const { count } = await supabase.from('clients').select('*', { count: 'exact', head: true });
-    setClientsCount(count || 0);
+    // Fetch Clients (All global clients)
+    const { data: clientsData } = await supabase.from('clients').select('*, shops(name)').order('created_at', { ascending: false });
+    if (clientsData) setClients(clientsData);
+
+    // Fetch Payments
+    const { data: payData } = await supabase.from('payment_notifications').select('*, shops(name)').order('created_at', { ascending: false });
+    if (payData) setPayments(payData);
+
+    // Fetch Config
+    const { data: configData } = await supabase.from('system_config').select('*').eq('key', 'subscription_plans').maybeSingle();
+    if (configData?.value) {
+      setSystemConfig(configData.value);
+    }
   };
 
   const handleAddShop = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data, error } = await supabase.from('shops').insert([newShop]).select();
+    const now = new Date();
+    now.setDate(now.getDate() + 30); // 30 days free trial or initial period
+
+    const { data, error } = await supabase.from('shops').insert([{
+      name: newShop.name,
+      slug: newShop.slug,
+      plan_type: newShop.plan_type,
+      subscription_ends_at: now.toISOString(),
+      subscription_status: 'active'
+    }]).select();
+
     if (data) {
       setShops([data[0], ...shops]);
       setIsAddingShop(false);
-      setNewShop({ name: '', slug: '' });
+      setNewShop({ name: '', slug: '', plan_type: 'Básica' });
+      alert("Lojista criado com sucesso!");
+    } else if (error) {
+      alert("Erro ao criar lojista: " + error.message);
     }
   };
 
+  const handleSaveConfig = async () => {
+    const { error } = await supabase.from('system_config').upsert({
+      key: 'subscription_plans',
+      value: systemConfig
+    }, { onConflict: 'key' });
+    
+    if (!error) alert("Configurações salvas com sucesso!");
+    else alert("Erro: " + error.message);
+  };
+
+  const handleApprovePayment = async (notif: any) => {
+    const { error: notifErr } = await supabase.from('payment_notifications').update({ status: 'approved' }).eq('id', notif.id);
+    if (notifErr) return alert(notifErr.message);
+
+    const store = shops.find(s => s.id === notif.shop_id);
+    if (store) {
+      const currentEnd = store.subscription_ends_at ? new Date(store.subscription_ends_at) : new Date();
+      if (currentEnd < new Date()) currentEnd.setTime(Date.now());
+      currentEnd.setDate(currentEnd.getDate() + 30);
+
+      await supabase.from('shops').update({
+        subscription_ends_at: currentEnd.toISOString(),
+        subscription_status: 'active'
+      }).eq('id', notif.shop_id);
+    }
+    loadData();
+  };
+
+  const handleRejectPayment = async (id: string) => {
+    await supabase.from('payment_notifications').update({ status: 'rejected' }).eq('id', id);
+    loadData();
+  };
+
+  const handleToggleSubscription = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
+    await supabase.from('shops').update({ subscription_status: newStatus }).eq('id', id);
+    loadData();
+  };
+
   const enterShop = (shopId: string) => {
-    // Switch to 'owner' view for this specific shop
     setAuth('owner', 'admin-support', shopId);
   };
 
-  const filteredShops = shops.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.slug.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const getSubscriptionProgress = (end?: string) => {
+    if (!end) return { percentage: 0, color: "#00ff00" };
+    const e = new Date(end).getTime();
+    const now = Date.now();
+    if (now > e) return { percentage: 100, color: "#ff4444" };
+    const remainingDays = (e - now) / (1000 * 60 * 60 * 24);
+    let percentage = 100 - (remainingDays / 30) * 100;
+    if (percentage < 2) percentage = 2;
+    if (percentage > 100) percentage = 100;
+    let color = "#00ff00";
+    if (percentage >= 50 && percentage < 85) color = "#ffaa00";
+    else if (percentage >= 85) color = "#ff4444";
+    return { percentage, color, days: Math.ceil(remainingDays) };
+  };
+
+  const currentRevenue = payments.filter(p => p.status === 'approved').reduce((acc, curr) => acc + Number(curr.amount || 70), 0);
 
   return (
-    <div className="animate-fade-in" style={{ padding: '1rem' }}>
-      <header style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="animate-fade-in" style={{ padding: '1rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-gold)', marginBottom: '0.5rem' }}>
-            <ShieldCheck size={24} />
-            <h1 style={{ fontSize: '1.8rem', fontWeight: '900', margin: 0, letterSpacing: '-0.02em', color: 'white' }}>Painel Central</h1>
+            <ShieldCheck size={28} />
+            <h1 style={{ fontSize: '2rem', fontWeight: '900', margin: 0, letterSpacing: '-0.02em', color: 'white' }}>Painel Central ADM</h1>
           </div>
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Gestão de Lojistas e Controle Global</p>
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Gestão global de Barbearias, Assinaturas e Clientes.</p>
         </div>
         
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <div className="premium-card" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-             <Users size={18} color="var(--accent-gold)" />
-             <div>
-               <p style={{ margin: 0, fontSize: '0.65rem', color: '#555', fontWeight: '800' }}>TOTAL CLIENTES</p>
-               <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: '900' }}>{clientsCount}</p>
-             </div>
-          </div>
-          <button 
-            onClick={() => setIsAddingShop(true)}
-            className="gold-button" 
-            style={{ padding: '0 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}
-          >
-            <Plus size={20} /> Novo Lojista
-          </button>
-        </div>
+        <button 
+          onClick={() => setIsAddingShop(true)}
+          className="gold-button" 
+          style={{ padding: '0.75rem 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}
+        >
+          <Plus size={20} /> Novo Lojista
+        </button>
       </header>
 
-      {/* Search and Filters */}
-      <div style={{ position: 'relative', marginBottom: '2rem' }}>
-        <Search size={20} style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#444' }} />
-        <input 
-          type="text" 
-          placeholder="Buscar lojista por nome ou slug..." 
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          style={{ 
-            width: '100%', padding: '1.1rem 1.1rem 1.1rem 3.5rem', borderRadius: '16px',
-            background: 'var(--bg-card)', border: '1px solid var(--glass-border)',
-            color: 'white', fontSize: '0.95rem', outline: 'none'
-          }}
-        />
-      </div>
-
-      {/* Shops Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-        {filteredShops.map(shop => (
-          <div key={shop.id} className="premium-card" style={{ padding: '1.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-gold)' }}>
-                  <Building2 size={24} />
-                </div>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>{shop.name}</h3>
-                  <p style={{ margin: 0, fontSize: '0.75rem', color: '#555' }}>/{shop.slug}</p>
-                </div>
-              </div>
-              <div style={{ padding: '4px 8px', borderRadius: '6px', background: shop.active ? 'rgba(0,255,0,0.05)' : 'rgba(255,0,0,0.05)', color: shop.active ? '#00ff00' : '#ff0000', fontSize: '0.65rem', fontWeight: '900' }}>
-                {shop.active ? 'ATIVO' : 'INATIVO'}
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#888', fontSize: '0.8rem' }}>
-                <QrCode size={14} />
-                <span>QR Code: {shop.qr_code_link || 'Não gerado'}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#888', fontSize: '0.8rem' }}>
-                <Key size={14} />
-                <span>ID: {shop.id.substring(0, 8)}...</span>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <button 
-                onClick={() => enterShop(shop.id)}
-                style={{ 
-                  padding: '0.75rem', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', 
-                  border: '1px solid rgba(212,175,55,0.2)', color: 'var(--accent-gold)', 
-                  fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' 
-                }}
-              >
-                <LayoutDashboard size={14} /> Entrar na Loja
-              </button>
-              <button 
-                style={{ 
-                  padding: '0.75rem', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', 
-                  border: '1px solid rgba(255,255,255,0.05)', color: 'white', 
-                  fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' 
-                }}
-              >
-                <ExternalLink size={14} /> Ver Vitrine
-              </button>
-            </div>
-          </div>
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', overflowX: 'auto' }}>
+        {[
+          { id: 'lojistas', label: `Lojistas (${shops.length})`, icon: Building2 },
+          { id: 'clientes', label: `Clientes (${clients.length})`, icon: Users },
+          { id: 'pagamentos', label: `Pagamentos`, icon: Banknote, badge: payments.filter(p => p.status === 'pending').length },
+          { id: 'ganhos', label: `Faturamento`, icon: Landmark },
+          { id: 'configuracoes', label: `Configurações`, icon: Settings },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as Tab)}
+            style={{
+              padding: '0.75rem 1rem', background: 'transparent', border: 'none',
+              color: activeTab === tab.id ? 'var(--accent-gold)' : '#888',
+              borderBottom: activeTab === tab.id ? '2px solid var(--accent-gold)' : '2px solid transparent',
+              fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+              whiteSpace: 'nowrap', transition: 'all 0.2s'
+            }}
+          >
+            <tab.icon size={18} />
+            {tab.label}
+            {tab.badge ? <span style={{ background: '#ff4444', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.65rem' }}>{tab.badge}</span> : null}
+          </button>
         ))}
       </div>
+
+      {/* Tab Content: Lojistas */}
+      {activeTab === 'lojistas' && (
+        <div>
+          <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
+            <Search size={20} style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#555' }} />
+            <input 
+              type="text" 
+              placeholder="Buscar lojista por nome..." 
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{ width: '100%', padding: '1rem 1rem 1rem 3.5rem', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', color: 'white', outline: 'none' }}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+            {shops.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())).map(shop => {
+              const prog = getSubscriptionProgress(shop.subscription_ends_at);
+              return (
+                <div key={shop.id} className="premium-card" style={{ padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>{shop.name}</h3>
+                      <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--accent-gold)' }}>Plano: {shop.plan_type}</p>
+                    </div>
+                    <button 
+                      onClick={() => handleToggleSubscription(shop.id, shop.subscription_status)}
+                      style={{ padding: '4px 8px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: shop.subscription_status === 'active' ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)', color: shop.subscription_status === 'active' ? '#00ff00' : '#ff0000', fontSize: '0.65rem', fontWeight: '900' }}
+                    >
+                      {shop.subscription_status === 'active' ? 'ATIVO' : 'SUSPENSO'}
+                    </button>
+                  </div>
+
+                  <div style={{ marginBottom: '1.5rem', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '4px', color: '#aaa' }}>
+                        <span>Vencimento</span>
+                        <span style={{ color: prog.color, fontWeight: 'bold' }}>{prog.days} dias restantes</span>
+                     </div>
+                     <div style={{ width: '100%', height: '6px', background: '#222', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ width: `${prog.percentage}%`, height: '100%', background: prog.color, transition: 'all 0.3s' }}></div>
+                     </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <button 
+                      onClick={() => enterShop(shop.id)}
+                      style={{ padding: '0.75rem', borderRadius: '8px', background: 'var(--accent-gold)', border: 'none', color: '#000', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    >
+                      <LayoutDashboard size={14} /> Entrar na Loja
+                    </button>
+                    <button 
+                      style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    >
+                      <ExternalLink size={14} /> Link Vitrine
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Tab Content: Clientes Globais */}
+      {activeTab === 'clientes' && (
+        <div className="premium-card" style={{ padding: '1.5rem', overflowX: 'auto' }}>
+          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#888', fontSize: '0.8rem' }}>
+                <th style={{ padding: '1rem' }}>Cliente</th>
+                <th style={{ padding: '1rem' }}>Contato</th>
+                <th style={{ padding: '1rem' }}>Barbearia (Origem)</th>
+                <th style={{ padding: '1rem' }}>Total Gasto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clients.map(c => (
+                <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <td style={{ padding: '1rem', fontWeight: '700' }}>{c.name}</td>
+                  <td style={{ padding: '1rem', color: '#aaa', fontSize: '0.85rem' }}>{c.phone || c.email}</td>
+                  <td style={{ padding: '1rem', color: 'var(--accent-gold)' }}>{(c.shops as any)?.name || 'Desconhecida'}</td>
+                  <td style={{ padding: '1rem', fontWeight: '900' }}>R$ {(c.total_spent || 0).toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Tab Content: Pagamentos */}
+      {activeTab === 'pagamentos' && (
+        <div className="premium-card" style={{ padding: '1.5rem', overflowX: 'auto' }}>
+          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#888', fontSize: '0.8rem' }}>
+                <th style={{ padding: '1rem' }}>Barbearia</th>
+                <th style={{ padding: '1rem' }}>Data</th>
+                <th style={{ padding: '1rem' }}>Comprovante</th>
+                <th style={{ padding: '1rem' }}>Status</th>
+                <th style={{ padding: '1rem' }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payments.map(p => (
+                <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <td style={{ padding: '1rem', fontWeight: '700' }}>{(p.shops as any)?.name || 'Desconhecida'}</td>
+                  <td style={{ padding: '1rem', color: '#aaa', fontSize: '0.85rem' }}>{new Date(p.created_at).toLocaleDateString()}</td>
+                  <td style={{ padding: '1rem' }}>
+                    {p.receipt_url ? <a href={p.receipt_url} target="_blank" style={{ color: 'var(--accent-gold)', textDecoration: 'underline' }}>Ver Arquivo</a> : 'Nenhum'}
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    <span style={{ padding: '4px 8px', borderRadius: '6px', background: p.status === 'approved' ? 'rgba(0,255,0,0.1)' : p.status === 'rejected' ? 'rgba(255,0,0,0.1)' : 'rgba(255,170,0,0.1)', color: p.status === 'approved' ? '#00ff00' : p.status === 'rejected' ? '#ff0000' : '#ffaa00', fontSize: '0.7rem', fontWeight: '800' }}>
+                      {p.status.toUpperCase()}
+                    </span>
+                  </td>
+                  <td style={{ padding: '1rem', display: 'flex', gap: '8px' }}>
+                    {p.status === 'pending' && (
+                      <>
+                        <button onClick={() => handleApprovePayment(p)} style={{ background: '#00ff00', color: '#000', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: '800', cursor: 'pointer' }}><CheckCircle size={16} /></button>
+                        <button onClick={() => handleRejectPayment(p.id)} style={{ background: '#ff4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: '800', cursor: 'pointer' }}><XCircle size={16} /></button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {payments.length === 0 && <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>Nenhum pagamento registrado.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Tab Content: Ganhos */}
+      {activeTab === 'ganhos' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+          <div className="premium-card" style={{ padding: '2rem', textAlign: 'center' }}>
+            <Landmark size={40} color="var(--accent-gold)" style={{ margin: '0 auto 1rem' }} />
+            <h3 style={{ color: '#888', margin: '0 0 0.5rem', fontSize: '0.9rem' }}>Faturamento (Pagamentos Aprovados)</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: '900', margin: 0, color: 'white' }}>R$ {currentRevenue.toFixed(2)}</p>
+          </div>
+          <div className="premium-card" style={{ padding: '2rem', textAlign: 'center' }}>
+            <Building2 size={40} color="var(--accent-gold)" style={{ margin: '0 auto 1rem' }} />
+            <h3 style={{ color: '#888', margin: '0 0 0.5rem', fontSize: '0.9rem' }}>Lojistas Ativos</h3>
+            <p style={{ fontSize: '2.5rem', fontWeight: '900', margin: 0, color: 'white' }}>{shops.filter(s => s.subscription_status === 'active').length}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Content: Configurações */}
+      {activeTab === 'configuracoes' && (
+        <div className="premium-card" style={{ padding: '2rem', maxWidth: '600px' }}>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Banknote size={20} color="var(--accent-gold)" /> Configurações de Pagamento (QR Code PIX)
+          </h2>
+          <div style={{ display: 'grid', gap: '1.2rem' }}>
+            <div>
+              <label style={{ fontSize: '0.8rem', color: '#888', fontWeight: '700', marginBottom: '4px', display: 'block' }}>Preço Base da Assinatura (R$)</label>
+              <input type="number" value={systemConfig.basica?.price || ''} onChange={e => setSystemConfig({ ...systemConfig, basica: { ...systemConfig.basica, price: Number(e.target.value) } })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8rem', color: '#888', fontWeight: '700', marginBottom: '4px', display: 'block' }}>URL da Imagem do QR Code</label>
+              <input type="text" placeholder="https://..." value={systemConfig.basica?.url || ''} onChange={e => setSystemConfig({ ...systemConfig, basica: { ...systemConfig.basica, url: e.target.value } })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8rem', color: '#888', fontWeight: '700', marginBottom: '4px', display: 'block' }}>Chave PIX (Copia e Cola)</label>
+              <input type="text" value={systemConfig.basica?.key || ''} onChange={e => setSystemConfig({ ...systemConfig, basica: { ...systemConfig.basica, key: e.target.value } })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
+            </div>
+            <button onClick={handleSaveConfig} className="gold-button" style={{ padding: '1rem', borderRadius: '8px', fontWeight: '800', marginTop: '1rem' }}>
+              Salvar Configurações
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Add Shop Modal */}
       {isAddingShop && (
@@ -193,7 +388,7 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button type="button" onClick={() => setIsAddingShop(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid #222', color: '#555', borderRadius: '12px', fontWeight: '700' }}>Cancelar</button>
-                <button type="submit" className="gold-button" style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: '800' }}>Cadastrar</button>
+                <button type="submit" className="gold-button" style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: '800' }}>Criar (30 Dias Grátis)</button>
               </div>
             </form>
           </div>
