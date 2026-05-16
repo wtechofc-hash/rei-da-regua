@@ -4,18 +4,27 @@ import { supabase } from '../lib/supabase';
 import { Banknote, Upload, CheckCircle, ShieldAlert, Power, Clock, Copy, Plus } from 'lucide-react';
 
 const Settings: React.FC = () => {
-  const { logout, shopData } = useApp();
+  const { logout, shopData: contextShopData } = useApp();
+  const [shopData, setShopData] = useState<any>(contextShopData);
   const [globalConfig, setGlobalConfig] = useState<any>(null);
   const [receiptUrl, setReceiptUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     fetchGlobalConfig();
-  }, []);
+    if (contextShopData?.id) {
+      fetchShopData();
+    }
+  }, [contextShopData?.id]);
 
   const fetchGlobalConfig = async () => {
     const { data } = await supabase.from('system_config').select('value').eq('key', 'subscription_plans').maybeSingle();
     if (data?.value) setGlobalConfig(data.value);
+  };
+
+  const fetchShopData = async () => {
+    const { data } = await supabase.from('shops').select('*').eq('id', contextShopData.id).single();
+    if (data) setShopData(data);
   };
 
   const handleUploadReceipt = async () => {
@@ -109,7 +118,7 @@ const Settings: React.FC = () => {
                 <img 
                   src={globalConfig.basica.url} 
                   alt="QR Code" 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.15)' }}
                   onError={(e) => { (e.target as HTMLImageElement).src = 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg'; }}
                 />
               ) : (
