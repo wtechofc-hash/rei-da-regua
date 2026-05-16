@@ -14,7 +14,12 @@ import {
   XCircle,
   Trash2,
   CalendarDays,
-  LogOut
+  LogOut,
+  Power,
+  Phone,
+  MessageSquare,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useApp } from '../context/AppContext';
@@ -37,6 +42,7 @@ const AdminDashboard: React.FC = () => {
   const [newShop, setNewShop] = useState({ name: '', slug: '', plan_type: 'Básica', login_email: '', login_password: '' });
   const [editShop, setEditShop] = useState({ name: '', slug: '', plan_type: 'Básica', login_email: '', login_password: '' });
   const [searchTerm, setSearchTerm] = useState('');
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadData();
@@ -157,6 +163,19 @@ const AdminDashboard: React.FC = () => {
     loadData();
   };
 
+  const handleExtendSubscription = async (id: string, currentEnd: string) => {
+    const d = currentEnd ? new Date(currentEnd) : new Date();
+    if (d.getTime() < Date.now()) d.setTime(Date.now());
+    d.setDate(d.getDate() + 30);
+    await supabase.from('shops').update({ subscription_ends_at: d.toISOString(), subscription_status: 'active' }).eq('id', id);
+    loadData();
+  };
+
+  const handleSetSubscriptionStatus = async (id: string, status: string) => {
+    await supabase.from('shops').update({ subscription_status: status }).eq('id', id);
+    loadData();
+  };
+
   const enterShop = (shopId: string) => {
     setAuth('owner', 'admin-support', shopId);
   };
@@ -248,46 +267,73 @@ const AdminDashboard: React.FC = () => {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
             {shops.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())).map(shop => {
               const prog = getSubscriptionProgress(shop.subscription_ends_at);
+              const showPass = visiblePasswords[shop.id];
               return (
-                <div key={shop.id} className="premium-card" style={{ padding: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                    <div onClick={() => openEditModal(shop)} style={{ cursor: 'pointer' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', textDecoration: 'underline' }}>{shop.name}</h3>
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--accent-gold)' }}>Plano: {shop.plan_type}</p>
+                <div key={shop.id} className="premium-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
+                    
+                    {/* Left: Info */}
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                      <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+                        <Building2 size={28} color="var(--accent-gold)" />
+                      </div>
+                      
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{shop.name}</h3>
+                          <span style={{ background: '#222', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: '800' }}>{shop.plan_type?.toUpperCase() || 'BÁSICA'}</span>
+                          <span style={{ background: shop.subscription_status === 'active' ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)', color: shop.subscription_status === 'active' ? '#00ff00' : '#ff4444', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: '800' }}>
+                            {shop.subscription_status?.toUpperCase() || 'ATIVA'}
+                          </span>
+                        </div>
+                        
+                        <div style={{ fontSize: '0.75rem', color: '#888', display: 'grid', gap: '4px', marginBottom: '12px' }}>
+                          <span>Geral - R. Exemplo da Silva, 123</span>
+                          <span>CNPJ: Não Informado</span>
+                          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '4px' }}>
+                            <span>Início: <span style={{ color: '#fff' }}>{new Date(shop.created_at).toLocaleDateString()}</span></span>
+                            <span>Venc.: <span style={{ color: '#fff' }}>{shop.subscription_ends_at ? new Date(shop.subscription_ends_at).toLocaleDateString() : 'N/A'}</span></span>
+                            <span style={{ color: '#00ff00', fontWeight: '800' }}>R$ 0.00 <span style={{ color: '#888', fontWeight: 'normal', fontSize: '0.65rem' }}>(saldo)</span></span>
+                          </div>
+                        </div>
+
+                        {/* Credentials */}
+                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 15px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#aaa' }}>Login: <span style={{ color: 'white', fontWeight: '500' }}>{shop.login_email || 'Não definido'}</span></span>
+                          <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#aaa', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            Senha: <span style={{ color: 'white', fontWeight: '500' }}>{showPass ? (shop.login_password || 'Não definido') : '********'}</span>
+                            <button onClick={() => setVisiblePasswords(prev => ({ ...prev, [shop.id]: !prev[shop.id] }))} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                              {showPass ? <EyeOff size={14} /> : <Eye size={14} />} <span style={{ fontSize: '0.65rem', marginLeft: '4px' }}>Protegido</span>
+                            </button>
+                          </span>
+                        </div>
+                        
+                        <div style={{ width: '100%', height: '4px', background: '#222', borderRadius: '2px', marginTop: '12px', overflow: 'hidden', maxWidth: '300px' }}>
+                          <div style={{ width: `${prog.percentage}%`, height: '100%', background: prog.color, transition: 'all 0.3s' }}></div>
+                        </div>
+                      </div>
                     </div>
-                    <button 
-                      onClick={() => handleToggleSubscription(shop.id, shop.subscription_status)}
-                      style={{ padding: '4px 8px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: shop.subscription_status === 'active' ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)', color: shop.subscription_status === 'active' ? '#00ff00' : '#ff0000', fontSize: '0.65rem', fontWeight: '900' }}
-                    >
-                      {shop.subscription_status === 'active' ? 'ATIVO' : 'SUSPENSO'}
-                    </button>
-                  </div>
 
-                  <div style={{ marginBottom: '1.5rem', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px' }}>
-                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '4px', color: '#aaa' }}>
-                        <span>Vencimento</span>
-                        <span style={{ color: prog.color, fontWeight: 'bold' }}>{prog.days} dias restantes</span>
-                     </div>
-                     <div style={{ width: '100%', height: '6px', background: '#222', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ width: `${prog.percentage}%`, height: '100%', background: prog.color, transition: 'all 0.3s' }}></div>
-                     </div>
-                  </div>
+                    {/* Right: Actions */}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                      <button onClick={() => handleSetSubscriptionStatus(shop.id, 'suspended')} style={{ padding: '8px 16px', borderRadius: '8px', background: '#ff4444', color: '#fff', border: 'none', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer' }}>Suspender</button>
+                      <button onClick={() => handleExtendSubscription(shop.id, shop.subscription_ends_at)} style={{ padding: '8px 16px', borderRadius: '8px', background: '#00cc44', color: '#fff', border: 'none', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer' }}>Estender</button>
+                      <button onClick={() => handleSetSubscriptionStatus(shop.id, 'paused')} style={{ padding: '8px 16px', borderRadius: '8px', background: 'transparent', color: '#ff4444', border: '1px solid #ff4444', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}><Power size={14} /> Pausar</button>
+                      
+                      <button style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#00cc44', border: '1px solid #00cc44', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Phone size={16} /></button>
+                      <button style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#3399ff', border: '1px solid #3399ff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><MessageSquare size={16} /></button>
+                      <button onClick={() => openEditModal(shop)} style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#888', border: '1px solid #555', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Settings size={16} /></button>
+                      <button style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#ff4444', border: '1px solid #ff4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Trash2 size={16} /></button>
+                      
+                      <button onClick={() => enterShop(shop.id)} className="gold-button" style={{ padding: '8px 16px', borderRadius: '8px', fontWeight: '800', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+                        <LayoutDashboard size={14} /> Entrar
+                      </button>
+                    </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <button 
-                      onClick={() => enterShop(shop.id)}
-                      style={{ padding: '0.75rem', borderRadius: '8px', background: 'var(--accent-gold)', border: 'none', color: '#000', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                    >
-                      <LayoutDashboard size={14} /> Entrar na Loja
-                    </button>
-                    <button 
-                      style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                    >
-                      <ExternalLink size={14} /> Link Vitrine
-                    </button>
                   </div>
                 </div>
               );
@@ -382,24 +428,54 @@ const AdminDashboard: React.FC = () => {
 
       {/* Tab Content: Configurações */}
       {activeTab === 'configuracoes' && (
-        <div className="premium-card" style={{ padding: '2rem', maxWidth: '600px' }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Banknote size={20} color="var(--accent-gold)" /> Configurações de Pagamento (QR Code PIX)
+        <div className="premium-card" style={{ padding: '2rem', maxWidth: '900px' }}>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-gold)' }}>
+            <Banknote size={20} /> Configurações: Assinatura Básica
           </h2>
-          <div style={{ display: 'grid', gap: '1.2rem' }}>
-            <div>
-              <label style={{ fontSize: '0.8rem', color: '#888', fontWeight: '700', marginBottom: '4px', display: 'block' }}>Preço Base da Assinatura (R$)</label>
-              <input type="number" value={systemConfig.basica?.price || ''} onChange={e => setSystemConfig({ ...systemConfig, basica: { ...systemConfig.basica, price: Number(e.target.value) } })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
+          
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#888', fontWeight: '800', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
+                  <Plus size={12} /> URL DO QR CODE / COPIA E COLA
+                </label>
+                <input type="text" placeholder="https://..." value={systemConfig.basica?.url || ''} onChange={e => setSystemConfig({ ...systemConfig, basica: { ...systemConfig.basica, url: e.target.value } })} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#888', fontWeight: '800', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
+                  <Landmark size={12} /> NOME DO BANCO
+                </label>
+                <input type="text" placeholder="Ex: NUBANK" value={systemConfig.basica?.bank || ''} onChange={e => setSystemConfig({ ...systemConfig, basica: { ...systemConfig.basica, bank: e.target.value } })} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
+              </div>
             </div>
-            <div>
-              <label style={{ fontSize: '0.8rem', color: '#888', fontWeight: '700', marginBottom: '4px', display: 'block' }}>URL da Imagem do QR Code</label>
-              <input type="text" placeholder="https://..." value={systemConfig.basica?.url || ''} onChange={e => setSystemConfig({ ...systemConfig, basica: { ...systemConfig.basica, url: e.target.value } })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#888', fontWeight: '800', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
+                  <Users size={12} /> NOME DO RECEBEDOR
+                </label>
+                <input type="text" placeholder="Ex: JOÃO SILVA" value={systemConfig.basica?.receiver || ''} onChange={e => setSystemConfig({ ...systemConfig, basica: { ...systemConfig.basica, receiver: e.target.value } })} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#888', fontWeight: '800', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
+                  <CheckCircle size={12} /> CHAVE PIX
+                </label>
+                <input type="text" placeholder="Sua chave..." value={systemConfig.basica?.key || ''} onChange={e => setSystemConfig({ ...systemConfig, basica: { ...systemConfig.basica, key: e.target.value } })} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
+              </div>
             </div>
+
             <div>
-              <label style={{ fontSize: '0.8rem', color: '#888', fontWeight: '700', marginBottom: '4px', display: 'block' }}>Chave PIX (Copia e Cola)</label>
-              <input type="text" value={systemConfig.basica?.key || ''} onChange={e => setSystemConfig({ ...systemConfig, basica: { ...systemConfig.basica, key: e.target.value } })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }} />
+              <label style={{ fontSize: '0.75rem', color: '#888', fontWeight: '800', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
+                <Banknote size={12} /> PREÇO DA ASSINATURA (R$)
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', width: 'fit-content' }}>
+                <span style={{ padding: '0.8rem 1rem', color: '#888', borderRight: '1px solid rgba(255,255,255,0.1)', fontWeight: '700' }}>R$</span>
+                <input type="number" value={systemConfig.basica?.price || ''} onChange={e => setSystemConfig({ ...systemConfig, basica: { ...systemConfig.basica, price: Number(e.target.value) } })} style={{ width: '120px', padding: '0.8rem 1rem', background: 'transparent', border: 'none', color: 'white', fontWeight: '800' }} />
+              </div>
             </div>
-            <button onClick={handleSaveConfig} className="gold-button" style={{ padding: '1rem', borderRadius: '8px', fontWeight: '800', marginTop: '1rem' }}>
+
+            <button onClick={handleSaveConfig} className="gold-button" style={{ padding: '1rem', borderRadius: '8px', fontWeight: '800', marginTop: '1rem', width: 'fit-content' }}>
               Salvar Configurações
             </button>
           </div>
