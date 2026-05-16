@@ -104,19 +104,12 @@ const AppContent: React.FC = () => {
     );
   }
 
-  if (role === 'customer') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<Spinner />}>
-          <Storefront />
-        </Suspense>
-      </ErrorBoundary>
-    );
-  }
 
   const renderPage = () => {
     switch (page) {
-      case 'dashboard':     return <Dashboard onViewAll={() => setPage('agendamentos')} />;
+      case 'dashboard':     
+        if (role === 'customer') return <Storefront />;
+        return <Dashboard onViewAll={() => setPage('agendamentos')} />;
       case 'agendamentos':  return <Appointments />;
       case 'servicos':      return <Services />;
       case 'produtos':      return <Products />;
@@ -130,7 +123,9 @@ const AppContent: React.FC = () => {
           <button onClick={logout} className="gold-button" style={{ marginTop: '2rem', background: '#ff4444', color: 'white' }}>Sair da Conta</button>
         </div>
       );
-      default: return <Dashboard onViewAll={() => setPage('agendamentos')} />;
+      default: 
+        if (role === 'customer') return <Storefront />;
+        return <Dashboard onViewAll={() => setPage('agendamentos')} />;
     }
   };
 
@@ -188,7 +183,12 @@ const AppContent: React.FC = () => {
         borderTop: '1px solid rgba(255,255,255,0.06)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-around', zIndex: 1000
       }}>
-        {BOTTOM_NAV.map(item => {
+        {BOTTOM_NAV.filter(item => {
+          if (role === 'customer') {
+            return ['dashboard', 'agendamentos', '__more__'].includes(item.id);
+          }
+          return true;
+        }).map(item => {
           const Icon = item.icon;
           if (item.isFab) return (
             <button key={item.id} onClick={() => setPage('agendamentos')} style={{

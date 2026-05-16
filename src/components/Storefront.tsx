@@ -9,12 +9,14 @@ import {
   Phone, 
   Share2, 
   ExternalLink,
-  CheckCircle
+  ExternalLink,
+  CheckCircle,
+  LogOut
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const Storefront: React.FC = () => {
-  const { services = [], products = [], addAppointment, profiles = [], config } = useApp();
+  const { services = [], products = [], addAppointment, profiles = [], config, logout } = useApp();
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
   const [bookingTime, setBookingTime] = useState('09:00');
@@ -64,7 +66,21 @@ const Storefront: React.FC = () => {
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent, #050505)' }}></div>
         </div>
 
-        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '0 1rem' }}>
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '0 1rem', width: '100%' }}>
+          {/* Logout Button for Customers */}
+          <button 
+            onClick={logout}
+            style={{ 
+              position: 'absolute', top: '-50px', right: '20px', 
+              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+              padding: '8px 15px', borderRadius: '10px', color: '#ff4444', 
+              display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', fontWeight: '700',
+              cursor: 'pointer', backdropFilter: 'blur(10px)'
+            }}
+          >
+            <LogOut size={14} /> Sair
+          </button>
+
           <div style={{ marginBottom: '2rem' }}>
             <img 
               src={config?.logoUrl || "/logo3.png"} 

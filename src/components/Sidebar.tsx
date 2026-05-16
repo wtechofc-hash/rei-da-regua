@@ -24,14 +24,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
   const currentProfile = profiles.find(p => p.id === userId) ?? profiles.find(p => p.role === role);
 
   const menuItems = [
-    { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard, roles: ['owner', 'professional'] },
-    { id: 'agendamentos', label: 'Agenda',       icon: Calendar,        roles: ['owner', 'professional'], badge: notificationCount },
+    { id: 'dashboard',    label: role === 'customer' ? 'Vitrine' : 'Dashboard', icon: LayoutDashboard, roles: ['owner', 'professional', 'customer'] },
+    { id: 'agendamentos', label: role === 'customer' ? 'Meus Agendamentos' : 'Agenda', icon: Calendar, roles: ['owner', 'professional', 'customer'], badge: notificationCount },
     { id: 'servicos',      label: 'Serviços',      icon: Scissors,        roles: ['owner', 'professional'] },
     { id: 'produtos',      label: 'Produtos',      icon: Package,         roles: ['owner', 'professional'] },
     { id: 'clientes',     label: 'Clientes',     icon: Users,           roles: ['owner'] },
     { id: 'profissionais', label: 'Equipe',         icon: User,            roles: ['owner'] },
     { id: 'relatorios',    label: 'Relatórios',     icon: BarChart3,       roles: ['owner', 'professional'] },
-    { id: 'configuracoes', label: 'Configurações',  icon: Settings,        roles: ['owner'] },
+    { id: 'configuracoes', label: 'Configurações',  icon: Settings,        roles: ['owner', 'customer'] },
   ];
 
   const visibleItems = menuItems.filter(item => item.roles.includes(role as string));
