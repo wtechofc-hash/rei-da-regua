@@ -158,32 +158,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         // Fetch Services
         const { data: servicesData } = await query(supabase.from('services').select('*'));
-        if (servicesData) setServices(servicesData.map(s => ({
+        if (servicesData) setServices(servicesData.map((s: any) => ({
           id: s.id, name: s.name, description: s.category || '', price: s.price, commission: 0 
         })));
 
         // Fetch Products
         const { data: productsData } = await query(supabase.from('products').select('*'));
-        if (productsData) setProducts(productsData.map(p => ({
+        if (productsData) setProducts(productsData.map((p: any) => ({
           id: p.id, name: p.name, description: p.category || '', price: p.price, stock: p.stock, image: p.image_url, commission: 0
         })));
 
         // Fetch Clients
         const { data: clientsData } = await query(supabase.from('clients').select('*'));
-        if (clientsData) setClients(clientsData.map(c => ({
+        if (clientsData) setClients(clientsData.map((c: any) => ({
           id: c.id, name: c.name, phone: c.phone || '', email: c.email, lastVisit: c.last_visit, totalSpent: c.total_spent, appointmentsCount: 0
         })));
 
         // Fetch Professionals
         const { data: prosData } = await query(supabase.from('professionals').select('*'));
-        if (prosData) setProfiles(prosData.map(p => ({
+        if (prosData) setProfiles(prosData.map((p: any) => ({
           id: p.id, name: p.name, role: (p.role?.toLowerCase() === 'owner' ? 'owner' : 'professional') as UserRole, 
           avatar: p.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`, commission: p.commission_rate
         })));
 
         // Fetch Appointments
         const { data: apptsData } = await query(supabase.from('appointments').select('*, clients(name)'));
-        if (apptsData) setAppointments(apptsData.map(a => ({
+        if (apptsData) setAppointments(apptsData.map((a: any) => ({
           id: a.id, clientId: a.client_id, clientName: (a.clients as any)?.name || 'Cliente', 
           professionalId: a.professional_id, serviceId: a.service_id, date: a.date, time: a.time, 
           status: a.status as any, priceAtTime: a.total_price || 0, commissionAtTime: 0
