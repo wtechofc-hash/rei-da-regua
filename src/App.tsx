@@ -6,7 +6,6 @@ import {
   Scissors, 
   Package, 
   BarChart3, 
-  Settings, 
   Settings as SettingsIcon, 
   Menu, 
   User, 
@@ -14,8 +13,6 @@ import {
   LogOut
 } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
-import AdminDashboard from './components/AdminDashboard';
-import Settings from './components/Settings';
 import './index.css';
 
 export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais';
@@ -31,6 +28,7 @@ const Professionals = React.lazy(() => import('./components/Professionals'));
 const Storefront   = React.lazy(() => import('./components/Storefront'));
 const Login        = React.lazy(() => import('./components/Login'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
+const Settings     = React.lazy(() => import('./components/Settings'));
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: string | null }> {
   constructor(props: any) {
