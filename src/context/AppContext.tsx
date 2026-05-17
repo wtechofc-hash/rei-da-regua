@@ -226,7 +226,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addService = async (s: Omit<Service, 'id'>) => {
     const { data, error } = await supabase.from('services').insert([{ 
-      name: s.name, price: s.price, duration: 30, category: s.description 
+      name: s.name, price: s.price, duration: 30, category: s.description, shop_id: shopId 
     }]).select();
     if (data) setServices(prev => [...prev, { ...s, id: data[0].id }]);
   };
@@ -241,7 +241,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addProduct = async (p: Omit<Product, 'id'>) => {
     const { data } = await supabase.from('products').insert([{ 
-      name: p.name, price: p.price, stock: p.stock, category: p.description, image_url: p.image 
+      name: p.name, price: p.price, stock: p.stock, category: p.description, image_url: p.image, shop_id: shopId 
     }]).select();
     if (data) setProducts(prev => [...prev, { ...p, id: data[0].id }]);
   };
@@ -255,7 +255,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addClient = async (c: Omit<Client, 'id'>) => {
-    const { data } = await supabase.from('clients').insert([{ name: c.name, phone: c.phone, email: c.email }]).select();
+    const { data } = await supabase.from('clients').insert([{ name: c.name, phone: c.phone, email: c.email, shop_id: shopId }]).select();
     if (data) setClients(prev => [...prev, { ...c, id: data[0].id }]);
   };
   const updateClient = async (id: string, c: Partial<Client>) => {
@@ -269,7 +269,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addProfile = async (p: Omit<Profile, 'id'>) => {
     const { data } = await supabase.from('professionals').insert([{ 
-      name: p.name, role: p.role, photo_url: p.avatar, commission_rate: p.commission 
+      name: p.name, role: p.role, photo_url: p.avatar, commission_rate: p.commission, shop_id: shopId 
     }]).select();
     if (data) setProfiles(prev => [...prev, { ...p, id: data[0].id }]);
   };
@@ -285,7 +285,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addAppointment = async (a: Omit<Appointment, 'id'>) => {
     const { data } = await supabase.from('appointments').insert([{ 
       client_id: a.clientId, professional_id: a.professionalId, service_id: a.serviceId, 
-      date: a.date, time: a.time, status: a.status, total_price: a.priceAtTime 
+      date: a.date, time: a.time, status: a.status, total_price: a.priceAtTime, shop_id: shopId 
     }]).select();
     if (data) {
       const newAppt = { ...a, id: data[0].id, isNewForPro: true };
