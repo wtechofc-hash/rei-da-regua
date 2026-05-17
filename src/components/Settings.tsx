@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
-import { Banknote, Upload, CheckCircle, ShieldAlert, Power, Clock, Copy, Plus, FileText, X } from 'lucide-react';
+import { Banknote, Upload, CheckCircle, ShieldAlert, Power, Clock, Copy, Plus, FileText, X, CreditCard } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
 const Settings: React.FC = () => {
@@ -15,12 +15,26 @@ const Settings: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Mercado Pago Integration States
+  const [mpPublicKey, setMpPublicKey] = useState('');
+  const [mpAccessToken, setMpAccessToken] = useState('');
+  const [mpEnabled, setMpEnabled] = useState(false);
+  const [isSavingMp, setIsSavingMp] = useState(false);
+
   useEffect(() => {
     fetchGlobalConfig();
     if (contextShopData?.id) {
       fetchShopData();
     }
   }, [contextShopData?.id]);
+
+  useEffect(() => {
+    if (shopData) {
+      setMpPublicKey(shopData.mp_public_key || '');
+      setMpAccessToken(shopData.mp_access_token || '');
+      setMpEnabled(shopData.mp_enabled || false);
+    }
+  }, [shopData]);
 
   const fetchGlobalConfig = async () => {
     const { data } = await supabase.from('system_config').select('value').eq('key', 'subscription_plans').maybeSingle();
@@ -32,6 +46,28 @@ const Settings: React.FC = () => {
     const { data } = await supabase.from('shops').select('*').eq('id', contextShopData.id).single();
     if (data) setShopData(data);
     setTimeout(() => setIsSyncing(false), 1000);
+  };
+
+  const handleSaveMercadoPago = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingMp(true);
+
+    try {
+      const { error } = await supabase.from('shops').update({
+        mp_public_key: mpPublicKey,
+        mp_access_token: mpAccessToken,
+        mp_enabled: mpEnabled
+      }).eq('id', shopData.id);
+
+      if (error) throw error;
+      alert("Integração do Mercado Pago atualizada com sucesso!");
+      fetchShopData();
+    } catch (err: any) {
+      console.error(err);
+      alert("Erro ao salvar integração: " + (err.message || err));
+    } finally {
+      setIsSavingMp(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -337,6 +373,90 @@ const Settings: React.FC = () => {
             <><CheckCircle size={20} /> Confirmar Envio da Solicitação</>
           )}
         </button>
+      </div>
+
+      {/* Card 3: Integração Mercado Pago */}
+      <div className="premium-card" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.5rem' }}>
+          <CreditCard color="var(--accent-gold)" size={24} />
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0, color: 'white' }}>Integração Mercado Pago</h2>
+        </div>
+        <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '2rem' }}>
+          Configure suas credenciais do Mercado Pago para receber pagamentos online de seus clientes via Cartão de Crédito/Débito ou PIX.
+        </p>
+
+        <form onSubmit={handleSaveMercadoPago} style={{ display: 'grid', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div>
+              <span style={{ fontSize: '0.95rem', fontWeight: '700', color: 'white', display: 'block' }}>Ativar Pagamentos Online</span>
+              <span style={{ fontSize: '0.75rem', color: '#666' }}>Habilitar Pix e Cartão na Vitrine da Barbearia</span>
+            </div>
+            <button 
+              type="button"
+              onClick={() => setMpEnabled(!mpEnabled)}
+              style={{
+                width: '50px', height: '26px', borderRadius: '13px',
+                background: mpEnabled ? '#00cc44' : 'rgba(255,255,255,0.1)',
+                border: 'none', cursor: 'pointer', position: 'relative',
+                transition: 'all 0.3s'
+              }}
+            >
+              <div style={{
+                width: '20px', height: '20px', borderRadius: '50%',
+                background: 'white', position: 'absolute', top: '3px',
+                left: mpEnabled ? '27px' : '3px', transition: 'all 0.3s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              }} />
+            </button>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '0.8rem', color: '#ccc', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>
+              Public Key (Chave Pública)
+            </label>
+            <input 
+              type="text" 
+              placeholder="Ex: APP_USR-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" 
+              value={mpPublicKey} 
+              onChange={e => setMpPublicKey(e.target.value)} 
+              style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '1rem', borderRadius: '12px', color: 'white', fontSize: '0.9rem', outline: 'none' }} 
+            />
+          </div>
+
+          <div>
+            <label style={{ fontSize: '0.8rem', color: '#ccc', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>
+              Access Token (Token de Acesso)
+            </label>
+            <input 
+              type="password" 
+              placeholder="Ex: APP_USR-xxxxxxxxxxxxxxxxxxxxxxxxx" 
+              value={mpAccessToken} 
+              onChange={e => setMpAccessToken(e.target.value)} 
+              style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '1rem', borderRadius: '12px', color: 'white', fontSize: '0.9rem', outline: 'none' }} 
+            />
+          </div>
+
+          <div style={{ fontSize: '0.75rem', color: '#888', background: 'rgba(212,175,55,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.1)', lineHeight: '1.5' }}>
+            💡 Você pode encontrar suas credenciais de produção no painel do <a href="https://www.mercadopago.com.br/developers/panel" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-gold)', fontWeight: '700', textDecoration: 'underline' }}>Mercado Pago Developers</a> em "Suas Aplicações".
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={isSavingMp} 
+            className="gold-button"
+            style={{ 
+              width: '100%', padding: '1rem', borderRadius: '12px', 
+              fontWeight: '800', fontSize: '1.05rem', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
+            }}
+          >
+            {isSavingMp ? (
+              <div style={{ width: '20px', height: '20px', border: '2px solid rgba(0,0,0,0.1)', borderTopColor: '#000', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            ) : (
+              'Salvar Integração'
+            )}
+          </button>
+        </form>
       </div>
 
       <div className="premium-card" style={{ padding: '2rem' }}>

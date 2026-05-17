@@ -76,7 +76,7 @@ interface AppContextType {
   addProduct: (product: Omit<Product, 'id'>) => void;
   updateProduct: (id: string, product: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
-  addAppointment: (appointment: Omit<Appointment, 'id'>) => void;
+  addAppointment: (appointment: Omit<Appointment, 'id'>) => Promise<Appointment | null>;
   updateAppointment: (id: string, appointment: Partial<Appointment>) => void;
   deleteAppointment: (id: string) => void;
   addClient: (client: Omit<Client, 'id'>) => void;
@@ -287,7 +287,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       client_id: a.clientId, professional_id: a.professionalId, service_id: a.serviceId, 
       date: a.date, time: a.time, status: a.status, total_price: a.priceAtTime 
     }]).select();
-    if (data) setAppointments(prev => [...prev, { ...a, id: data[0].id, isNewForPro: true }]);
+    if (data) {
+      const newAppt = { ...a, id: data[0].id, isNewForPro: true };
+      setAppointments(prev => [...prev, newAppt]);
+      return newAppt;
+    }
+    return null;
   };
   const updateAppointment = async (id: string, a: Partial<Appointment>) => {
     await supabase.from('appointments').update({ status: a.status }).eq('id', id);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Scissors, 
   Package, 
@@ -10,43 +10,124 @@ import {
   Share2, 
   ExternalLink,
   CheckCircle,
-  LogOut
+  LogOut,
+  CreditCard
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { supabase } from '../lib/supabase';
 
 const Storefront: React.FC = () => {
-  const { services = [], products = [], addAppointment, profiles = [], config, logout } = useApp();
+  const { services = [], products = [], addAppointment, profiles = [], config, logout, shopData, shopId } = useApp();
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
   const [bookingTime, setBookingTime] = useState('09:00');
   const [clientName, setClientName] = useState('');
   const [isBooked, setIsBooked] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'offline' | 'online'>('offline');
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [onlineSuccess, setOnlineSuccess] = useState(false);
 
-  const handleBooking = (e: React.FormEvent) => {
+  useEffect(() => {
+    // Check URL parameters for Mercado Pago redirect success
+    const params = new URLSearchParams(window.location.search);
+    const mpStatus = params.get('status');
+    const shopRef = params.get('shop');
+
+    if ((mpStatus === 'success' || mpStatus === 'approved') && shopRef) {
+      const pendingId = localStorage.getItem('pending_mp_appointment_id');
+      if (pendingId) {
+        supabase.from('appointments')
+          .update({ status: 'confirmed' })
+          .eq('id', pendingId)
+          .then(({ error }) => {
+            if (error) {
+              console.error("Erro ao confirmar agendamento:", error);
+            } else {
+              setOnlineSuccess(true);
+              localStorage.removeItem('pending_mp_appointment_id');
+              // Clear search params
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          });
+      }
+    } else if (mpStatus === 'failure') {
+      alert("O pagamento falhou ou foi cancelado. Por favor, tente novamente.");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedService) return;
     
     const service = services.find(s => s.id === selectedService);
     if (!service) return;
 
-    addAppointment({
-      clientId: 'online-customer',
-      clientName,
-      professionalId: profiles.find(p => p.role === 'professional')?.id || '2',
-      serviceId: selectedService,
-      date: bookingDate,
-      time: bookingTime,
-      status: 'pending',
-      priceAtTime: service.price,
-      commissionAtTime: (service.price * (service.commission || 0)) / 100
-    });
+    if (paymentMethod === 'online' && shopData?.mp_enabled) {
+      setIsCheckingOut(true);
+      try {
+        const appt = await addAppointment({
+          clientId: 'online-customer',
+          clientName,
+          professionalId: profiles.find(p => p.role === 'professional')?.id || '2',
+          serviceId: selectedService,
+          date: bookingDate,
+          time: bookingTime,
+          status: 'pending',
+          priceAtTime: service.price,
+          commissionAtTime: 0
+        });
 
-    setIsBooked(true);
-    setTimeout(() => {
-      setIsBooked(false);
-      setSelectedService(null);
-      setClientName('');
-    }, 5000);
+        if (!appt) throw new Error("Erro ao registrar agendamento preliminar.");
+
+        localStorage.setItem('pending_mp_appointment_id', appt.id);
+
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-mp-preference`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            shopId: shopId,
+            title: service.name,
+            price: service.price,
+            appointmentData: {
+              id: appt.id
+            }
+          })
+        });
+
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.error || "Erro no checkout do Mercado Pago.");
+
+        window.location.href = resData.initPoint;
+
+      } catch (err: any) {
+        console.error(err);
+        alert("Erro no checkout: " + err.message);
+        setIsCheckingOut(false);
+      }
+    } else {
+      addAppointment({
+        clientId: 'online-customer',
+        clientName,
+        professionalId: profiles.find(p => p.role === 'professional')?.id || '2',
+        serviceId: selectedService,
+        date: bookingDate,
+        time: bookingTime,
+        status: 'pending',
+        priceAtTime: service.price,
+        commissionAtTime: 0
+      });
+
+      setIsBooked(true);
+      setTimeout(() => {
+        setIsBooked(false);
+        setSelectedService(null);
+        setClientName('');
+      }, 5000);
+    }
   };
 
   return (
@@ -193,7 +274,20 @@ const Storefront: React.FC = () => {
               <div className="premium-card" style={{ padding: '2.5rem', border: '1px solid rgba(212,175,55,0.2)' }}>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem', color: 'var(--accent-gold)', textAlign: 'center' }}>Reserve seu Horário</h3>
                 
-                {isBooked ? (
+                {onlineSuccess ? (
+                  <div className="animate-fade-in" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+                    <div style={{ background: 'rgba(0, 204, 68, 0.1)', width: '70px', height: '70px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', border: '1px solid rgba(0,204,68,0.2)' }}>
+                      <CheckCircle size={40} color="#00cc44" />
+                    </div>
+                    <h4 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1rem', color: '#00cc44' }}>Pagamento Aprovado!</h4>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                      Seu pagamento foi confirmado com sucesso. O agendamento foi registrado e está garantido!
+                    </p>
+                    <button type="button" onClick={() => { setOnlineSuccess(false); setSelectedService(null); setClientName(''); }} className="gold-button" style={{ padding: '0.8rem 1.5rem', width: '100%', marginTop: '2rem', fontSize: '0.85rem' }}>
+                      Entendido
+                    </button>
+                  </div>
+                ) : isBooked ? (
                   <div className="animate-fade-in" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
                     <div style={{ background: 'rgba(0, 230, 118, 0.1)', width: '70px', height: '70px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
                       <CheckCircle size={40} color="#00e676" />
@@ -214,6 +308,7 @@ const Storefront: React.FC = () => {
                       <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Seu Nome</label>
                       <input 
                         required 
+                        disabled={isCheckingOut}
                         type="text" 
                         style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }} 
                         value={clientName} 
@@ -227,6 +322,7 @@ const Storefront: React.FC = () => {
                         <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Data</label>
                         <input 
                           required 
+                          disabled={isCheckingOut}
                           type="date" 
                           style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }} 
                           value={bookingDate} 
@@ -237,6 +333,7 @@ const Storefront: React.FC = () => {
                         <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Hora</label>
                         <input 
                           required 
+                          disabled={isCheckingOut}
                           type="time" 
                           style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }} 
                           value={bookingTime} 
@@ -245,11 +342,92 @@ const Storefront: React.FC = () => {
                       </div>
                     </div>
 
-                    <button type="submit" className="gold-button" style={{ padding: '1.25rem', width: '100%', marginTop: '1rem', fontSize: '1rem', boxShadow: '0 8px 25px rgba(212,175,55,0.3)' }}>
-                      Confirmar Solicitação
+                    {shopData?.mp_enabled && (
+                      <div>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Forma de Pagamento</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
+                          <button
+                            type="button"
+                            disabled={isCheckingOut}
+                            onClick={() => setPaymentMethod('offline')}
+                            style={{
+                              padding: '0.8rem',
+                              borderRadius: '12px',
+                              background: paymentMethod === 'offline' ? 'rgba(212,175,55,0.1)' : '#111',
+                              border: paymentMethod === 'offline' ? '1px solid var(--accent-gold)' : '1px solid var(--glass-border)',
+                              color: paymentMethod === 'offline' ? 'var(--accent-gold)' : '#ccc',
+                              fontWeight: '800',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <Clock size={16} />
+                            Pagar no Local
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isCheckingOut}
+                            onClick={() => setPaymentMethod('online')}
+                            style={{
+                              padding: '0.8rem',
+                              borderRadius: '12px',
+                              background: paymentMethod === 'online' ? 'rgba(0,204,68,0.1)' : '#111',
+                              border: paymentMethod === 'online' ? '1px solid #00cc44' : '1px solid var(--glass-border)',
+                              color: paymentMethod === 'online' ? '#00cc44' : '#ccc',
+                              fontWeight: '800',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <CreditCard size={16} />
+                            Cartão / Pix
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <button 
+                      type="submit" 
+                      disabled={isCheckingOut}
+                      className={paymentMethod === 'online' && shopData?.mp_enabled ? '' : 'gold-button'}
+                      style={{ 
+                        padding: '1.25rem', width: '100%', marginTop: '1rem', fontSize: '1rem', 
+                        boxShadow: paymentMethod === 'online' && shopData?.mp_enabled ? '0 8px 25px rgba(0, 204, 68, 0.2)' : '0 8px 25px rgba(212,175,55,0.3)',
+                        background: paymentMethod === 'online' && shopData?.mp_enabled ? '#00cc44' : undefined,
+                        border: 'none',
+                        borderRadius: '12px',
+                        color: 'white',
+                        fontWeight: '800',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      {isCheckingOut ? (
+                        <>
+                          <div style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                          Redirecionando...
+                        </>
+                      ) : paymentMethod === 'online' && shopData?.mp_enabled ? (
+                        'Ir para Pagamento'
+                      ) : (
+                        'Confirmar Solicitação'
+                      )}
                     </button>
                     
-                    <button type="button" onClick={() => setSelectedService(null)} style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>
+                    <button type="button" disabled={isCheckingOut} onClick={() => setSelectedService(null)} style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '0.85rem', cursor: 'pointer', transition: 'color 0.2s' }}>
                       Alterar serviço selecionado
                     </button>
                   </form>
