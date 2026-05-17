@@ -283,12 +283,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   
   const addAppointment = async (a: Omit<Appointment, 'id'>) => {
+    let resolvedClientId: string | null = a.clientId;
+    
+    if (!a.clientId || a.clientId === 'online-customer' || a.clientId.length < 10) {
+      const { data: newClient } = await supabase.from('clients').insert([{
+        name: a.clientName || 'Cliente Online',
+        phone: '',
+        email: '',
+        shop_id: shopId
+      }]).select();
+      if (newClient && newClient.length > 0) {
+        resolvedClientId = newClient[0].id;
+      } else {
+        resolvedClientId = null;
+      }
+    }
+
     const { data } = await supabase.from('appointments').insert([{ 
-      client_id: a.clientId, professional_id: a.professionalId, service_id: a.serviceId, 
-      date: a.date, time: a.time, status: a.status, total_price: a.priceAtTime, shop_id: shopId 
+      client_id: resolvedClientId, 
+      professional_id: a.professionalId, 
+      service_id: a.serviceId, 
+      date: a.date, 
+      time: a.time, 
+      status: a.status, 
+      total_price: a.priceAtTime, 
+      shop_id: shopId 
     }]).select();
+
     if (data) {
-      const newAppt = { ...a, id: data[0].id, isNewForPro: true };
+      const newAppt = { 
+        ...a, 
+        id: data[0].id, 
+        clientId: resolvedClientId || 'online-customer', 
+        clientName: a.clientName || 'Cliente Online',
+        isNewForPro: true 
+      };
       setAppointments(prev => [...prev, newAppt]);
       return newAppt;
     }

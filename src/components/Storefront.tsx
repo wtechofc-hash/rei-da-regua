@@ -17,7 +17,7 @@ import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
 
 const Storefront: React.FC = () => {
-  const { services = [], products = [], addAppointment, profiles = [], config, logout, shopData, shopId } = useApp();
+  const { services = [], products = [], addAppointment, profiles = [], config, logout, shopData, shopId, userId, clients = [] } = useApp();
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
   const [bookingTime, setBookingTime] = useState('09:00');
@@ -26,6 +26,15 @@ const Storefront: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<'offline' | 'online'>('offline');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [onlineSuccess, setOnlineSuccess] = useState(false);
+
+  useEffect(() => {
+    if (userId && clients.length > 0) {
+      const currentClient = clients.find(c => c.id === userId);
+      if (currentClient) {
+        setClientName(currentClient.name);
+      }
+    }
+  }, [userId, clients]);
 
   useEffect(() => {
     // Check URL parameters for Mercado Pago redirect success
@@ -67,7 +76,7 @@ const Storefront: React.FC = () => {
       setIsCheckingOut(true);
       try {
         const appt = await addAppointment({
-          clientId: 'online-customer',
+          clientId: userId || 'online-customer',
           clientName,
           professionalId: profiles.find(p => p.role === 'professional')?.id || '2',
           serviceId: selectedService,
@@ -110,7 +119,7 @@ const Storefront: React.FC = () => {
       }
     } else {
       addAppointment({
-        clientId: 'online-customer',
+        clientId: userId || 'online-customer',
         clientName,
         professionalId: profiles.find(p => p.role === 'professional')?.id || '2',
         serviceId: selectedService,

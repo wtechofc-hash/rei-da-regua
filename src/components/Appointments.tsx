@@ -30,6 +30,57 @@ const Appointments: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newClientToggle, setNewClientToggle] = useState(false);
+  const [newApptData, setNewApptData] = useState({
+    clientId: '',
+    clientName: '',
+    serviceId: '',
+    professionalId: '',
+    date: new Date().toISOString().split('T')[0],
+    time: '09:00',
+    price: 0
+  });
+
+  const handleCreateAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newApptData.serviceId || !newApptData.professionalId || !newApptData.clientName) {
+      alert("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    try {
+      const added = await addAppointment({
+        clientId: newClientToggle ? 'online-customer' : newApptData.clientId,
+        clientName: newApptData.clientName,
+        professionalId: newApptData.professionalId,
+        serviceId: newApptData.serviceId,
+        date: newApptData.date,
+        time: newApptData.time,
+        status: 'confirmed',
+        priceAtTime: newApptData.price,
+        commissionAtTime: 0
+      });
+
+      if (added) {
+        setIsModalOpen(false);
+        setNewApptData({
+          clientId: '',
+          clientName: '',
+          serviceId: '',
+          professionalId: '',
+          date: new Date().toISOString().split('T')[0],
+          time: '09:00',
+          price: 0
+        });
+        setNewClientToggle(false);
+      } else {
+        alert("Erro ao criar o agendamento no banco de dados.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert("Erro ao agendar: " + err.message);
+    }
+  };
 
   // Filtro por Papel e ID
   const filteredAppointments = appointments.filter(appt => {
@@ -176,6 +227,186 @@ const Appointments: React.FC = () => {
           })
         )}
       </div>
+
+      {/* Modal Novo Agendamento */}
+      {isModalOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', padding: '1rem'
+        }}>
+          <div className="premium-card" style={{
+            width: '100%', maxWidth: '500px', padding: '2rem', border: '1px solid rgba(255,255,255,0.1)',
+            maxHeight: '90vh', overflowY: 'auto'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>Novo Agendamento</h2>
+              <button 
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setNewApptData({
+                    clientId: '',
+                    clientName: '',
+                    serviceId: '',
+                    professionalId: '',
+                    date: new Date().toISOString().split('T')[0],
+                    time: '09:00',
+                    price: 0
+                  });
+                  setNewClientToggle(false);
+                }}
+                style={{ background: 'none', border: 'none', color: '#ff1744', cursor: 'pointer', fontWeight: '800' }}
+              >
+                Fechar
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateAppointment} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              
+              {/* Toggle Cliente */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Tipo de Cliente</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setNewClientToggle(false)}
+                    style={{
+                      flex: 1, padding: '0.6rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                      background: !newClientToggle ? 'var(--accent-gold)' : 'rgba(255,255,255,0.03)',
+                      color: !newClientToggle ? '#000' : '#888', fontSize: '0.75rem', fontWeight: '700'
+                    }}
+                  >
+                    Cadastrado
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewClientToggle(true)}
+                    style={{
+                      flex: 1, padding: '0.6rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                      background: newClientToggle ? 'var(--accent-gold)' : 'rgba(255,255,255,0.03)',
+                      color: newClientToggle ? '#000' : '#888', fontSize: '0.75rem', fontWeight: '700'
+                    }}
+                  >
+                    Novo Cliente
+                  </button>
+                </div>
+              </div>
+
+              {/* Input Cliente */}
+              {!newClientToggle ? (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Cliente</label>
+                  <select
+                    required
+                    value={newApptData.clientId}
+                    onChange={e => {
+                      const selected = clients.find(c => c.id === e.target.value);
+                      setNewApptData(prev => ({ ...prev, clientId: e.target.value, clientName: selected?.name || '' }));
+                    }}
+                    style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                  >
+                    <option value="" style={{ background: '#050505' }}>Selecione um cliente...</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id} style={{ background: '#050505' }}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Nome do Novo Cliente</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Digite o nome..."
+                    value={newApptData.clientName}
+                    onChange={e => setNewApptData(prev => ({ ...prev, clientName: e.target.value, clientId: 'new' }))}
+                    style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                  />
+                </div>
+              )}
+
+              {/* Serviço */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Serviço</label>
+                <select
+                  required
+                  value={newApptData.serviceId}
+                  onChange={e => {
+                    const selected = services.find(s => s.id === e.target.value);
+                    setNewApptData(prev => ({ ...prev, serviceId: e.target.value, price: selected?.price || 0 }));
+                  }}
+                  style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                >
+                  <option value="" style={{ background: '#050505' }}>Selecione um serviço...</option>
+                  {services.map(s => (
+                    <option key={s.id} value={s.id} style={{ background: '#050505' }}>{s.name} - R$ {s.price.toFixed(2)}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Profissional */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Profissional</label>
+                <select
+                  required
+                  value={newApptData.professionalId}
+                  onChange={e => setNewApptData(prev => ({ ...prev, professionalId: e.target.value }))}
+                  style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                >
+                  <option value="" style={{ background: '#050505' }}>Selecione um profissional...</option>
+                  {profiles.map(p => (
+                    <option key={p.id} value={p.id} style={{ background: '#050505' }}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Data e Hora */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Data</label>
+                  <input
+                    type="date"
+                    required
+                    value={newApptData.date}
+                    onChange={e => setNewApptData(prev => ({ ...prev, date: e.target.value }))}
+                    style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Horário</label>
+                  <input
+                    type="time"
+                    required
+                    value={newApptData.time}
+                    onChange={e => setNewApptData(prev => ({ ...prev, time: e.target.value }))}
+                    style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              {/* Valor */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Preço do Serviço (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={newApptData.price}
+                  onChange={e => setNewApptData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                  style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="gold-button"
+                style={{ width: '100%', padding: '0.85rem', marginTop: '1rem', fontWeight: '800' }}
+              >
+                Agendar Horário
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

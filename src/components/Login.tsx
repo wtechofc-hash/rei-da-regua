@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, Lock, LogIn, Eye, EyeOff, Shield, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Lock, LogIn, Eye, EyeOff, Shield, User, Building2 } from 'lucide-react';
 import { useApp, UserRole } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
 
@@ -13,17 +13,53 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [shops, setShops] = useState<any[]>([]);
+  const [selectedShopId, setSelectedShopId] = useState('');
+
+  useEffect(() => {
+    supabase.from('shops').select('id, name').then(({ data }) => {
+      if (data) {
+        setShops(data);
+        if (data.length > 0) setSelectedShopId(data[0].id);
+      }
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     if (isRegistering) {
-      // Simulação de registro
-      setTimeout(() => {
-        setAuth('customer', 'new-user');
+      const trimmedEmail = email.trim().toLowerCase();
+      const trimmedPassword = password.trim();
+
+      if (!selectedShopId) {
+        alert("Por favor, selecione uma barbearia para se cadastrar.");
         setIsLoading(false);
-      }, 1500);
+        return;
+      }
+
+      const { data, error } = await supabase.from('clients').insert([{
+        name: name,
+        phone: phone,
+        email: trimmedEmail,
+        password: trimmedPassword,
+        shop_id: selectedShopId,
+        total_spent: 0
+      }]).select();
+
+      if (error) {
+        alert("Erro ao realizar cadastro: " + error.message);
+        setIsLoading(false);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setAuth('customer', data[0].id, selectedShopId);
+        setIsLoading(false);
+        window.location.href = '/';
+        return;
+      }
     } else {
       const trimmedEmail = email.trim().toLowerCase();
       const trimmedPassword = password.trim();
@@ -46,6 +82,21 @@ const Login: React.FC = () => {
 
       if (shopMatch) {
         setAuth('owner', 'owner-' + shopMatch.id, shopMatch.id);
+        window.location.href = '/';
+        return;
+      }
+
+      // Check against clients (registered customers)
+      const { data: clientMatch } = await supabase
+        .from('clients')
+        .select('*')
+        .or(`email.eq.${trimmedEmail},phone.eq.${trimmedEmail}`)
+        .eq('password', trimmedPassword)
+        .maybeSingle();
+
+      if (clientMatch) {
+        setAuth('customer', clientMatch.id, clientMatch.shop_id);
+        setIsLoading(false);
         window.location.href = '/';
         return;
       }
@@ -144,7 +195,7 @@ const Login: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Input Phone */}
+                 {/* Input Phone */}
                 <div>
                   <label style={{ fontSize: '0.85rem', color: '#ccc', fontWeight: '600', display: 'block', marginBottom: '0.75rem' }}>
                     Telefone
@@ -160,6 +211,37 @@ const Login: React.FC = () => {
                         color: 'white', outline: 'none', transition: 'all 0.2s', fontSize: '0.95rem'
                       }} 
                     />
+                  </div>
+                </div>
+
+                {/* Input Barbearia */}
+                <div>
+                  <label style={{ fontSize: '0.85rem', color: '#ccc', fontWeight: '600', display: 'block', marginBottom: '0.75rem' }}>
+                    Selecione a Barbearia
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <Building2 size={18} style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: '#666', pointerEvents: 'none' }} />
+                    <select 
+                      required
+                      value={selectedShopId} 
+                      onChange={e => setSelectedShopId(e.target.value)}
+                      style={{ 
+                        width: '100%', padding: '1.1rem 1.1rem 1.1rem 3.5rem', borderRadius: '14px', 
+                        background: '#111', border: '1px solid rgba(255,255,255,0.1)', 
+                        color: 'white', outline: 'none', transition: 'all 0.2s', fontSize: '0.95rem',
+                        appearance: 'none', cursor: 'pointer'
+                      }} 
+                    >
+                      {shops.length === 0 ? (
+                        <option value="">Carregando barbearias...</option>
+                      ) : (
+                        shops.map(s => (
+                          <option key={s.id} value={s.id} style={{ background: '#111', color: 'white' }}>
+                            {s.name}
+                          </option>
+                        ))
+                      )}
+                    </select>
                   </div>
                 </div>
               </>

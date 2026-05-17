@@ -43,6 +43,7 @@ const AdminDashboard: React.FC = () => {
   const [editShop, setEditShop] = useState({ name: '', slug: '', plan_type: 'Básica', login_email: '', login_password: '', subscription_ends_at: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+  const [visibleClientPasswords, setVisibleClientPasswords] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadData();
@@ -202,6 +203,33 @@ const AdminDashboard: React.FC = () => {
   const handleRejectPayment = async (id: string) => {
     await supabase.from('payment_notifications').update({ status: 'rejected' }).eq('id', id);
     loadData();
+  };
+
+  const handleDeletePayment = async (id: string) => {
+    if (!window.confirm("Deseja realmente excluir este registro de comprovante?")) return;
+    const { error } = await supabase.from('payment_notifications').delete().eq('id', id);
+    if (error) alert("Erro ao excluir: " + error.message);
+    else loadData();
+  };
+
+  const handleClearAllPayments = async () => {
+    if (!window.confirm("Deseja realmente LIMPAR TODO O HISTÓRICO de comprovantes de pagamento? Essa ação não pode ser desfeita e também impactará o faturamento total.")) return;
+    const { error } = await supabase.from('payment_notifications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) alert("Erro ao limpar histórico: " + error.message);
+    else {
+      alert("Histórico de comprovantes limpo com sucesso!");
+      loadData();
+    }
+  };
+
+  const handleClearApprovedRevenue = async () => {
+    if (!window.confirm("Deseja realmente ZERAR O FATURAMENTO excluindo todos os pagamentos aprovados?")) return;
+    const { error } = await supabase.from('payment_notifications').delete().eq('status', 'approved');
+    if (error) alert("Erro ao zerar faturamento: " + error.message);
+    else {
+      alert("Faturamento zerado com sucesso!");
+      loadData();
+    }
   };
 
   const handleToggleSubscription = async (id: string, currentStatus: string) => {
@@ -426,19 +454,39 @@ const AdminDashboard: React.FC = () => {
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#888', fontSize: '0.8rem' }}>
                 <th style={{ padding: '1rem' }}>Cliente</th>
                 <th style={{ padding: '1rem' }}>Contato</th>
+                <th style={{ padding: '1rem' }}>Credenciais (Login/Senha)</th>
                 <th style={{ padding: '1rem' }}>Barbearia (Origem)</th>
                 <th style={{ padding: '1rem' }}>Total Gasto</th>
               </tr>
             </thead>
             <tbody>
-              {clients.map(c => (
-                <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                  <td style={{ padding: '1rem', fontWeight: '700' }}>{c.name}</td>
-                  <td style={{ padding: '1rem', color: '#aaa', fontSize: '0.85rem' }}>{c.phone || c.email}</td>
-                  <td style={{ padding: '1rem', color: 'var(--accent-gold)' }}>{(c.shops as any)?.name || 'Desconhecida'}</td>
-                  <td style={{ padding: '1rem', fontWeight: '900' }}>R$ {(c.total_spent || 0).toFixed(2)}</td>
-                </tr>
-              ))}
+              {clients.map(c => {
+                const showClientPass = visibleClientPasswords[c.id];
+                return (
+                  <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <td style={{ padding: '1rem', fontWeight: '700' }}>{c.name}</td>
+                    <td style={{ padding: '1rem', color: '#aaa', fontSize: '0.85rem' }}>
+                      <div style={{ display: 'grid', gap: '2px' }}>
+                        <span>Tel: {c.phone || 'N/A'}</span>
+                        <span>E-mail: {c.email || 'N/A'}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px 12px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '0.75rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#aaa' }}>Login: <span style={{ color: 'white', fontWeight: '500' }}>{c.email || c.phone || 'Não definido'}</span></span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#aaa', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          Senha: <span style={{ color: 'white', fontWeight: '500' }}>{showClientPass ? (c.password || 'Sem senha') : '********'}</span>
+                          <button onClick={() => setVisibleClientPasswords(prev => ({ ...prev, [c.id]: !prev[c.id] }))} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}>
+                            {showClientPass ? <EyeOff size={12} /> : <Eye size={12} />}
+                          </button>
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '1rem', color: 'var(--accent-gold)' }}>{(c.shops as any)?.name || 'Desconhecida'}</td>
+                    <td style={{ padding: '1rem', fontWeight: '900' }}>R$ {(c.total_spent || 0).toFixed(2)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -446,56 +494,103 @@ const AdminDashboard: React.FC = () => {
 
       {/* Tab Content: Pagamentos */}
       {activeTab === 'pagamentos' && (
-        <div className="premium-card" style={{ padding: '1.5rem', overflowX: 'auto' }}>
-          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#888', fontSize: '0.8rem' }}>
-                <th style={{ padding: '1rem' }}>Barbearia</th>
-                <th style={{ padding: '1rem' }}>Data</th>
-                <th style={{ padding: '1rem' }}>Comprovante</th>
-                <th style={{ padding: '1rem' }}>Status</th>
-                <th style={{ padding: '1rem' }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map(p => (
-                <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                  <td style={{ padding: '1rem', fontWeight: '700' }}>{(p.shops as any)?.name || 'Desconhecida'}</td>
-                  <td style={{ padding: '1rem', color: '#aaa', fontSize: '0.85rem' }}>{new Date(p.created_at).toLocaleDateString()}</td>
-                  <td style={{ padding: '1rem' }}>
-                    {p.receipt_url ? <a href={p.receipt_url} target="_blank" style={{ color: 'var(--accent-gold)', textDecoration: 'underline' }}>Ver Arquivo</a> : 'Nenhum'}
-                  </td>
-                  <td style={{ padding: '1rem' }}>
-                    <span style={{ padding: '4px 8px', borderRadius: '6px', background: p.status === 'approved' ? 'rgba(0,255,0,0.1)' : p.status === 'rejected' ? 'rgba(255,0,0,0.1)' : 'rgba(255,170,0,0.1)', color: p.status === 'approved' ? '#00ff00' : p.status === 'rejected' ? '#ff0000' : '#ffaa00', fontSize: '0.7rem', fontWeight: '800' }}>
-                      {p.status.toUpperCase()}
-                    </span>
-                  </td>
-                  <td style={{ padding: '1rem', display: 'flex', gap: '8px' }}>
-                    {p.status === 'pending' && (
-                      <>
-                        <button onClick={() => handleApprovePayment(p)} style={{ background: '#00ff00', color: '#000', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: '800', cursor: 'pointer' }}><CheckCircle size={16} /></button>
-                        <button onClick={() => handleRejectPayment(p.id)} style={{ background: '#ff4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: '800', cursor: 'pointer' }}><XCircle size={16} /></button>
-                      </>
-                    )}
-                  </td>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {payments.length > 0 && (
+            <button 
+              onClick={handleClearAllPayments}
+              style={{
+                alignSelf: 'flex-end',
+                background: 'rgba(255, 68, 68, 0.1)',
+                border: '1px solid rgba(255, 68, 68, 0.2)',
+                color: '#ff4444',
+                padding: '10px 18px',
+                borderRadius: '12px',
+                fontWeight: '800',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Trash2 size={16} /> Limpar Histórico de Pagamentos
+            </button>
+          )}
+          
+          <div className="premium-card" style={{ padding: '1.5rem', overflowX: 'auto' }}>
+            <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#888', fontSize: '0.8rem' }}>
+                  <th style={{ padding: '1rem' }}>Barbearia</th>
+                  <th style={{ padding: '1rem' }}>Data</th>
+                  <th style={{ padding: '1rem' }}>Comprovante</th>
+                  <th style={{ padding: '1rem' }}>Status</th>
+                  <th style={{ padding: '1rem' }}>Ações</th>
                 </tr>
-              ))}
-              {payments.length === 0 && <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>Nenhum pagamento registrado.</td></tr>}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {payments.map(p => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <td style={{ padding: '1rem', fontWeight: '700' }}>{(p.shops as any)?.name || 'Desconhecida'}</td>
+                    <td style={{ padding: '1rem', color: '#aaa', fontSize: '0.85rem' }}>{new Date(p.created_at).toLocaleDateString()}</td>
+                    <td style={{ padding: '1rem' }}>
+                      {p.receipt_url ? <a href={p.receipt_url} target="_blank" style={{ color: 'var(--accent-gold)', textDecoration: 'underline' }}>Ver Arquivo</a> : 'Nenhum'}
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      <span style={{ padding: '4px 8px', borderRadius: '6px', background: p.status === 'approved' ? 'rgba(0,255,0,0.1)' : p.status === 'rejected' ? 'rgba(255,0,0,0.1)' : 'rgba(255,170,0,0.1)', color: p.status === 'approved' ? '#00ff00' : p.status === 'rejected' ? '#ff0000' : '#ffaa00', fontSize: '0.7rem', fontWeight: '800' }}>
+                        {p.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td style={{ padding: '1rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      {p.status === 'pending' && (
+                        <>
+                          <button title="Aprovar" onClick={() => handleApprovePayment(p)} style={{ background: '#00cc44', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><CheckCircle size={16} /></button>
+                          <button title="Recusar" onClick={() => handleRejectPayment(p.id)} style={{ background: '#ffaa00', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><XCircle size={16} /></button>
+                        </>
+                      )}
+                      <button title="Excluir do Histórico" onClick={() => handleDeletePayment(p.id)} style={{ background: 'rgba(255, 68, 68, 0.1)', color: '#ff4444', border: '1px solid rgba(255, 68, 68, 0.2)', padding: '8px 12px', borderRadius: '8px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Trash2 size={16} /></button>
+                    </td>
+                  </tr>
+                ))}
+                {payments.length === 0 && <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>Nenhum pagamento registrado.</td></tr>}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* Tab Content: Ganhos */}
       {activeTab === 'ganhos' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
-          <div className="premium-card" style={{ padding: '2rem', textAlign: 'center' }}>
-            <Landmark size={40} color="var(--accent-gold)" style={{ margin: '0 auto 1rem' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+          <div className="premium-card" style={{ padding: '2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <Landmark size={40} color="var(--accent-gold)" style={{ marginBottom: '1rem' }} />
             <h3 style={{ color: '#888', margin: '0 0 0.5rem', fontSize: '0.9rem' }}>Faturamento (Pagamentos Aprovados)</h3>
-            <p style={{ fontSize: '2.5rem', fontWeight: '900', margin: 0, color: 'white' }}>R$ {currentRevenue.toFixed(2)}</p>
+            <p style={{ fontSize: '2.5rem', fontWeight: '900', margin: '0 0 1.5rem', color: 'white' }}>R$ {currentRevenue.toFixed(2)}</p>
+            {currentRevenue > 0 && (
+              <button 
+                onClick={handleClearApprovedRevenue}
+                style={{
+                  background: 'rgba(255, 68, 68, 0.1)',
+                  border: '1px solid rgba(255, 68, 68, 0.2)',
+                  color: '#ff4444',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontWeight: '800',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Trash2 size={14} /> Limpar Faturamento
+              </button>
+            )}
           </div>
-          <div className="premium-card" style={{ padding: '2rem', textAlign: 'center' }}>
-            <Building2 size={40} color="var(--accent-gold)" style={{ margin: '0 auto 1rem' }} />
+          <div className="premium-card" style={{ padding: '2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <Building2 size={40} color="var(--accent-gold)" style={{ marginBottom: '1rem' }} />
             <h3 style={{ color: '#888', margin: '0 0 0.5rem', fontSize: '0.9rem' }}>Lojistas Ativos</h3>
             <p style={{ fontSize: '2.5rem', fontWeight: '900', margin: 0, color: 'white' }}>{shops.filter(s => s.subscription_status === 'active').length}</p>
           </div>
