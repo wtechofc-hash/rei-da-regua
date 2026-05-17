@@ -106,6 +106,7 @@ const Login: React.FC = () => {
         }}>
           
           <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+             <div style={{ color: '#555', fontSize: '0.7rem', fontWeight: 'bold', marginBottom: '10px' }}>v2.5 (Atualizado)</div>
              <div style={{ 
               width: '140px', height: '140px', 
               margin: '0 auto 1rem',
