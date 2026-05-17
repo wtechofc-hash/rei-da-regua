@@ -764,8 +764,8 @@ const AdminDashboard: React.FC = () => {
 
       {/* Add Shop Modal */}
       {isAddingShop && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '2rem 1rem', overflowY: 'auto' }}>
-          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2rem', margin: 'auto 0' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', maxHeight: '85vh', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Novo Lojista</h2>
             <form onSubmit={handleAddShop} style={{ display: 'grid', gap: '1.5rem' }}>
               <div>
@@ -819,8 +819,8 @@ const AdminDashboard: React.FC = () => {
 
       {/* Edit Shop Modal */}
       {isEditingShop && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '2rem 1rem', overflowY: 'auto' }}>
-          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2rem', margin: 'auto 0' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', maxHeight: '85vh', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Editar Lojista</h2>
             <form onSubmit={handleEditShop} style={{ display: 'grid', gap: '1.5rem' }}>
               <div>
@@ -878,8 +878,8 @@ const AdminDashboard: React.FC = () => {
       )}
       {/* Add Client Modal */}
       {isAddingClient && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '2rem 1rem', overflowY: 'auto' }}>
-          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2rem', margin: 'auto 0' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', maxHeight: '85vh', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Novo Cliente</h2>
             <form onSubmit={handleAddClient} style={{ display: 'grid', gap: '1.5rem' }}>
               <div>
@@ -947,8 +947,8 @@ const AdminDashboard: React.FC = () => {
 
       {/* Edit Client Modal */}
       {isEditingClient && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '2rem 1rem', overflowY: 'auto' }}>
-          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2rem', margin: 'auto 0' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', maxHeight: '85vh', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Editar Cliente</h2>
             <form onSubmit={handleUpdateClient} style={{ display: 'grid', gap: '1.5rem' }}>
               <div>
