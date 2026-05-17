@@ -161,7 +161,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Fetch Shop Data
         if (shopId) {
           const { data: sData } = await supabase.from('shops').select('*').eq('id', shopId).maybeSingle();
-          if (sData) setShopData(sData);
+          if (sData) {
+            setShopData(sData);
+          } else if (savedRole === 'owner') {
+            // Auto-logout if the shop was deleted by an admin
+            logout();
+            return;
+          }
         }
 
         // Fetch Services
