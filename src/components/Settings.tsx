@@ -68,7 +68,21 @@ const Settings: React.FC = () => {
     const end = new Date(shopData.subscription_ends_at).getTime();
     const now = Date.now();
     const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-    return diff > 0 ? diff : 0;
+    return diff;
+  };
+
+  const daysRemaining = getDaysRemaining();
+  const showWarning = shopData?.subscription_ends_at && daysRemaining <= 5;
+
+  const formatSafeDate = (dateStr: string) => {
+    if (!dateStr) return 'Indefinido';
+    try {
+      // Split to avoid timezone offset issues pushing the date back 1 day
+      const [year, month, day] = dateStr.split('T')[0].split('-');
+      return `${day}/${month}/${year}`;
+    } catch {
+      return new Date(dateStr).toLocaleDateString('pt-BR');
+    }
   };
 
   return (
@@ -76,6 +90,23 @@ const Settings: React.FC = () => {
       <h1 style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <Banknote color="var(--accent-gold)" /> Assinatura e Configurações
       </h1>
+
+      {/* Warning Banner */}
+      {showWarning && (
+        <div style={{ background: 'rgba(255, 68, 68, 0.1)', border: '1px solid #ff4444', borderRadius: '12px', padding: '1.2rem', marginBottom: '2rem', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <ShieldAlert color="#ff4444" size={24} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div>
+            <h3 style={{ color: '#ff4444', margin: 0, fontSize: '1rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Atenção: Assinatura {daysRemaining <= 0 ? 'Expirada' : 'Vencendo em breve'}
+            </h3>
+            <p style={{ color: '#ffcccc', margin: 0, fontSize: '0.85rem', marginTop: '6px', lineHeight: '1.4' }}>
+              {daysRemaining <= 0 
+                ? 'Sua assinatura expirou. Por favor, regularize seu pagamento para continuar utilizando a plataforma sem interrupções.'
+                : `Sua assinatura vencerá em ${daysRemaining} dia(s). Antecipe seu pagamento para evitar a suspensão da sua loja.`}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Card 1: Status da Assinatura */}
       <div className="premium-card" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -107,10 +138,12 @@ const Settings: React.FC = () => {
               </div>
               <div>
                 <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#888', textTransform: 'uppercase' }}>Vencimento</span>
-                <div style={{ fontSize: '1.2rem', fontWeight: '900', color: 'white' }}>
-                  {shopData?.subscription_ends_at ? new Date(shopData.subscription_ends_at).toLocaleDateString('pt-BR') : 'Indefinido'}
+                <div style={{ fontSize: '1.2rem', fontWeight: '900', color: daysRemaining <= 5 && shopData?.subscription_ends_at ? '#ff4444' : 'white' }}>
+                  {formatSafeDate(shopData?.subscription_ends_at)}
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '2px' }}>{getDaysRemaining()} dia(s) restante(s)</div>
+                <div style={{ fontSize: '0.8rem', color: daysRemaining <= 5 && shopData?.subscription_ends_at ? '#ff4444' : '#666', marginTop: '2px', fontWeight: daysRemaining <= 5 ? '700' : 'normal' }}>
+                  {shopData?.subscription_ends_at ? `${Math.max(0, daysRemaining)} dia(s) restante(s)` : ''}
+                </div>
               </div>
             </div>
           </div>
