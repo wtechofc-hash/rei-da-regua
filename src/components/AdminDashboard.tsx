@@ -44,6 +44,12 @@ const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   const [visibleClientPasswords, setVisibleClientPasswords] = useState<Record<string, boolean>>({});
+  
+  const [isAddingClient, setIsAddingClient] = useState(false);
+  const [isEditingClient, setIsEditingClient] = useState(false);
+  const [editingClientId, setEditingClientId] = useState<string | null>(null);
+  const [newClient, setNewClient] = useState({ name: '', phone: '', email: '', password: '', shop_id: '' });
+  const [editClient, setEditClient] = useState({ name: '', phone: '', email: '', password: '', shop_id: '' });
 
   useEffect(() => {
     loadData();
@@ -280,6 +286,67 @@ const AdminDashboard: React.FC = () => {
     loadData();
   };
 
+  const handleAddClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClient.shop_id) {
+      alert("Por favor, selecione uma barbearia para o cliente.");
+      return;
+    }
+
+    const { error } = await supabase.from('clients').insert([{
+      name: newClient.name,
+      phone: newClient.phone,
+      email: newClient.email.trim().toLowerCase() || null,
+      password: newClient.password,
+      shop_id: newClient.shop_id,
+      total_spent: 0
+    }]);
+
+    if (error) {
+      alert("Erro ao cadastrar cliente: " + error.message);
+    } else {
+      alert("Cliente cadastrado com sucesso!");
+      setIsAddingClient(false);
+      setNewClient({ name: '', phone: '', email: '', password: '', shop_id: '' });
+      loadData();
+    }
+  };
+
+  const handleUpdateClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingClientId) return;
+
+    const { error } = await supabase.from('clients').update({
+      name: editClient.name,
+      phone: editClient.phone,
+      email: editClient.email.trim().toLowerCase() || null,
+      password: editClient.password,
+      shop_id: editClient.shop_id
+    }).eq('id', editingClientId);
+
+    if (error) {
+      alert("Erro ao atualizar cliente: " + error.message);
+    } else {
+      alert("Cliente atualizado com sucesso!");
+      setIsEditingClient(false);
+      setEditingClientId(null);
+      setEditClient({ name: '', phone: '', email: '', password: '', shop_id: '' });
+      loadData();
+    }
+  };
+
+  const handleDeleteClient = async (clientId: string, clientName: string) => {
+    if (!window.confirm(`Tem certeza que deseja excluir o cliente "${clientName}" permanentemente?`)) return;
+
+    const { error } = await supabase.from('clients').delete().eq('id', clientId);
+    if (error) {
+      alert("Erro ao excluir cliente: " + error.message);
+    } else {
+      alert("Cliente excluído com sucesso!");
+      loadData();
+    }
+  };
+
   const enterShop = (shopId: string) => {
     setAuth('owner', 'admin-support', shopId);
   };
@@ -313,13 +380,26 @@ const AdminDashboard: React.FC = () => {
         </div>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <button 
-            onClick={() => setIsAddingShop(true)}
-            className="gold-button" 
-            style={{ padding: '0.75rem 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem' }}
-          >
-            <Plus size={22} /> Novo Lojista
-          </button>
+          {activeTab === 'clientes' ? (
+            <button 
+              onClick={() => {
+                setNewClient({ name: '', phone: '', email: '', password: '', shop_id: shops[0]?.id || '' });
+                setIsAddingClient(true);
+              }}
+              className="gold-button" 
+              style={{ padding: '0.75rem 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem' }}
+            >
+              <Plus size={22} /> Novo Cliente
+            </button>
+          ) : (
+            <button 
+              onClick={() => setIsAddingShop(true)}
+              className="gold-button" 
+              style={{ padding: '0.75rem 1.5rem', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem' }}
+            >
+              <Plus size={22} /> Novo Lojista
+            </button>
+          )}
           
           <button 
             onClick={logout}
@@ -457,6 +537,7 @@ const AdminDashboard: React.FC = () => {
                 <th style={{ padding: '1rem' }}>Credenciais (Login/Senha)</th>
                 <th style={{ padding: '1rem' }}>Barbearia (Origem)</th>
                 <th style={{ padding: '1rem' }}>Total Gasto</th>
+                <th style={{ padding: '1rem' }}>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -484,6 +565,34 @@ const AdminDashboard: React.FC = () => {
                     </td>
                     <td style={{ padding: '1rem', color: 'var(--accent-gold)' }}>{(c.shops as any)?.name || 'Desconhecida'}</td>
                     <td style={{ padding: '1rem', fontWeight: '900' }}>R$ {(c.total_spent || 0).toFixed(2)}</td>
+                    <td style={{ padding: '1rem' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                          title="Editar Cliente"
+                          onClick={() => {
+                            setEditingClientId(c.id);
+                            setEditClient({
+                              name: c.name,
+                              phone: c.phone || '',
+                              email: c.email || '',
+                              password: c.password || '',
+                              shop_id: c.shop_id || ''
+                            });
+                            setIsEditingClient(true);
+                          }}
+                          style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#888', border: '1px solid #555', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                        >
+                          <Settings size={14} />
+                        </button>
+                        <button 
+                          title="Excluir Cliente"
+                          onClick={() => handleDeleteClient(c.id, c.name)}
+                          style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#ff4444', border: '1px solid #ff4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -761,6 +870,140 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button type="button" onClick={() => setIsEditingShop(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid #222', color: '#555', borderRadius: '12px', fontWeight: '700' }}>Cancelar</button>
+                <button type="submit" className="gold-button" style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: '800' }}>Salvar Alterações</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Add Client Modal */}
+      {isAddingClient && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Novo Cliente</h2>
+            <form onSubmit={handleAddClient} style={{ display: 'grid', gap: '1.5rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>NOME DO CLIENTE</label>
+                <input 
+                  required type="text" 
+                  value={newClient.name} 
+                  onChange={e => setNewClient({ ...newClient, name: e.target.value })}
+                  placeholder="Ex: João da Silva"
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>TELEFONE</label>
+                <input 
+                  required type="text" 
+                  value={newClient.phone} 
+                  onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
+                  placeholder="Ex: 75998736352"
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>E-MAIL</label>
+                <input 
+                  type="email" 
+                  value={newClient.email} 
+                  onChange={e => setNewClient({ ...newClient, email: e.target.value })}
+                  placeholder="cliente@email.com (Opcional)"
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>SENHA</label>
+                <input 
+                  required type="text" 
+                  value={newClient.password} 
+                  onChange={e => setNewClient({ ...newClient, password: e.target.value })}
+                  placeholder="senha123"
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>BARBEARIA (ORIGEM)</label>
+                <select
+                  required
+                  value={newClient.shop_id}
+                  onChange={e => setNewClient({ ...newClient, shop_id: e.target.value })}
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }}
+                >
+                  <option value="">Selecione uma barbearia...</option>
+                  {shops.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setIsAddingClient(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid #222', color: '#555', borderRadius: '12px', fontWeight: '700' }}>Cancelar</button>
+                <button type="submit" className="gold-button" style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: '800' }}>Criar Cliente</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Client Modal */}
+      {isEditingClient && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Editar Cliente</h2>
+            <form onSubmit={handleUpdateClient} style={{ display: 'grid', gap: '1.5rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>NOME DO CLIENTE</label>
+                <input 
+                  required type="text" 
+                  value={editClient.name} 
+                  onChange={e => setEditClient({ ...editClient, name: e.target.value })}
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>TELEFONE</label>
+                <input 
+                  required type="text" 
+                  value={editClient.phone} 
+                  onChange={e => setEditClient({ ...editClient, phone: e.target.value })}
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>E-MAIL</label>
+                <input 
+                  type="email" 
+                  value={editClient.email} 
+                  onChange={e => setEditClient({ ...editClient, email: e.target.value })}
+                  placeholder="cliente@email.com (Opcional)"
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>SENHA</label>
+                <input 
+                  required type="text" 
+                  value={editClient.password} 
+                  onChange={e => setEditClient({ ...editClient, password: e.target.value })}
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.75rem', color: '#555', display: 'block', marginBottom: '8px', fontWeight: '800' }}>BARBEARIA (ORIGEM)</label>
+                <select
+                  required
+                  value={editClient.shop_id}
+                  onChange={e => setEditClient({ ...editClient, shop_id: e.target.value })}
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid #222', color: 'white' }}
+                >
+                  <option value="">Selecione uma barbearia...</option>
+                  {shops.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setIsEditingClient(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid #222', color: '#555', borderRadius: '12px', fontWeight: '700' }}>Cancelar</button>
                 <button type="submit" className="gold-button" style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: '800' }}>Salvar Alterações</button>
               </div>
             </form>
