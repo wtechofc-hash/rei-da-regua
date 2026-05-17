@@ -46,7 +46,7 @@ const Login: React.FC = () => {
 
       if (shopMatch) {
         setAuth('owner', 'owner-' + shopMatch.id, shopMatch.id);
-        setIsLoading(false);
+        window.location.href = '/';
         return;
       }
 

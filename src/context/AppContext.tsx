@@ -156,11 +156,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Load initial data from Supabase
     const fetchData = async () => {
       try {
-        const query = shopId ? (q: any) => q.eq('shop_id', shopId) : (q: any) => q;
+        const currentShopId = savedShopId;
+        const query = currentShopId ? (q: any) => q.eq('shop_id', currentShopId) : (q: any) => q;
 
         // Fetch Shop Data
-        if (shopId) {
-          const { data: sData } = await supabase.from('shops').select('*').eq('id', shopId).maybeSingle();
+        if (currentShopId) {
+          const { data: sData } = await supabase.from('shops').select('*').eq('id', currentShopId).maybeSingle();
           if (sData) {
             setShopData(sData);
           } else if (savedRole === 'owner') {
