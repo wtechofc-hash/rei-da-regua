@@ -108,11 +108,6 @@ const Settings: React.FC = () => {
         </div>
       )}
 
-      {/* DEBUG TEMPORARIO: APAGAR DEPOIS */}
-      <div style={{ background: '#111', padding: '10px', fontSize: '10px', color: '#0f0', marginBottom: '1rem', wordBreak: 'break-all' }}>
-        DEBUG INFO: ID={contextShopData?.id || 'null'} | ENDS_AT={shopData?.subscription_ends_at || 'null'} | DAYS={daysRemaining} | JSON={JSON.stringify(shopData).substring(0, 150)}
-      </div>
-
       {/* Card 1: Status da Assinatura */}
       <div className="premium-card" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '2rem' }}>

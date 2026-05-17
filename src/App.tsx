@@ -156,17 +156,69 @@ const AppContent: React.FC = () => {
           </div>
         )}
 
-        {/* Subscription Banner */}
-        {role === 'owner' && shopData && shopData.subscription_status === 'suspended' && (
-          <div style={{ background: '#ff4444', color: '#fff', padding: '8px 15px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '800', zIndex: 999 }}>
-            <span style={{ fontSize: '0.8rem' }}>⚠️ Sua assinatura está SUSPENSA. Por favor, regularize o pagamento para continuar usando a plataforma.</span>
-          </div>
-        )}
-        {role === 'owner' && shopData && shopData.subscription_status === 'active' && new Date(shopData.subscription_ends_at) < new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) && (
-          <div style={{ background: '#ffaa00', color: '#000', padding: '8px 15px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '800', zIndex: 999 }}>
-            <span style={{ fontSize: '0.8rem' }}>⏳ Sua assinatura expira em breve ({new Date(shopData.subscription_ends_at).toLocaleDateString()}).</span>
-          </div>
-        )}
+        {/* Subscription Lock Logic */}
+        {(() => {
+          if ((role !== 'owner' && role !== 'professional') || !shopData) return null;
+          
+          let isExpired = false;
+          let diffDays = 0;
+          if (shopData.subscription_ends_at) {
+            const end = new Date(shopData.subscription_ends_at).getTime();
+            const now = Date.now();
+            diffDays = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+            isExpired = diffDays <= 0;
+          }
+          const isSuspended = shopData.subscription_status === 'suspended';
+          const isBlocked = isExpired || isSuspended;
+
+          if (isBlocked) {
+            if (role === 'owner' && page !== 'configuracoes') {
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '2rem', textAlign: 'center', background: '#0a0a0a' }}>
+                  <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                    <span style={{ fontSize: '2rem' }}>🔒</span>
+                  </div>
+                  <h2 style={{ color: '#ff4444', marginBottom: '1rem', fontSize: '1.8rem', fontWeight: '900' }}>Acesso Bloqueado</h2>
+                  <p style={{ color: '#aaa', maxWidth: '400px', lineHeight: '1.6', marginBottom: '2rem' }}>
+                    Sua assinatura está {isSuspended ? 'suspensa' : 'vencida'}. Para continuar acessando os relatórios, agendamentos e cadastros da sua barbearia, por favor, regularize o pagamento.
+                  </p>
+                  <button onClick={() => setPage('configuracoes')} className="gold-button" style={{ padding: '14px 28px', borderRadius: '12px', fontWeight: '800', fontSize: '1rem' }}>
+                    Ir para Configurações (Pagar)
+                  </button>
+                </div>
+              );
+            } else if (role === 'professional') {
+              // Professionals are completely locked out
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '2rem', textAlign: 'center', background: '#0a0a0a' }}>
+                  <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                    <span style={{ fontSize: '2rem' }}>⏸️</span>
+                  </div>
+                  <h2 style={{ color: '#ffaa00', marginBottom: '1rem', fontSize: '1.8rem', fontWeight: '900' }}>Sistema Pausado</h2>
+                  <p style={{ color: '#aaa', maxWidth: '400px', lineHeight: '1.6', marginBottom: '2rem' }}>
+                    O sistema da barbearia encontra-se temporariamente pausado. Por favor, entre em contato com o administrador ou proprietário do estabelecimento.
+                  </p>
+                </div>
+              );
+            }
+            
+            return (
+               <div style={{ background: '#ff4444', color: '#fff', padding: '8px 15px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '800', zIndex: 999 }}>
+                  <span style={{ fontSize: '0.8rem' }}>⚠️ Sua assinatura está {isSuspended ? 'SUSPENSA' : 'VENCIDA'}. Efetue o pagamento para liberar o sistema.</span>
+               </div>
+            );
+          }
+
+          if (role === 'owner' && diffDays > 0 && diffDays <= 5) {
+            return (
+              <div style={{ background: '#ffaa00', color: '#000', padding: '8px 15px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '800', zIndex: 999 }}>
+                <span style={{ fontSize: '0.8rem' }}>⚠️ Atenção: Sua assinatura vence em {diffDays} dia(s).</span>
+              </div>
+            );
+          }
+          
+          return null;
+        })()}
 
         <header id="header-mobile" style={{
           display: 'none', alignItems: 'center', justifyContent: 'space-between',
