@@ -255,7 +255,6 @@ const AppContent: React.FC = () => {
             </ErrorBoundary>
           </div>
         </main>
-      </div>
 
       {/* Mobile Nav */}
       {role !== 'superadmin' && (
@@ -348,6 +347,7 @@ const AppContent: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
         @media (min-width: 769px) {
