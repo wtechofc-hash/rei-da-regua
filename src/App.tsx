@@ -83,6 +83,12 @@ const AppContent: React.FC = () => {
   const { role, userId, shopData, setAuth, logout, profiles = [], appointments = [], clearProNotifications, config } = useApp();
   const [page, setPage] = useState<Page>('dashboard');
   const [moreOpen, setMoreOpen] = useState(false);
+  const [moreOpenTime, setMoreOpenTime] = useState(0);
+
+  const handleOpenMore = () => {
+    setMoreOpen(true);
+    setMoreOpenTime(Date.now());
+  };
   
   const currentProfile = profiles.find(p => p.id === userId) ?? profiles.find(p => p.role === role) ?? profiles[0];
 
@@ -167,19 +173,19 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', width: '100vw', background: 'var(--bg-primary)', color: 'white', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', minHeight: '100dvh', width: '100vw', background: 'var(--bg-primary)', color: 'white', overflow: 'hidden' }}>
 
       {role !== 'superadmin' && (
         <div id="sb-desktop">
           <ErrorBoundary>
-            <Suspense fallback={<div style={{ width: '240px', background: '#0a0a0a', height: '100vh' }} />}>
+            <Suspense fallback={<div style={{ width: '240px', background: '#0a0a0a', height: '100dvh' }} />}>
               <Sidebar activePage={page} setActivePage={setPage} notificationCount={notificationCount} />
             </Suspense>
           </ErrorBoundary>
         </div>
       )}
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
         
         {/* Impersonation Banner */}
         {role === 'owner' && userId === 'admin-support' && (
@@ -283,7 +289,7 @@ const AppContent: React.FC = () => {
           const isAgenda = item.id === 'agendamentos';
 
           return (
-            <button key={item.id} onClick={() => isMais ? setMoreOpen(true) : setPage(item.id as Page)} style={{
+            <button key={item.id} onClick={() => isMais ? handleOpenMore() : setPage(item.id as Page)} style={{
               background: 'transparent', border: 'none', flex: 1, cursor: 'pointer',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px',
               color: (isActive || (isMais && moreOpen)) ? '#d4af37' : '#555',
@@ -321,7 +327,11 @@ const AppContent: React.FC = () => {
               {MORE_NAV.map(item => {
                 const Icon = item.icon;
                 return (
-                  <button key={item.id} onClick={() => { setPage(item.id as Page); setMoreOpen(false); }} style={{
+                  <button key={item.id} onClick={() => { 
+                    if (Date.now() - moreOpenTime < 300) return;
+                    setPage(item.id as Page); 
+                    setMoreOpen(false); 
+                  }} style={{
                     background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
                     borderRadius: '20px', padding: '1.5rem 0.5rem', color: 'white',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',

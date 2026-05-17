@@ -50,7 +50,7 @@ select option {
 .main-content {
   flex: 1;
   padding: 2rem 2.5rem;
-  min-height: 100vh;
+  min-height: 0;
   background: var(--bg-primary);
   overflow-y: auto;
   transition: padding 0.3s ease;
