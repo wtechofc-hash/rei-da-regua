@@ -369,10 +369,10 @@ const AdminDashboard: React.FC = () => {
   const currentRevenue = payments.filter(p => p.status === 'approved').reduce((acc, curr) => acc + Number(curr.amount || 70), 0);
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1600px', margin: '0 auto', width: '100%' }}>
+    <div className="admin-container" style={{ padding: '2rem', maxWidth: '1600px', margin: '0 auto', width: '100%' }}>
       <div className="animate-fade-in">
-        <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
+        <header className="admin-header" style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div className="admin-title-wrap">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-gold)', marginBottom: '0.5rem' }}>
             <ShieldCheck size={36} />
             <h1 style={{ fontSize: '2.5rem', fontWeight: '900', margin: 0, letterSpacing: '-0.02em', color: 'white' }}>Painel Central ADM</h1>
@@ -380,7 +380,7 @@ const AdminDashboard: React.FC = () => {
           <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '1.1rem' }}>Gestão global de Barbearias, Assinaturas e Clientes.</p>
         </div>
         
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div className="admin-header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           {activeTab === 'clientes' ? (
             <button 
               onClick={() => {
@@ -412,7 +412,7 @@ const AdminDashboard: React.FC = () => {
       </header>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', overflowX: 'auto' }}>
+      <div className="admin-tabs" style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', overflowX: 'auto' }}>
         {[
           { id: 'lojistas', label: `Lojistas (${shops.length})`, icon: Building2 },
           { id: 'clientes', label: `Clientes (${clients.length})`, icon: Users },
@@ -457,18 +457,18 @@ const AdminDashboard: React.FC = () => {
               const prog = getSubscriptionProgress(shop.subscription_ends_at);
               const showPass = visiblePasswords[shop.id];
               return (
-                <div key={shop.id} className="premium-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div key={shop.id} className="premium-card shop-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                   
-                  <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
+                  <div className="shop-card-content" style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
                     
                     {/* Left: Info */}
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    <div className="shop-info-wrapper" style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                       <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
                         <Building2 size={28} color="var(--accent-gold)" />
                       </div>
                       
                       <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                        <div className="shop-title-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                           <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{shop.name}</h3>
                           <span style={{ background: '#222', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: '800' }}>{shop.plan_type?.toUpperCase() || 'BÁSICA'}</span>
                           <span style={{ background: shop.subscription_status === 'active' ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)', color: shop.subscription_status === 'active' ? '#00ff00' : '#ff4444', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: '800' }}>
@@ -479,7 +479,7 @@ const AdminDashboard: React.FC = () => {
                         <div style={{ fontSize: '0.75rem', color: '#888', display: 'grid', gap: '4px', marginBottom: '12px' }}>
                           <span>Geral - R. Exemplo da Silva, 123</span>
                           <span>CNPJ: Não Informado</span>
-                          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '4px' }}>
+                          <div className="shop-meta-info" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '4px' }}>
                             <span>Início: <span style={{ color: '#fff' }}>{new Date(shop.created_at).toLocaleDateString()}</span></span>
                             <span>Venc.: <span style={{ color: '#fff' }}>{shop.subscription_ends_at ? new Date(shop.subscription_ends_at).toLocaleDateString() : 'N/A'}</span></span>
                             <span style={{ color: '#00ff00', fontWeight: '800' }}>R$ 0.00 <span style={{ color: '#888', fontWeight: 'normal', fontSize: '0.65rem' }}>(saldo)</span></span>
@@ -487,7 +487,7 @@ const AdminDashboard: React.FC = () => {
                         </div>
 
                         {/* Credentials */}
-                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 15px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div className="shop-credentials" style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 15px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
                           <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#aaa' }}>Login: <span style={{ color: 'white', fontWeight: '500' }}>{shop.login_email || 'Não definido'}</span></span>
                           <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#aaa', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             Senha: <span style={{ color: 'white', fontWeight: '500' }}>{showPass ? (shop.login_password || 'Não definido') : '********'}</span>
@@ -497,14 +497,14 @@ const AdminDashboard: React.FC = () => {
                           </span>
                         </div>
                         
-                        <div style={{ width: '100%', height: '4px', background: '#222', borderRadius: '2px', marginTop: '12px', overflow: 'hidden', maxWidth: '300px' }}>
+                        <div className="shop-progress-bar" style={{ width: '100%', height: '4px', background: '#222', borderRadius: '2px', marginTop: '12px', overflow: 'hidden', maxWidth: '300px' }}>
                           <div style={{ width: `${prog.percentage}%`, height: '100%', background: prog.color, transition: 'all 0.3s' }}></div>
                         </div>
                       </div>
                     </div>
 
                     {/* Right: Actions */}
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                    <div className="shop-actions-container" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                       <button onClick={() => handleSetSubscriptionStatus(shop.id, 'suspended')} style={{ padding: '8px 16px', borderRadius: '8px', background: '#ff4444', color: '#fff', border: 'none', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer' }}>Suspender</button>
                       <button onClick={() => handleExtendSubscription(shop.id, shop.subscription_ends_at)} style={{ padding: '8px 16px', borderRadius: '8px', background: '#00cc44', color: '#fff', border: 'none', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer' }}>Estender</button>
                       <button onClick={() => handleSetSubscriptionStatus(shop.id, 'paused')} style={{ padding: '8px 16px', borderRadius: '8px', background: 'transparent', color: '#ff4444', border: '1px solid #ff4444', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}><Power size={14} /> Pausar</button>
@@ -529,7 +529,7 @@ const AdminDashboard: React.FC = () => {
 
       {/* Tab Content: Clientes Globais */}
       {activeTab === 'clientes' && (
-        <div className="premium-card" style={{ padding: '1.5rem', overflowX: 'auto' }}>
+        <div className="premium-card table-responsive-wrapper" style={{ padding: '1.5rem', overflowX: 'auto' }}>
           <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#888', fontSize: '0.8rem' }}>
@@ -628,7 +628,7 @@ const AdminDashboard: React.FC = () => {
             </button>
           )}
           
-          <div className="premium-card" style={{ padding: '1.5rem', overflowX: 'auto' }}>
+          <div className="premium-card table-responsive-wrapper" style={{ padding: '1.5rem', overflowX: 'auto' }}>
             <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#888', fontSize: '0.8rem' }}>
@@ -716,7 +716,7 @@ const AdminDashboard: React.FC = () => {
           
           <div style={{ display: 'grid', gap: '1.5rem' }}>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div className="config-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div>
                 <label style={{ fontSize: '0.75rem', color: '#888', fontWeight: '800', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
                   <Plus size={12} /> URL DO QR CODE / COPIA E COLA
@@ -731,7 +731,7 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div className="config-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div>
                 <label style={{ fontSize: '0.75rem', color: '#888', fontWeight: '800', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
                   <Users size={12} /> NOME DO RECEBEDOR
@@ -1012,6 +1012,148 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Responsive overrides block */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 768px) {
+          .admin-container {
+            padding: 1rem 0.5rem !important;
+          }
+          
+          .admin-header {
+            margin-bottom: 1.5rem !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 1.25rem !important;
+          }
+          
+          .admin-title-wrap {
+            text-align: center !important;
+          }
+          
+          .admin-title-wrap h1 {
+            font-size: 1.8rem !important;
+          }
+          
+          .admin-title-wrap p {
+            font-size: 0.9rem !important;
+          }
+          
+          .admin-header-actions {
+            display: flex !important;
+            gap: 0.75rem !important;
+            width: 100% !important;
+          }
+          
+          .admin-header-actions button {
+            flex: 1 !important;
+            justify-content: center !important;
+            padding: 0.8rem 1rem !important;
+            font-size: 0.85rem !important;
+            border-radius: 12px !important;
+          }
+          
+          .admin-tabs {
+            margin-bottom: 1.5rem !important;
+            gap: 0.25rem !important;
+            padding-bottom: 0.25rem !important;
+          }
+          
+          .admin-tabs button {
+            padding: 0.6rem 0.8rem !important;
+            font-size: 0.85rem !important;
+            gap: 6px !important;
+          }
+          
+          .admin-tabs button svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+          
+          .shop-card {
+            padding: 1rem !important;
+          }
+          
+          .shop-card-content {
+            flex-direction: column !important;
+            gap: 1.25rem !important;
+          }
+          
+          .shop-info-wrapper {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+          }
+          
+          .shop-info-wrapper div {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+          }
+          
+          .shop-title-row {
+            flex-direction: column !important;
+            gap: 6px !important;
+          }
+          
+          .shop-meta-info {
+            justify-content: center !important;
+            flex-wrap: wrap !important;
+            gap: 8px 12px !important;
+          }
+          
+          .shop-credentials {
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 8px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          
+          .shop-progress-bar {
+            max-width: 100% !important;
+          }
+          
+          .shop-actions-container {
+            width: 100% !important;
+            justify-content: center !important;
+            gap: 8px !important;
+          }
+          
+          .shop-actions-container button {
+            flex: 1 !important;
+            justify-content: center !important;
+            min-width: 80px !important;
+            font-size: 0.75rem !important;
+            padding: 8px 10px !important;
+            height: auto !important;
+          }
+          
+          .shop-actions-container button.gold-button {
+            flex: 100% !important;
+            margin-top: 4px !important;
+          }
+          
+          .table-responsive-wrapper {
+            margin: 0 -0.5rem !important;
+            border-radius: 0 !important;
+            border-left: none !important;
+            border-right: none !important;
+            padding: 1rem 0.5rem !important;
+          }
+          
+          .table-responsive-wrapper table th, 
+          .table-responsive-wrapper table td {
+            padding: 0.75rem 0.5rem !important;
+            font-size: 0.8rem !important;
+          }
+
+          .config-grid {
+            grid-template-columns: 1fr !important;
+            gap: 1rem !important;
+          }
+        }
+      ` }} />
     </div>
 
   );
