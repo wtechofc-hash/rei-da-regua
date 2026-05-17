@@ -369,8 +369,9 @@ const AdminDashboard: React.FC = () => {
   const currentRevenue = payments.filter(p => p.status === 'approved').reduce((acc, curr) => acc + Number(curr.amount || 70), 0);
 
   return (
-    <div className="animate-fade-in" style={{ padding: '2rem', maxWidth: '1600px', margin: '0 auto', width: '100%' }}>
-      <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ padding: '2rem', maxWidth: '1600px', margin: '0 auto', width: '100%' }}>
+      <div className="animate-fade-in">
+        <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--accent-gold)', marginBottom: '0.5rem' }}>
             <ShieldCheck size={36} />
@@ -761,11 +762,12 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
 
       {/* Add Shop Modal */}
       {isAddingShop && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, overflowY: 'auto', padding: '0 1rem' }}>
-          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', margin: '6rem auto 2rem auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Novo Lojista</h2>
             <form onSubmit={handleAddShop} style={{ display: 'grid', gap: '1.5rem' }}>
               <div>
@@ -819,8 +821,8 @@ const AdminDashboard: React.FC = () => {
 
       {/* Edit Shop Modal */}
       {isEditingShop && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, overflowY: 'auto', padding: '0 1rem' }}>
-          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', margin: '6rem auto 2rem auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Editar Lojista</h2>
             <form onSubmit={handleEditShop} style={{ display: 'grid', gap: '1.5rem' }}>
               <div>
@@ -878,8 +880,8 @@ const AdminDashboard: React.FC = () => {
       )}
       {/* Add Client Modal */}
       {isAddingClient && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, overflowY: 'auto', padding: '0 1rem' }}>
-          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', margin: '6rem auto 2rem auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Novo Cliente</h2>
             <form onSubmit={handleAddClient} style={{ display: 'grid', gap: '1.5rem' }}>
               <div>
@@ -947,8 +949,8 @@ const AdminDashboard: React.FC = () => {
 
       {/* Edit Client Modal */}
       {isEditingClient && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, overflowY: 'auto', padding: '0 1rem' }}>
-          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', margin: '6rem auto 2rem auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Editar Cliente</h2>
             <form onSubmit={handleUpdateClient} style={{ display: 'grid', gap: '1.5rem' }}>
               <div>
