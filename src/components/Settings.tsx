@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
-import { Banknote, Upload, CheckCircle, ShieldAlert, Power, Clock, Copy, Plus } from 'lucide-react';
+import { Banknote, Upload, CheckCircle, ShieldAlert, Power, Clock, Copy, Plus, FileText, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
 const Settings: React.FC = () => {
   const { logout, shopData: contextShopData } = useApp();
   const [shopData, setShopData] = useState<any>(contextShopData);
   const [globalConfig, setGlobalConfig] = useState<any>(null);
-  const [receiptUrl, setReceiptUrl] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [qrError, setQrError] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchGlobalConfig();
@@ -32,25 +34,69 @@ const Settings: React.FC = () => {
     setTimeout(() => setIsSyncing(false), 1000);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+
+    // If it's an image, create a preview
+    if (file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      setFilePreview(url);
+    } else {
+      // PDF or other supported type
+      setFilePreview(null);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleUploadReceipt = async () => {
-    if (!receiptUrl) return alert("Cole o link da imagem do comprovante primeiro.");
+    if (!selectedFile) return alert("Selecione o comprovante primeiro.");
     setIsUploading(true);
     
-    // Create payment notification
-    const { error } = await supabase.from('payment_notifications').insert([{
-      shop_id: shopData?.id,
-      amount: globalConfig?.basica?.price || 70,
-      receipt_url: receiptUrl,
-      status: 'pending'
-    }]);
+    try {
+      // 1. Upload to Supabase Storage
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${Date.now()}_comprovante.${fileExt}`;
+      const filePath = `${shopData?.id || 'unknown'}/${fileName}`;
 
-    setIsUploading(false);
-    
-    if (error) {
-      alert("Erro ao enviar comprovante: " + error.message);
-    } else {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('receipts')
+        .upload(filePath, selectedFile, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // 2. Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('receipts')
+        .getPublicUrl(filePath);
+
+      // 3. Create payment notification in DB
+      const { error: dbError } = await supabase.from('payment_notifications').insert([{
+        shop_id: shopData?.id,
+        amount: globalConfig?.basica?.price || 185,
+        receipt_url: publicUrl,
+        status: 'pending'
+      }]);
+
+      if (dbError) throw dbError;
+
       alert("Comprovante enviado com sucesso! Aguarde a aprovação do administrador.");
-      setReceiptUrl('');
+      handleRemoveFile();
+    } catch (err: any) {
+      console.error(err);
+      alert("Erro ao enviar comprovante: " + (err.message || err));
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -191,30 +237,105 @@ const Settings: React.FC = () => {
       <div className="premium-card" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.4rem', color: 'white' }}>Informar Pagamento</h2>
         <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '2rem' }}>
-          Faça o pagamento via PIX acima, anexe o comprovante e clique em <strong style={{ color: '#aaa' }}>Confirmar Envio</strong>.
+          Faça o pagamento via PIX acima, anexe o comprovante (imagem ou PDF) e clique em <strong style={{ color: '#aaa' }}>Confirmar Envio</strong>.
         </p>
+
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          accept="image/*,application/pdf" 
+          style={{ display: 'none' }} 
+          onChange={handleFileChange} 
+        />
         
-        <div style={{ border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '16px', padding: '2.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '2rem', background: 'rgba(0,0,0,0.2)', transition: 'all 0.3s' }}>
-          <Plus color="var(--accent-gold)" size={32} style={{ marginBottom: '8px' }} />
-          <div style={{ textAlign: 'center', width: '100%', maxWidth: '400px' }}>
-            <span style={{ fontSize: '1rem', fontWeight: '700', color: 'white', display: 'block', marginBottom: '8px' }}>Selecionar Comprovante</span>
-            <input 
-              type="text" 
-              placeholder="Cole a URL da imagem do comprovante aqui..." 
-              value={receiptUrl} 
-              onChange={e => setReceiptUrl(e.target.value)} 
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.8rem', borderRadius: '8px', color: 'white', textAlign: 'center', fontSize: '0.85rem', width: '100%', outline: 'none' }} 
-            />
-            <span style={{ fontSize: '0.75rem', color: '#666', display: 'block', marginTop: '12px' }}>Apenas Link de Imagem (por enquanto)</span>
-          </div>
+        <div 
+          onClick={() => fileInputRef.current?.click()}
+          style={{ 
+            border: '2px dashed rgba(255, 255, 255, 0.1)', 
+            borderRadius: '16px', 
+            padding: '2.5rem 1rem', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: '12px', 
+            marginBottom: '2rem', 
+            background: 'rgba(0,0,0,0.2)', 
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+          onMouseOver={e => e.currentTarget.style.borderColor = 'var(--accent-gold)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+        >
+          {selectedFile ? (
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1 }} onClick={e => e.stopPropagation()}>
+              
+              <button 
+                onClick={handleRemoveFile}
+                style={{ 
+                  position: 'absolute', right: '10px', top: '-10px', 
+                  background: 'rgba(255,68,68,0.2)', border: 'none', 
+                  borderRadius: '50%', padding: '6px', cursor: 'pointer',
+                  color: '#ff4444', display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                }}
+              >
+                <X size={16} />
+              </button>
+
+              {filePreview ? (
+                <img 
+                  src={filePreview} 
+                  alt="Pré-visualização" 
+                  style={{ maxHeight: '180px', maxWidth: '100%', borderRadius: '12px', objectFit: 'contain', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.1)' }} 
+                />
+              ) : (
+                <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                  <FileText color="var(--accent-gold)" size={48} />
+                </div>
+              )}
+
+              <span style={{ fontSize: '0.95rem', fontWeight: '700', color: 'white', wordBreak: 'break-all', textAlign: 'center' }}>
+                {selectedFile.name}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#888', marginTop: '4px' }}>
+                {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+              </span>
+            </div>
+          ) : (
+            <>
+              <Plus color="var(--accent-gold)" size={32} style={{ marginBottom: '8px' }} />
+              <div style={{ textAlign: 'center', width: '100%', maxWidth: '400px' }}>
+                <span style={{ fontSize: '1rem', fontWeight: '700', color: 'white', display: 'block', marginBottom: '6px' }}>
+                  Selecionar Comprovante
+                </span>
+                <span style={{ fontSize: '0.8rem', color: '#888', display: 'block' }}>
+                  Toque para tirar foto ou selecionar PDF/Imagem
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         <button 
           onClick={handleUploadReceipt} 
-          disabled={isUploading || !receiptUrl} 
-          style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: receiptUrl ? '#00cc44' : 'rgba(0,204,68,0.2)', color: receiptUrl ? 'white' : 'rgba(255,255,255,0.5)', border: 'none', fontWeight: '800', fontSize: '1.05rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: receiptUrl ? 'pointer' : 'not-allowed', transition: 'all 0.3s' }}
+          disabled={isUploading || !selectedFile} 
+          style={{ 
+            width: '100%', padding: '1rem', borderRadius: '12px', 
+            background: selectedFile ? '#00cc44' : 'rgba(0,204,68,0.2)', 
+            color: selectedFile ? 'white' : 'rgba(255,255,255,0.5)', 
+            border: 'none', fontWeight: '800', fontSize: '1.05rem', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', 
+            cursor: selectedFile && !isUploading ? 'pointer' : 'not-allowed', 
+            transition: 'all 0.3s' 
+          }}
         >
-          <CheckCircle size={20} /> Confirmar Envio da Solicitação
+          {isUploading ? (
+            <div style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear' }} />
+          ) : (
+            <><CheckCircle size={20} /> Confirmar Envio da Solicitação</>
+          )}
         </button>
       </div>
 
