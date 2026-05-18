@@ -232,7 +232,7 @@ const AppContent: React.FC = () => {
           position: 'fixed', bottom: 0, left: 0, right: 0, height: '72px',
         background: 'rgba(10, 10, 10, 0.95)', backdropFilter: 'blur(10px)',
         borderTop: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-around', zIndex: 1000
+        display: 'flex', alignItems: 'center', justifyContent: 'space-around', zIndex: 10000
       }}>
         {BOTTOM_NAV.filter(item => {
           if (role === 'customer') {
@@ -285,10 +285,10 @@ const AppContent: React.FC = () => {
 
         {/* More menu */}
         {moreOpen && (
-          <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }}>
+          <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: '72px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }}>
           <div onClick={e => e.stopPropagation()} style={{
             width: '100%', background: '#0d0d0d', borderRadius: '32px 32px 0 0',
-            padding: '1.5rem 1.25rem 4rem', borderTop: '1px solid rgba(212,175,55,0.2)',
+            padding: '1.5rem 1.25rem 2rem', borderTop: '1px solid rgba(212,175,55,0.2)',
             animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
           }}>
             <div style={{ width: '40px', height: '4px', background: '#333', borderRadius: '2px', margin: '0 auto 2.5rem' }} />
