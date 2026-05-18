@@ -41,11 +41,14 @@ const Settings: React.FC = () => {
     if (data?.value) setGlobalConfig(data.value);
   };
 
+  const isMountedRef = React.useRef(true);
+  useEffect(() => { return () => { isMountedRef.current = false; }; }, []);
+
   const fetchShopData = async () => {
     setIsSyncing(true);
     const { data } = await supabase.from('shops').select('*').eq('id', contextShopData.id).single();
-    if (data) setShopData(data);
-    setTimeout(() => setIsSyncing(false), 1000);
+    if (data && isMountedRef.current) setShopData(data);
+    setTimeout(() => { if (isMountedRef.current) setIsSyncing(false); }, 1000);
   };
 
   const handleSaveMercadoPago = async (e: React.FormEvent) => {

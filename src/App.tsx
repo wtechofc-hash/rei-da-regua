@@ -238,7 +238,7 @@ const AppContent: React.FC = () => {
         <main className="main-content" style={{ flex: 1, overflowY: 'auto', paddingBottom: '88px' }}>
           <div style={{ padding: '1.25rem 1.25rem 40px' }}>
             <ErrorBoundary>
-              <Suspense fallback={<Spinner />}>
+              <Suspense key={page} fallback={<Spinner />}>
                 {renderPage()}
               </Suspense>
             </ErrorBoundary>
