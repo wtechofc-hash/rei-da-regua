@@ -217,7 +217,7 @@ const AppContent: React.FC = () => {
           </div>
         </header>
 
-        <main className="main-content" style={{ flex: 1, overflowY: 'auto', paddingBottom: '160px' }}>
+        <main className="main-content" style={{ flex: 1, overflowY: 'auto', paddingBottom: '160px', visibility: moreOpen ? 'hidden' : 'visible' }}>
           <div style={{ padding: '1.25rem 1.25rem 40px' }}>
             <ErrorBoundary>
               <Suspense fallback={<Spinner />}>
