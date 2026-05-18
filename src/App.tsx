@@ -1,5 +1,6 @@
 // Deployment update: 2026-05-16 00:15
 import React, { useState, Suspense, Component, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -283,8 +284,8 @@ const AppContent: React.FC = () => {
       </nav>
       )}
 
-        {/* More menu */}
-        {moreOpen && (
+        {/* More menu via Portal to escape stacking context bugs */}
+        {moreOpen && createPortal(
           <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: '72px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }}>
           <div onClick={e => e.stopPropagation()} style={{
             width: '100%', background: '#0d0d0d', borderRadius: '32px 32px 0 0',
@@ -315,8 +316,9 @@ const AppContent: React.FC = () => {
               })}
             </div>
           </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
