@@ -286,7 +286,7 @@ const AppContent: React.FC = () => {
 
         {/* More menu via Portal to escape stacking context bugs */}
         {moreOpen && createPortal(
-          <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: '72px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }}>
+          <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: '72px', background: 'rgba(0,0,0,0.97)', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }}>
           <div onClick={e => e.stopPropagation()} style={{
             width: '100%', background: '#0d0d0d', borderRadius: '32px 32px 0 0',
             padding: '1.5rem 1.25rem 2rem', borderTop: '1px solid rgba(212,175,55,0.2)',
