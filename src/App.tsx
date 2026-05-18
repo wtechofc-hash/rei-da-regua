@@ -1,6 +1,5 @@
 // Deployment update: 2026-05-16 00:15
 import React, { useState, Suspense, Component, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -17,7 +16,7 @@ import {
 import { AppProvider, useApp } from './context/AppContext';
 import './index.css';
 
-export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais';
+export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais' | '__more__';
 
 const Sidebar      = React.lazy(() => import('./components/Sidebar'));
 const Dashboard    = React.lazy(() => import('./components/Dashboard'));
@@ -83,13 +82,8 @@ const MORE_NAV = [
 const AppContent: React.FC = () => {
   const { role, userId, shopData, setAuth, logout, profiles = [], appointments = [], clearProNotifications, config } = useApp();
   const [page, setPage] = useState<Page>('dashboard');
-  const [moreOpen, setMoreOpen] = useState(false);
-  const [moreOpenTime, setMoreOpenTime] = useState(0);
+  const handleOpenMore = () => setPage('__more__');
 
-  const handleOpenMore = () => {
-    setMoreOpen(true);
-    setMoreOpenTime(Date.now());
-  };
   
   const currentProfile = profiles.find(p => p.id === userId) ?? profiles.find(p => p.role === role) ?? profiles[0];
 
@@ -127,6 +121,30 @@ const AppContent: React.FC = () => {
     
     
     switch (page) {
+      case '__more__':
+        return (
+          <div style={{ padding: '2rem 1.25rem', minHeight: '100%', background: 'var(--bg-primary)' }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1.5rem' }}>Menu</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+              {MORE_NAV.map(item => {
+                const Icon = item.icon;
+                return (
+                  <button key={item.id} onClick={() => setPage(item.id as Page)} style={{
+                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: '20px', padding: '1.5rem 0.5rem', color: 'white',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
+                    cursor: 'pointer', transition: 'all 0.2s', width: '100%'
+                  }}>
+                    <div style={{ background: 'rgba(212,175,55,0.12)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d4af37' }}>
+                      <Icon size={22} />
+                    </div>
+                    <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
       case 'dashboard':
         if (role === 'customer') return <Storefront />;
         return <Dashboard onViewAll={() => setPage('agendamentos')} />;
@@ -217,7 +235,7 @@ const AppContent: React.FC = () => {
           </div>
         </header>
 
-        <main className="main-content" style={{ flex: 1, overflowY: 'auto', paddingBottom: '160px', visibility: moreOpen ? 'hidden' : 'visible' }}>
+        <main className="main-content" style={{ flex: 1, overflowY: 'auto', paddingBottom: '88px' }}>
           <div style={{ padding: '1.25rem 1.25rem 40px' }}>
             <ErrorBoundary>
               <Suspense fallback={<Spinner />}>
@@ -259,10 +277,10 @@ const AppContent: React.FC = () => {
           const isAgenda = item.id === 'agendamentos';
 
           return (
-            <button key={item.id} onClick={() => isMais ? handleOpenMore() : setPage(item.id as Page)} style={{
+            <button key={item.id} onClick={() => isMais ? setPage('__more__') : setPage(item.id as Page)} style={{
               background: 'transparent', border: 'none', flex: 1, cursor: 'pointer',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px',
-              color: (isActive || (isMais && moreOpen)) ? '#d4af37' : '#555',
+              color: (isActive || (isMais && page === '__more__')) ? '#d4af37' : '#555',
               transition: 'all 0.2s', position: 'relative'
             }}>
               <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
@@ -284,41 +302,7 @@ const AppContent: React.FC = () => {
       </nav>
       )}
 
-        {/* More menu via Portal to escape stacking context bugs */}
-        {moreOpen && createPortal(
-          <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: '72px', background: 'rgba(0,0,0,0.97)', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            width: '100%', background: '#0d0d0d', borderRadius: '32px 32px 0 0',
-            padding: '1.5rem 1.25rem 2rem', borderTop: '1px solid rgba(212,175,55,0.2)',
-            animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-          }}>
-            <div style={{ width: '40px', height: '4px', background: '#333', borderRadius: '2px', margin: '0 auto 2.5rem' }} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-              {MORE_NAV.map(item => {
-                const Icon = item.icon;
-                return (
-                  <button key={item.id} onClick={() => { 
-                    if (Date.now() - moreOpenTime < 300) return;
-                    setPage(item.id as Page); 
-                    setMoreOpen(false); 
-                  }} style={{
-                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: '20px', padding: '1.5rem 0.5rem', color: 'white',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
-                    cursor: 'pointer', transition: 'all 0.2s'
-                  }}>
-                    <div style={{ background: 'rgba(212,175,55,0.1)', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d4af37' }}>
-                      <Icon size={22} />
-                    </div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          </div>,
-          document.body
-        )}
+
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
