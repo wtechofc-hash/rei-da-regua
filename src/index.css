@@ -56,6 +56,7 @@ select option {
   transition: padding 0.3s ease;
   position: relative;
   z-index: 1;
+  isolation: isolate;
 }
 
 @media (max-width: 1024px) {
@@ -76,7 +77,6 @@ select option {
 /* Cards */
 .premium-card {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
   padding: 1.5rem;
