@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { 
   Building2, 
   Users, 
@@ -765,9 +766,9 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Add Shop Modal */}
-      {isAddingShop && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '2rem 1rem', overflowY: 'auto' }}>
-          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', margin: 'auto' }}>
+      {isAddingShop && ReactDOM.createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '3rem 1rem 2rem', overflowY: 'auto' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', margin: '0 auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Novo Lojista</h2>
             <form onSubmit={handleAddShop} style={{ display: 'grid', gap: '1.5rem' }}>
               <div>
@@ -816,13 +817,14 @@ const AdminDashboard: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Edit Shop Modal */}
-      {isEditingShop && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '2rem 1rem', overflowY: 'auto' }}>
-          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', margin: 'auto' }}>
+      {isEditingShop && ReactDOM.createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '3rem 1rem 2rem', overflowY: 'auto' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', margin: '0 auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Editar Lojista</h2>
             <form onSubmit={handleEditShop} style={{ display: 'grid', gap: '1.5rem' }}>
               <div>
@@ -876,12 +878,13 @@ const AdminDashboard: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {/* Add Client Modal */}
-      {isAddingClient && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '2rem 1rem', overflowY: 'auto' }}>
-          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', margin: 'auto' }}>
+      {isAddingClient && ReactDOM.createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '3rem 1rem 2rem', overflowY: 'auto' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', margin: '0 auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Novo Cliente</h2>
             <form onSubmit={handleAddClient} style={{ display: 'grid', gap: '1.5rem' }}>
               <div>
@@ -944,13 +947,14 @@ const AdminDashboard: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Edit Client Modal */}
-      {isEditingClient && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '2rem 1rem', overflowY: 'auto' }}>
-          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', margin: 'auto' }}>
+      {isEditingClient && ReactDOM.createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '3rem 1rem 2rem', overflowY: 'auto' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem', margin: '0 auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '2rem' }}>Editar Cliente</h2>
             <form onSubmit={handleUpdateClient} style={{ display: 'grid', gap: '1.5rem' }}>
               <div>
@@ -1010,7 +1014,8 @@ const AdminDashboard: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Responsive overrides block */}

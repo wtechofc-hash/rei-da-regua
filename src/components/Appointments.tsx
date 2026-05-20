@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { 
   Calendar, 
   Plus, 
@@ -229,9 +230,9 @@ const Appointments: React.FC = () => {
       </div>
 
       {/* Modal Novo Agendamento */}
-      {isModalOpen && (
+      {isModalOpen && ReactDOM.createPortal(
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+          position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
           background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)', padding: '3rem 1rem 2rem', overflowY: 'auto'
         }}>
           <div className="premium-card" style={{
@@ -405,7 +406,8 @@ const Appointments: React.FC = () => {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

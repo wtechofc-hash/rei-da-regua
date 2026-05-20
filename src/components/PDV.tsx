@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import {
   Search, Trash2, Plus, Minus, ShoppingCart, CreditCard,
   Banknote, Smartphone, CheckCircle2, X, Package, Barcode, Hash
@@ -203,7 +204,7 @@ const PDV: React.FC = () => {
       </div>
 
       {/* Success Overlay */}
-      {showSuccess && (
+      {showSuccess && ReactDOM.createPortal(
         <div style={{
           position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)',
@@ -218,7 +219,8 @@ const PDV: React.FC = () => {
           </div>
           <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>Venda Finalizada!</h2>
           <p style={{ color: '#888', marginTop: '8px' }}>O estoque foi atualizado automaticamente.</p>
-        </div>
+        </div>,
+        document.body
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
