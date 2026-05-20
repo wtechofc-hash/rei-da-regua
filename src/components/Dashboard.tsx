@@ -175,7 +175,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                     const badge = statusBadge[appt.status] ?? statusBadge.pending;
                     return (
                       <tr key={appt.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                        <td style={{ padding: '1rem', fontWeight: '700', color: '#d4af37', whiteSpace: 'nowrap' }}>{appt.time}</td>
+                        <td style={{ padding: '1rem', fontWeight: '700', color: '#d4af37', whiteSpace: 'nowrap' }}>{appt.time.slice(0, 5)}</td>
                         <td style={{ padding: '1rem', fontWeight: '600' }}>{appt.clientName}</td>
                         <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{svc?.name ?? '—'}</td>
                         <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{prof?.name ?? '—'}</td>
@@ -205,7 +205,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                   }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{ fontWeight: '800', color: '#d4af37', fontSize: '0.95rem' }}>{appt.time}</span>
+                        <span style={{ fontWeight: '800', color: '#d4af37', fontSize: '0.95rem' }}>{appt.time.slice(0, 5)}</span>
                         <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{appt.clientName}</span>
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>

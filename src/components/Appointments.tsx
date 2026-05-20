@@ -168,7 +168,7 @@ const Appointments: React.FC = () => {
                 <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flex: 1, minWidth: '280px' }}>
                   {/* Time info */}
                   <div style={{ textAlign: 'center', minWidth: '70px', padding: '10px', background: 'rgba(212,175,55,0.05)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.1)' }}>
-                    <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)' }}>{appt.time}</p>
+                    <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)' }}>{appt.time.slice(0, 5)}</p>
                     <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{new Date(appt.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</p>
                   </div>
 
