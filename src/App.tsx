@@ -11,12 +11,13 @@ import {
   Menu, 
   User, 
   Plus,
-  LogOut
+  LogOut,
+  ShoppingCart
 } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import './index.css';
 
-export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais' | '__more__';
+export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais' | 'pdv' | '__more__';
 
 const Sidebar      = React.lazy(() => import('./components/Sidebar'));
 const Dashboard    = React.lazy(() => import('./components/Dashboard'));
@@ -30,6 +31,7 @@ const Storefront   = React.lazy(() => import('./components/Storefront'));
 const Login        = React.lazy(() => import('./components/Login'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 const Settings     = React.lazy(() => import('./components/Settings'));
+const PDV          = React.lazy(() => import('./components/PDV'));
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: string | null }> {
   constructor(props: any) {
@@ -72,6 +74,7 @@ const BOTTOM_NAV = [
 ];
 
 const MORE_NAV = [
+  { id: 'pdv',           label: 'Ponto de Venda', icon: ShoppingCart },
   { id: 'servicos',      label: 'Serviços',      icon: Scissors },
   { id: 'produtos',      label: 'Produtos',      icon: Package },
   { id: 'profissionais', label: 'Equipe',         icon: User },
@@ -171,6 +174,7 @@ const AppContent: React.FC = () => {
       case 'relatorios':    return <Reports />;
       case 'profissionais': return <Professionals />;
       case 'configuracoes': return <Settings />;
+      case 'pdv':           return <PDV />;
       default: 
         if (role === 'customer') return <Storefront />;
         return <Dashboard onViewAll={() => setPage('agendamentos')} />;

@@ -8,7 +8,8 @@ import {
   BarChart3, 
   Settings, 
   LogOut,
-  User
+  User,
+  ShoppingCart
 } from 'lucide-react';
 import { useApp, UserRole } from '../context/AppContext';
 
@@ -26,6 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
   const menuItems = [
     { id: 'dashboard',    label: role === 'customer' ? 'Vitrine' : 'Dashboard', icon: LayoutDashboard, roles: ['owner', 'professional', 'customer'] },
     { id: 'agendamentos', label: role === 'customer' ? 'Meus Agendamentos' : 'Agenda', icon: Calendar, roles: ['owner', 'professional', 'customer'], badge: notificationCount },
+    { id: 'pdv',           label: 'Ponto de Venda', icon: ShoppingCart,    roles: ['owner'] },
     { id: 'servicos',      label: 'Serviços',      icon: Scissors,        roles: ['owner', 'professional'] },
     { id: 'produtos',      label: 'Produtos',      icon: Package,         roles: ['owner', 'professional'] },
     { id: 'clientes',     label: 'Clientes',     icon: Users,           roles: ['owner'] },

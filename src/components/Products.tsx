@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
-import { Plus, Package, Trash2, Minus } from 'lucide-react';
+import { Plus, Package, Trash2, Minus, Barcode, Hash } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const Products: React.FC = () => {
   const { products = [], addProduct, updateProduct, deleteProduct } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', description: '', price: '', commission: '10', stock: '0'
+    name: '', description: '', price: '', commission: '10', stock: '0',
+    barcode: '', itemCode: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     addProduct({
       name: formData.name, description: formData.description,
-      price: Number(formData.price), commission: Number(formData.commission), stock: Number(formData.stock)
+      price: Number(formData.price), commission: Number(formData.commission), stock: Number(formData.stock),
+      barcode: formData.barcode || undefined, itemCode: formData.itemCode || undefined
     });
-    setFormData({ name: '', description: '', price: '', commission: '10', stock: '0' });
+    setFormData({ name: '', description: '', price: '', commission: '10', stock: '0', barcode: '', itemCode: '' });
     setIsAdding(false);
   };
 
@@ -45,6 +47,23 @@ const Products: React.FC = () => {
               <input required type="text" placeholder="Ex: Pomada Modeladora 150g" style={inputStyle}
                 value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
             </div>
+
+            {/* Código de Barras e Código do Item */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Barcode size={14} /> Código de Barras (opcional)
+              </label>
+              <input type="text" placeholder="Ex: 7891234567890" style={inputStyle}
+                value={formData.barcode} onChange={e => setFormData({ ...formData, barcode: e.target.value })} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Hash size={14} /> Código do Item
+              </label>
+              <input type="text" placeholder="Ex: PROD-001" style={inputStyle}
+                value={formData.itemCode} onChange={e => setFormData({ ...formData, itemCode: e.target.value })} />
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Preço de Venda (R$)</label>
               <input required type="number" step="0.01" style={inputStyle}
@@ -90,6 +109,20 @@ const Products: React.FC = () => {
             {product.description && (
               <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>{product.description}</p>
             )}
+
+            {/* Códigos */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+              {product.itemCode && (
+                <span style={{ fontSize: '0.68rem', color: '#d4af37', background: 'rgba(212,175,55,0.08)', padding: '3px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid rgba(212,175,55,0.15)' }}>
+                  <Hash size={10} /> {product.itemCode}
+                </span>
+              )}
+              {product.barcode && (
+                <span style={{ fontSize: '0.68rem', color: '#888', background: 'rgba(255,255,255,0.03)', padding: '3px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <Barcode size={10} /> {product.barcode}
+                </span>
+              )}
+            </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <span style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--accent-gold)' }}>

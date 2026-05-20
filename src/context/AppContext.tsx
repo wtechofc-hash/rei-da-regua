@@ -31,6 +31,8 @@ export interface Product {
   commission: number;
   image?: string;
   stock: number;
+  barcode?: string;
+  itemCode?: string;
 }
 
 export interface Appointment {
@@ -180,7 +182,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Fetch Products
         const { data: productsData } = await query(supabase.from('products').select('*'));
         if (productsData) setProducts(productsData.map((p: any) => ({
-          id: p.id, name: p.name, description: p.category || '', price: p.price, stock: p.stock, image: p.image_url, commission: 0
+          id: p.id, name: p.name, description: p.category || '', price: p.price, stock: p.stock, image: p.image_url, commission: 0,
+          barcode: p.barcode || '', itemCode: p.item_code || ''
         })));
 
         // Fetch Clients
@@ -241,12 +244,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addProduct = async (p: Omit<Product, 'id'>) => {
     const { data } = await supabase.from('products').insert([{ 
-      name: p.name, price: p.price, stock: p.stock, category: p.description, image_url: p.image, shop_id: shopId 
+      name: p.name, price: p.price, stock: p.stock, category: p.description, image_url: p.image, shop_id: shopId,
+      barcode: p.barcode || null, item_code: p.itemCode || null
     }]).select();
     if (data) setProducts(prev => [...prev, { ...p, id: data[0].id }]);
   };
   const updateProduct = async (id: string, p: Partial<Product>) => {
-    await supabase.from('products').update({ name: p.name, price: p.price, stock: p.stock }).eq('id', id);
+    const updatePayload: any = {};
+    if (p.name !== undefined) updatePayload.name = p.name;
+    if (p.price !== undefined) updatePayload.price = p.price;
+    if (p.stock !== undefined) updatePayload.stock = p.stock;
+    if (p.barcode !== undefined) updatePayload.barcode = p.barcode;
+    if (p.itemCode !== undefined) updatePayload.item_code = p.itemCode;
+    await supabase.from('products').update(updatePayload).eq('id', id);
     setProducts(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
   };
   const deleteProduct = async (id: string) => {
