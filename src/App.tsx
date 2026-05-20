@@ -90,6 +90,7 @@ const AppContent: React.FC = () => {
     if (mainRef.current) {
       mainRef.current.scrollTop = 0;
     }
+    window.scrollTo(0, 0);
   }, [page]);
 
   
@@ -131,7 +132,14 @@ const AppContent: React.FC = () => {
     switch (page) {
       case '__more__':
         return (
-          <div style={{ padding: '2rem 1.25rem', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+          <div style={{
+            padding: '2rem 1.25rem',
+            minHeight: 'calc(100vh - 72px)',
+            background: 'var(--bg-primary)',
+            position: 'relative',
+            zIndex: 50,
+            isolation: 'isolate'
+          }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1.5rem' }}>Menu</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
               {MORE_NAV.map(item => {
