@@ -82,7 +82,15 @@ const MORE_NAV = [
 const AppContent: React.FC = () => {
   const { role, userId, shopData, setAuth, logout, profiles = [], appointments = [], clearProNotifications, config } = useApp();
   const [page, setPage] = useState<Page>('dashboard');
+  const mainRef = React.useRef<HTMLDivElement>(null);
   const handleOpenMore = () => setPage('__more__');
+
+  // Reset scroll to top on every page change
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+  }, [page]);
 
   
   const currentProfile = profiles.find(p => p.id === userId) ?? profiles.find(p => p.role === role) ?? profiles[0];
@@ -123,7 +131,7 @@ const AppContent: React.FC = () => {
     switch (page) {
       case '__more__':
         return (
-          <div style={{ padding: '2rem 1.25rem', minHeight: '100%', background: 'var(--bg-primary)' }}>
+          <div style={{ padding: '2rem 1.25rem', minHeight: '100vh', background: 'var(--bg-primary)' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1.5rem' }}>Menu</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
               {MORE_NAV.map(item => {
@@ -235,7 +243,7 @@ const AppContent: React.FC = () => {
           </div>
         </header>
 
-        <main className="main-content" style={{ flex: 1, overflowY: 'auto', paddingBottom: '88px' }}>
+        <main ref={mainRef} className="main-content" style={{ flex: 1, overflowY: 'auto', paddingBottom: '88px' }}>
           <div style={{ padding: '1.25rem 1.25rem 40px' }}>
             <ErrorBoundary>
               <Suspense key={page} fallback={<Spinner />}>
