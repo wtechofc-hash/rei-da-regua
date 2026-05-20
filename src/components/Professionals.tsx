@@ -1,20 +1,47 @@
 import React, { useState } from 'react';
-import { Plus, Users, Trash2, Mail, Percent, Shield } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { Plus, Users, Trash2, Mail, Percent, Shield, Edit2 } from 'lucide-react';
+import { useApp, Profile } from '../context/AppContext';
 
 const Professionals: React.FC = () => {
-  const { profiles = [], addProfile, deleteProfile } = useApp();
+  const { profiles = [], addProfile, updateProfile, deleteProfile } = useApp();
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', email: '', commission: '30' });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addProfile({
-      name: formData.name, email: formData.email,
-      commission: Number(formData.commission), role: 'professional',
+    const data = {
+      name: formData.name, 
+      email: formData.email,
+      commission: Number(formData.commission), 
+      role: 'professional' as const,
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(formData.name)}`
-    });
+    };
+
+    if (editingId) {
+      updateProfile(editingId, data);
+    } else {
+      addProfile(data);
+    }
+
     setFormData({ name: '', email: '', commission: '30' });
+    setEditingId(null);
+    setIsAdding(false);
+  };
+
+  const handleEditClick = (pro: Profile) => {
+    setEditingId(pro.id);
+    setFormData({
+      name: pro.name,
+      email: pro.email || '',
+      commission: (pro.commission ?? 30).toString()
+    });
+    setIsAdding(true);
+  };
+
+  const handleCancel = () => {
+    setFormData({ name: '', email: '', commission: '30' });
+    setEditingId(null);
     setIsAdding(false);
   };
 
@@ -31,14 +58,16 @@ const Professionals: React.FC = () => {
           <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0 }}>Equipe</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '4px' }}>{staff.length} profissional(is) ativo(s)</p>
         </div>
-        <button className="gold-button" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setIsAdding(true)}>
+        <button className="gold-button" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => { handleCancel(); setIsAdding(true); }}>
           <Plus size={18} /> Novo Profissional
         </button>
       </header>
 
       {isAdding && (
         <div className="premium-card" style={{ marginBottom: '2rem', border: '1px solid var(--accent-gold)', animation: 'slideUp 0.3s ease-out' }}>
-          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>Cadastrar Profissional</h3>
+          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>
+            {editingId ? 'Editar Profissional' : 'Cadastrar Profissional'}
+          </h3>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Nome Completo</label>
@@ -53,8 +82,10 @@ const Professionals: React.FC = () => {
               <input required type="number" style={inputStyle} value={formData.commission} onChange={e => setFormData({ ...formData, commission: e.target.value })} />
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem' }}>
-              <button type="submit" className="gold-button" style={{ flex: 1 }}>Salvar</button>
-              <button type="button" onClick={() => setIsAdding(false)} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
+              <button type="submit" className="gold-button" style={{ flex: 1 }}>
+                {editingId ? 'Salvar Alterações' : 'Salvar'}
+              </button>
+              <button type="button" onClick={handleCancel} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
             </div>
           </form>
         </div>
@@ -79,7 +110,7 @@ const Professionals: React.FC = () => {
                   <p style={{ color: 'var(--accent-gold)', fontSize: '0.75rem', margin: '3px 0 0', fontWeight: '600' }}>Barbeiro Especialista</p>
                 </div>
               </div>
-              <button onClick={() => deleteProfile(pro.id)} style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', padding: '6px' }}>
+              <button onClick={() => deleteProfile(pro.id)} style={{ background: 'transparent', border: 'none', color: '#ff1744', cursor: 'pointer', padding: '6px' }}>
                 <Trash2 size={16} />
               </button>
             </div>
@@ -101,7 +132,7 @@ const Professionals: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#00c853' }}>
                 <Shield size={13} /> Acesso Ativo
               </div>
-              <button style={{ background: 'transparent', border: 'none', color: 'var(--accent-gold)', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}>
+              <button onClick={() => handleEditClick(pro)} style={{ background: 'transparent', border: 'none', color: 'var(--accent-gold)', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}>
                 Editar
               </button>
             </div>
@@ -120,3 +151,4 @@ const Professionals: React.FC = () => {
 };
 
 export default Professionals;
+

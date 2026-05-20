@@ -1,16 +1,47 @@
 import React, { useState } from 'react';
-import { Plus, Scissors, Trash2, Percent } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { Plus, Scissors, Trash2, Percent, Edit2 } from 'lucide-react';
+import { useApp, Service } from '../context/AppContext';
 
 const Services: React.FC = () => {
-  const { services = [], addService, deleteService } = useApp();
+  const { services = [], addService, updateService, deleteService } = useApp();
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '', price: '', commission: '' });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addService({ name: formData.name, description: formData.description, price: Number(formData.price), commission: Number(formData.commission) });
+    const data = { 
+      name: formData.name, 
+      description: formData.description, 
+      price: Number(formData.price), 
+      commission: Number(formData.commission) 
+    };
+
+    if (editingId) {
+      updateService(editingId, data);
+    } else {
+      addService(data);
+    }
+
     setFormData({ name: '', description: '', price: '', commission: '' });
+    setEditingId(null);
+    setIsAdding(false);
+  };
+
+  const handleEditClick = (service: Service) => {
+    setEditingId(service.id);
+    setFormData({
+      name: service.name,
+      description: service.description || '',
+      price: service.price.toString(),
+      commission: service.commission.toString()
+    });
+    setIsAdding(true);
+  };
+
+  const handleCancel = () => {
+    setFormData({ name: '', description: '', price: '', commission: '' });
+    setEditingId(null);
     setIsAdding(false);
   };
 
@@ -26,14 +57,16 @@ const Services: React.FC = () => {
           <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0 }}>Serviços</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '4px' }}>Catálogo de serviços e comissões</p>
         </div>
-        <button className="gold-button" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setIsAdding(true)}>
+        <button className="gold-button" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => { handleCancel(); setIsAdding(true); }}>
           <Plus size={18} /> Novo Serviço
         </button>
       </header>
 
       {isAdding && (
         <div className="premium-card" style={{ marginBottom: '2rem', border: '1px solid var(--accent-gold)', animation: 'slideUp 0.3s ease-out' }}>
-          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>Adicionar Serviço</h3>
+          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>
+            {editingId ? 'Editar Serviço' : 'Adicionar Serviço'}
+          </h3>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Nome do Serviço</label>
@@ -56,8 +89,10 @@ const Services: React.FC = () => {
                 value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem' }}>
-              <button type="submit" className="gold-button" style={{ flex: 1 }}>Salvar Serviço</button>
-              <button type="button" onClick={() => setIsAdding(false)} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
+              <button type="submit" className="gold-button" style={{ flex: 1 }}>
+                {editingId ? 'Salvar Alterações' : 'Salvar Serviço'}
+              </button>
+              <button type="button" onClick={handleCancel} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
             </div>
           </form>
         </div>
@@ -83,9 +118,14 @@ const Services: React.FC = () => {
                 </span>
               </div>
             </div>
-            <button onClick={() => deleteService(service.id)} style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', padding: '8px', flexShrink: 0 }}>
-              <Trash2 size={16} />
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0 }}>
+              <button onClick={() => handleEditClick(service)} style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer', padding: '6px', transition: 'color 0.2s' }} title="Editar">
+                <Edit2 size={15} />
+              </button>
+              <button onClick={() => deleteService(service.id)} style={{ background: 'transparent', border: 'none', color: '#ff1744', cursor: 'pointer', padding: '6px', transition: 'color 0.2s' }} title="Remover">
+                <Trash2 size={15} />
+              </button>
+            </div>
           </div>
         ))}
 
@@ -104,3 +144,4 @@ const Services: React.FC = () => {
 };
 
 export default Services;
+

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Plus, Package, Trash2, Minus, Barcode, Hash } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { Plus, Package, Trash2, Minus, Barcode, Hash, Edit2 } from 'lucide-react';
+import { useApp, Product } from '../context/AppContext';
 
 const Products: React.FC = () => {
   const { products = [], addProduct, updateProduct, deleteProduct } = useApp();
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '', description: '', price: '', commission: '10', stock: '0',
     barcode: '', itemCode: ''
@@ -12,12 +13,44 @@ const Products: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addProduct({
-      name: formData.name, description: formData.description,
-      price: Number(formData.price), commission: Number(formData.commission), stock: Number(formData.stock),
-      barcode: formData.barcode || undefined, itemCode: formData.itemCode || undefined
-    });
+    const data = {
+      name: formData.name, 
+      description: formData.description,
+      price: Number(formData.price), 
+      commission: Number(formData.commission), 
+      stock: Number(formData.stock),
+      barcode: formData.barcode || undefined, 
+      itemCode: formData.itemCode || undefined
+    };
+
+    if (editingId) {
+      updateProduct(editingId, data);
+    } else {
+      addProduct(data);
+    }
+
     setFormData({ name: '', description: '', price: '', commission: '10', stock: '0', barcode: '', itemCode: '' });
+    setEditingId(null);
+    setIsAdding(false);
+  };
+
+  const handleEditClick = (product: Product) => {
+    setEditingId(product.id);
+    setFormData({
+      name: product.name,
+      description: product.description || '',
+      price: product.price.toString(),
+      commission: product.commission.toString(),
+      stock: product.stock.toString(),
+      barcode: product.barcode || '',
+      itemCode: product.itemCode || ''
+    });
+    setIsAdding(true);
+  };
+
+  const handleCancel = () => {
+    setFormData({ name: '', description: '', price: '', commission: '10', stock: '0', barcode: '', itemCode: '' });
+    setEditingId(null);
     setIsAdding(false);
   };
 
@@ -33,14 +66,16 @@ const Products: React.FC = () => {
           <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0 }}>Produtos</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '4px' }}>Gestão de estoque e vitrine</p>
         </div>
-        <button className="gold-button" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setIsAdding(true)}>
+        <button className="gold-button" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => { handleCancel(); setIsAdding(true); }}>
           <Plus size={18} /> Novo Produto
         </button>
       </header>
 
       {isAdding && (
         <div className="premium-card" style={{ marginBottom: '2rem', border: '1px solid var(--accent-gold)', animation: 'slideUp 0.3s ease-out' }}>
-          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>Cadastrar Novo Produto</h3>
+          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>
+            {editingId ? 'Editar Produto' : 'Cadastrar Novo Produto'}
+          </h3>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Nome do Produto</label>
@@ -85,8 +120,10 @@ const Products: React.FC = () => {
                 value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem' }}>
-              <button type="submit" className="gold-button" style={{ flex: 1 }}>Salvar Produto</button>
-              <button type="button" onClick={() => setIsAdding(false)} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
+              <button type="submit" className="gold-button" style={{ flex: 1 }}>
+                {editingId ? 'Salvar Alterações' : 'Salvar Produto'}
+              </button>
+              <button type="button" onClick={handleCancel} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
             </div>
           </form>
         </div>
@@ -155,8 +192,11 @@ const Products: React.FC = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={() => deleteProduct(product.id)} style={{ background: 'transparent', border: 'none', color: '#444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button onClick={() => handleEditClick(product)} style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem' }}>
+                <Edit2 size={14} /> Editar
+              </button>
+              <button onClick={() => deleteProduct(product.id)} style={{ background: 'transparent', border: 'none', color: '#ff1744', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem' }}>
                 <Trash2 size={14} /> Remover
               </button>
             </div>
@@ -178,3 +218,4 @@ const Products: React.FC = () => {
 };
 
 export default Products;
+

@@ -231,12 +231,12 @@ const Appointments: React.FC = () => {
       {/* Modal Novo Agendamento */}
       {isModalOpen && (
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', padding: '1rem'
+          position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', padding: '2rem 1rem', overflowY: 'auto'
         }}>
           <div className="premium-card" style={{
             width: '100%', maxWidth: '500px', padding: '2rem', border: '1px solid rgba(255,255,255,0.1)',
-            maxHeight: '90vh', overflowY: 'auto'
+            margin: 'auto', position: 'relative'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>Novo Agendamento</h2>

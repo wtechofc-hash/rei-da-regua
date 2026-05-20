@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, Search, Phone, Calendar, Trash2 } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { Plus, Search, Phone, Calendar, Trash2, Edit2 } from 'lucide-react';
+import { useApp, Client } from '../context/AppContext';
 
 const Clients: React.FC = () => {
-  const { clients = [], addClient } = useApp();
+  const { clients = [], addClient, updateClient, deleteClient } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
 
   const filtered = clients.filter(c =>
@@ -14,8 +15,32 @@ const Clients: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addClient({ name: formData.name, phone: formData.phone, email: formData.email, totalSpent: 0, appointmentsCount: 0 });
+    const data = { name: formData.name, phone: formData.phone, email: formData.email };
+    
+    if (editingId) {
+      updateClient(editingId, data);
+    } else {
+      addClient({ ...data, totalSpent: 0, appointmentsCount: 0 });
+    }
+
     setFormData({ name: '', phone: '', email: '' });
+    setEditingId(null);
+    setIsAdding(false);
+  };
+
+  const handleEditClick = (client: Client) => {
+    setEditingId(client.id);
+    setFormData({
+      name: client.name,
+      phone: client.phone || '',
+      email: client.email || ''
+    });
+    setIsAdding(true);
+  };
+
+  const handleCancel = () => {
+    setFormData({ name: '', phone: '', email: '' });
+    setEditingId(null);
     setIsAdding(false);
   };
 
@@ -31,7 +56,7 @@ const Clients: React.FC = () => {
           <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0 }}>Clientes</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '4px' }}>{clients.length} clientes cadastrados</p>
         </div>
-        <button className="gold-button" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setIsAdding(true)}>
+        <button className="gold-button" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => { handleCancel(); setIsAdding(true); }}>
           <Plus size={18} /> Novo Cliente
         </button>
       </header>
@@ -51,7 +76,9 @@ const Clients: React.FC = () => {
 
       {isAdding && (
         <div className="premium-card" style={{ marginBottom: '2rem', border: '1px solid var(--accent-gold)', animation: 'slideUp 0.3s ease-out' }}>
-          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>Cadastrar Cliente</h3>
+          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>
+            {editingId ? 'Editar Cliente' : 'Cadastrar Cliente'}
+          </h3>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Nome Completo</label>
@@ -66,8 +93,10 @@ const Clients: React.FC = () => {
               <input type="email" style={inputStyle} value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem' }}>
-              <button type="submit" className="gold-button" style={{ flex: 1 }}>Salvar Cliente</button>
-              <button type="button" onClick={() => setIsAdding(false)} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
+              <button type="submit" className="gold-button" style={{ flex: 1 }}>
+                {editingId ? 'Salvar Alterações' : 'Salvar Cliente'}
+              </button>
+              <button type="button" onClick={handleCancel} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
             </div>
           </form>
         </div>
@@ -106,14 +135,19 @@ const Clients: React.FC = () => {
               </div>
             </div>
 
-            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                <Calendar size={13} />
+            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', color: 'var(--text-secondary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <Calendar size={13} style={{ flexShrink: 0 }} />
                 {client.lastVisit ? new Date(client.lastVisit + 'T12:00:00').toLocaleDateString('pt-BR') : 'Sem visitas'}
               </span>
-              <button style={{ background: 'rgba(212,175,55,0.1)', border: 'none', color: 'var(--accent-gold)', fontWeight: '700', cursor: 'pointer', fontSize: '0.75rem', padding: '4px 12px', borderRadius: '8px' }}>
-                Histórico
-              </button>
+              <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                <button onClick={() => handleEditClick(client)} style={{ background: 'rgba(255,255,255,0.03)', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.75rem', padding: '6px', borderRadius: '8px' }} title="Editar">
+                  <Edit2 size={13} />
+                </button>
+                <button onClick={() => deleteClient(client.id)} style={{ background: 'rgba(255,23,68,0.05)', border: 'none', color: '#ff1744', cursor: 'pointer', fontSize: '0.75rem', padding: '6px', borderRadius: '8px' }} title="Remover">
+                  <Trash2 size={13} />
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -130,3 +164,4 @@ const Clients: React.FC = () => {
 };
 
 export default Clients;
+
