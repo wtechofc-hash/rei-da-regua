@@ -171,7 +171,7 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto' }}>
+    <div className="animate-fade-in" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', background: 'var(--bg-primary)', minHeight: '100vh', position: 'relative', zIndex: 50 }}>
       <h1 style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <Banknote color="var(--accent-gold)" /> Assinatura e Configurações
       </h1>
