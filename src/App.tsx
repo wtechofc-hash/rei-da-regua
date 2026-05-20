@@ -76,7 +76,7 @@ const MORE_NAV = [
   { id: 'produtos',      label: 'Produtos',      icon: Package },
   { id: 'profissionais', label: 'Equipe',         icon: User },
   { id: 'relatorios',    label: 'Relatórios',     icon: BarChart3 },
-  { id: 'configuracoes', label: 'Configurações',  icon: Settings },
+  { id: 'configuracoes', label: 'Configurações',  icon: SettingsIcon },
 ];
 
 const AppContent: React.FC = () => {
