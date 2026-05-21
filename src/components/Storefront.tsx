@@ -222,7 +222,7 @@ const Storefront: React.FC = () => {
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '4rem' }} className="storefront-main-grid">
           
-          <div className="storefront-content">
+          <div className="storefront-content" style={{ minWidth: 0 }}>
             {/* Services Carousel */}
             <section style={{ marginBottom: '5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
