@@ -561,17 +561,19 @@ const Storefront: React.FC = () => {
         
         .netflix-row::-webkit-scrollbar { display: none; }
         
-        .netflix-card:hover {
-          transform: scale(1.05);
-          z-index: 10;
+        @media (hover: hover) and (pointer: fine) {
+          .netflix-card:hover {
+            transform: scale(1.05);
+            z-index: 10;
+          }
+          
+          .netflix-card:hover > div {
+            border-color: var(--accent-gold) !important;
+            box-shadow: 0 0 30px rgba(212,175,55,0.2);
+          }
+          
+          .premium-card:hover { border-color: rgba(212,175,55,0.3) !important; transform: translateY(-2px); }
         }
-        
-        .netflix-card:hover > div {
-          border-color: var(--accent-gold) !important;
-          box-shadow: 0 0 30px rgba(212,175,55,0.2);
-        }
-
-        .premium-card:hover { border-color: rgba(212,175,55,0.3) !important; transform: translateY(-2px); }
       `}} />
     </div>
   );
