@@ -20,6 +20,7 @@ export interface Service {
   description: string;
   price: number;
   commission: number;
+  duration?: number;
 }
 
 export interface Product {
@@ -43,6 +44,7 @@ export interface Appointment {
   serviceId: string;
   date: string;
   time: string;
+  endTime?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   priceAtTime: number;
   commissionAtTime: number;
@@ -88,6 +90,7 @@ interface AppContextType {
   updateProfile: (id: string, profile: Partial<Profile>) => void;
   deleteProfile: (id: string) => void;
   updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
+  updateAppointmentEndTime: (id: string, newEndTime: string) => void;
   clearProNotifications: (proId: string) => void;
   config: {
     businessName: string;
@@ -176,7 +179,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Fetch Services
         const { data: servicesData } = await query(supabase.from('services').select('*'));
         if (servicesData) setServices(servicesData.map((s: any) => ({
-          id: s.id, name: s.name, description: s.category || '', price: s.price, commission: 0 
+          id: s.id, name: s.name, description: s.category || '', price: s.price, commission: 0, duration: s.duration || 30
         })));
 
         // Fetch Products
@@ -203,7 +206,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const { data: apptsData } = await query(supabase.from('appointments').select('*, clients(name)'));
         if (apptsData) setAppointments(apptsData.map((a: any) => ({
           id: a.id, clientId: a.client_id, clientName: (a.clients as any)?.name || 'Cliente', 
-          professionalId: a.professional_id, serviceId: a.service_id, date: a.date, time: a.time, 
+          professionalId: a.professional_id, serviceId: a.service_id, date: a.date, time: a.time, endTime: a.end_time || a.time,
           status: a.status as any, priceAtTime: a.total_price || 0, commissionAtTime: 0
         })));
 
@@ -229,12 +232,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addService = async (s: Omit<Service, 'id'>) => {
     const { data, error } = await supabase.from('services').insert([{ 
-      name: s.name, price: s.price, duration: 30, category: s.description, shop_id: shopId 
+      name: s.name, price: s.price, duration: s.duration || 30, category: s.description, shop_id: shopId 
     }]).select();
-    if (data) setServices(prev => [...prev, { ...s, id: data[0].id }]);
+    if (data) setServices(prev => [...prev, { ...s, id: data[0].id, duration: s.duration || 30 }]);
   };
   const updateService = async (id: string, s: Partial<Service>) => {
-    await supabase.from('services').update({ name: s.name, price: s.price }).eq('id', id);
+    const updatePayload: any = { name: s.name, price: s.price };
+    if (s.duration !== undefined) updatePayload.duration = s.duration;
+    await supabase.from('services').update(updatePayload).eq('id', id);
     setServices(prev => prev.map(i => i.id === id ? {...i, ...s} : i));
   };
   const deleteService = async (id: string) => {
@@ -315,6 +320,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       service_id: a.serviceId, 
       date: a.date, 
       time: a.time, 
+      end_time: a.endTime || a.time,
       status: a.status, 
       total_price: a.priceAtTime, 
       shop_id: shopId 
@@ -365,6 +371,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  const updateAppointmentEndTime = async (id: string, newEndTime: string) => {
+    await supabase.from('appointments').update({ end_time: newEndTime, status: 'completed' }).eq('id', id);
+    setAppointments(prev => prev.map(a => {
+      if (a.id === id) {
+        if (a.status !== 'completed') {
+          const client = clients.find(c => c.id === a.clientId);
+          if (client) {
+            supabase.from('clients').update({ 
+              total_spent: (client.totalSpent || 0) + (a.priceAtTime || 0),
+              last_visit: a.date
+            }).eq('id', client.id).then();
+          }
+        }
+        return { ...a, endTime: newEndTime, status: 'completed', isNewForPro: false };
+      }
+      return a;
+    }));
+  };
+
   const updateConfig = async (newC: Partial<AppContextType['config']>) => {
     const { data } = await supabase.from('business_config').select('id').single();
     if (data?.id) {
@@ -380,10 +405,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       role, userId, shopId, shopData, setAuth, logout, services, products, appointments, profiles, clients,
       addService, updateService, deleteService,
       addProduct, updateProduct, deleteProduct,
-      addAppointment, updateAppointment, deleteAppointment,
+      addAppointment, updateAppointment, deleteAppointment, updateAppointmentStatus, updateAppointmentEndTime, clearProNotifications,
       addClient, updateClient, deleteClient,
       addProfile, updateProfile, deleteProfile,
-      updateAppointmentStatus, clearProNotifications, config, updateConfig
+      config, updateConfig
     }}>
       {children}
     </AppContext.Provider>

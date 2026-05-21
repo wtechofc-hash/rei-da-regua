@@ -6,7 +6,7 @@ const Services: React.FC = () => {
   const { services = [], addService, updateService, deleteService } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', commission: '' });
+  const [formData, setFormData] = useState({ name: '', description: '', price: '', commission: '', duration: '' });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,7 +14,8 @@ const Services: React.FC = () => {
       name: formData.name, 
       description: formData.description, 
       price: Number(formData.price), 
-      commission: Number(formData.commission) 
+      commission: Number(formData.commission),
+      duration: Number(formData.duration) || 30
     };
 
     if (editingId) {
@@ -23,7 +24,7 @@ const Services: React.FC = () => {
       addService(data);
     }
 
-    setFormData({ name: '', description: '', price: '', commission: '' });
+    setFormData({ name: '', description: '', price: '', commission: '', duration: '' });
     setEditingId(null);
     setIsAdding(false);
   };
@@ -34,13 +35,14 @@ const Services: React.FC = () => {
       name: service.name,
       description: service.description || '',
       price: service.price.toString(),
-      commission: service.commission.toString()
+      commission: service.commission.toString(),
+      duration: service.duration ? service.duration.toString() : '30'
     });
     setIsAdding(true);
   };
 
   const handleCancel = () => {
-    setFormData({ name: '', description: '', price: '', commission: '' });
+    setFormData({ name: '', description: '', price: '', commission: '', duration: '' });
     setEditingId(null);
     setIsAdding(false);
   };
@@ -83,6 +85,11 @@ const Services: React.FC = () => {
               <input required type="number" style={inputStyle}
                 value={formData.commission} onChange={e => setFormData({ ...formData, commission: e.target.value })} />
             </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Duração Média (min)</label>
+              <input required type="number" placeholder="Ex: 30" style={inputStyle}
+                value={formData.duration} onChange={e => setFormData({ ...formData, duration: e.target.value })} />
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Descrição</label>
               <input type="text" style={inputStyle}
@@ -116,6 +123,7 @@ const Services: React.FC = () => {
                 <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                   <Percent size={11} /> {service.commission}% comissão
                 </span>
+                <span style={{ fontSize: '0.75rem', color: '#888' }}>• {service.duration || 30} min</span>
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0 }}>

@@ -15,17 +15,45 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
+import { generateAvailableSlots } from '../utils/timeSlots';
 
 const Storefront: React.FC = () => {
   const { services = [], products = [], addAppointment, profiles = [], config, logout, shopData, shopId, userId, clients = [] } = useApp();
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
-  const [bookingTime, setBookingTime] = useState('09:00');
+  const [bookingTime, setBookingTime] = useState('');
+  const [selectedProfessional, setSelectedProfessional] = useState<string>('');
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [clientName, setClientName] = useState('');
   const [isBooked, setIsBooked] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'offline' | 'online'>('offline');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [onlineSuccess, setOnlineSuccess] = useState(false);
+
+  const availableProfessionals = profiles.filter(p => p.role === 'professional' || p.role === 'owner');
+
+  useEffect(() => {
+    if (availableProfessionals.length === 1 && !selectedProfessional) {
+      setSelectedProfessional(availableProfessionals[0].id);
+    }
+  }, [availableProfessionals, selectedProfessional]);
+
+  // Update available slots when relevant state changes
+  useEffect(() => {
+    if (selectedService && selectedProfessional && bookingDate) {
+      const service = services.find(s => s.id === selectedService);
+      const duration = service?.duration || 30;
+      const slots = generateAvailableSlots(bookingDate, selectedProfessional, duration, appointments);
+      setAvailableSlots(slots);
+      
+      // Auto-select first slot or reset if current is invalid
+      if (slots.length > 0 && !slots.includes(bookingTime)) {
+        setBookingTime(slots[0]);
+      } else if (slots.length === 0) {
+        setBookingTime('');
+      }
+    }
+  }, [selectedService, selectedProfessional, bookingDate, appointments, services]);
 
   useEffect(() => {
     if (userId && clients.length > 0) {
@@ -78,7 +106,7 @@ const Storefront: React.FC = () => {
         const appt = await addAppointment({
           clientId: userId || 'online-customer',
           clientName,
-          professionalId: profiles.find(p => p.role === 'professional')?.id || '2',
+          professionalId: selectedProfessional,
           serviceId: selectedService,
           date: bookingDate,
           time: bookingTime,
@@ -121,7 +149,7 @@ const Storefront: React.FC = () => {
       addAppointment({
         clientId: userId || 'online-customer',
         clientName,
-        professionalId: profiles.find(p => p.role === 'professional')?.id || '2',
+        professionalId: selectedProfessional,
         serviceId: selectedService,
         date: bookingDate,
         time: bookingTime,
@@ -228,8 +256,8 @@ const Storefront: React.FC = () => {
                       }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '4px', color: 'white' }}>{service.name}</h3>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)' }}>R$ {service.price}</span>
-                          <span style={{ fontSize: '0.75rem', color: '#888' }}>• 45m</span>
+                          <span style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)' }}>R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                          <span style={{ fontSize: '0.75rem', color: '#888' }}>• {service.duration || 30}m</span>
                         </div>
                       </div>
                     </div>
@@ -326,28 +354,70 @@ const Storefront: React.FC = () => {
                       />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Profissional</label>
+                      <select 
+                        required
+                        disabled={isCheckingOut}
+                        value={selectedProfessional}
+                        onChange={e => setSelectedProfessional(e.target.value)}
+                        style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }}
+                      >
+                        <option value="">Selecione o profissional...</option>
+                        {availableProfessionals.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
                       <div>
                         <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Data</label>
                         <input 
                           required 
                           disabled={isCheckingOut}
                           type="date" 
+                          min={new Date().toISOString().split('T')[0]}
                           style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }} 
                           value={bookingDate} 
                           onChange={e => setBookingDate(e.target.value)} 
                         />
                       </div>
                       <div>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Hora</label>
-                        <input 
-                          required 
-                          disabled={isCheckingOut}
-                          type="time" 
-                          style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }} 
-                          value={bookingTime} 
-                          onChange={e => setBookingTime(e.target.value)} 
-                        />
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Horário</label>
+                        {!selectedProfessional ? (
+                          <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center', color: '#888', fontSize: '0.85rem' }}>
+                            Selecione um profissional para ver os horários.
+                          </div>
+                        ) : availableSlots.length === 0 ? (
+                          <div style={{ padding: '1rem', background: 'rgba(255,50,50,0.1)', borderRadius: '12px', border: '1px solid rgba(255,50,50,0.2)', textAlign: 'center', color: '#ff5252', fontSize: '0.85rem', fontWeight: '700' }}>
+                            Nenhum horário livre para este dia.
+                          </div>
+                        ) : (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                            {availableSlots.map(slot => (
+                              <button
+                                key={slot}
+                                type="button"
+                                disabled={isCheckingOut}
+                                onClick={() => setBookingTime(slot)}
+                                style={{
+                                  padding: '0.75rem 0.5rem',
+                                  borderRadius: '10px',
+                                  background: bookingTime === slot ? 'var(--accent-gold)' : '#111',
+                                  border: bookingTime === slot ? '1px solid var(--accent-gold)' : '1px solid var(--glass-border)',
+                                  color: bookingTime === slot ? '#000' : 'white',
+                                  fontWeight: '800',
+                                  fontSize: '0.9rem',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s'
+                                }}
+                              >
+                                {slot}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 

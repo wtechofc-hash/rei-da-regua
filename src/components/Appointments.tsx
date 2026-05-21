@@ -14,6 +14,7 @@ import {
   Check
 } from 'lucide-react';
 import { useApp, Appointment } from '../context/AppContext';
+import { generateAvailableSlots } from '../utils/timeSlots';
 
 const Appointments: React.FC = () => {
   const { 
@@ -25,6 +26,7 @@ const Appointments: React.FC = () => {
     profiles = [],
     addAppointment,
     updateAppointmentStatus,
+    updateAppointmentEndTime,
     deleteAppointment
   } = useApp();
 
@@ -38,9 +40,25 @@ const Appointments: React.FC = () => {
     serviceId: '',
     professionalId: '',
     date: new Date().toISOString().split('T')[0],
-    time: '09:00',
+    time: '',
     price: 0
   });
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+
+  React.useEffect(() => {
+    if (newApptData.serviceId && newApptData.professionalId && newApptData.date) {
+      const service = services.find(s => s.id === newApptData.serviceId);
+      const duration = service?.duration || 30;
+      const slots = generateAvailableSlots(newApptData.date, newApptData.professionalId, duration, appointments);
+      setAvailableSlots(slots);
+      
+      if (slots.length > 0 && !slots.includes(newApptData.time)) {
+        setNewApptData(prev => ({ ...prev, time: slots[0] }));
+      } else if (slots.length === 0) {
+        setNewApptData(prev => ({ ...prev, time: '' }));
+      }
+    }
+  }, [newApptData.serviceId, newApptData.professionalId, newApptData.date, appointments, services]);
 
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +88,7 @@ const Appointments: React.FC = () => {
           serviceId: '',
           professionalId: '',
           date: new Date().toISOString().split('T')[0],
-          time: '09:00',
+          time: '',
           price: 0
         });
         setNewClientToggle(false);
@@ -170,7 +188,10 @@ const Appointments: React.FC = () => {
                   {/* Time info */}
                   <div style={{ textAlign: 'center', minWidth: '70px', padding: '10px', background: 'rgba(212,175,55,0.05)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.1)' }}>
                     <p style={{ margin: 0, fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)' }}>{appt.time.slice(0, 5)}</p>
-                    <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{new Date(appt.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</p>
+                    {appt.endTime && (
+                      <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>até {appt.endTime.slice(0, 5)}</p>
+                    )}
+                    <p style={{ margin: '4px 0 0', fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: '700' }}>{new Date(appt.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</p>
                   </div>
 
                   {/* Main Info */}
@@ -212,6 +233,22 @@ const Appointments: React.FC = () => {
                       </button>
                     )}
 
+                    {(appt.status === 'pending' || appt.status === 'confirmed') && 
+                     appt.date === new Date().toISOString().split('T')[0] && 
+                     role === 'professional' && (
+                      <button 
+                        onClick={() => {
+                          const now = new Date();
+                          const currentStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                          updateAppointmentEndTime(appt.id, currentStr);
+                        }}
+                        style={{ padding: '8px 16px', borderRadius: '10px', border: 'none', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', border: '1px solid rgba(212,175,55,0.3)' }}
+                        title="Finalizar atendimento agora e liberar o resto do horário"
+                      >
+                        Adiantar
+                      </button>
+                    )}
+
                     {appt.status !== 'cancelled' && appt.status !== 'completed' && (
                        <button 
                         onClick={() => updateAppointmentStatus(appt.id, 'cancelled')}
@@ -250,7 +287,7 @@ const Appointments: React.FC = () => {
                     serviceId: '',
                     professionalId: '',
                     date: new Date().toISOString().split('T')[0],
-                    time: '09:00',
+                    time: '',
                     price: 0
                   });
                   setNewClientToggle(false);
@@ -374,13 +411,37 @@ const Appointments: React.FC = () => {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Horário</label>
-                  <input
-                    type="time"
-                    required
-                    value={newApptData.time}
-                    onChange={e => setNewApptData(prev => ({ ...prev, time: e.target.value }))}
-                    style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
-                  />
+                  {!newApptData.professionalId || !newApptData.serviceId ? (
+                    <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center', color: '#888', fontSize: '0.85rem' }}>
+                      Selecione serviço e profissional.
+                    </div>
+                  ) : availableSlots.length === 0 ? (
+                    <div style={{ padding: '0.75rem', background: 'rgba(255,50,50,0.1)', borderRadius: '10px', border: '1px solid rgba(255,50,50,0.2)', textAlign: 'center', color: '#ff5252', fontSize: '0.85rem', fontWeight: '700' }}>
+                      Nenhum horário livre.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                      {availableSlots.map(slot => (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => setNewApptData(prev => ({ ...prev, time: slot }))}
+                          style={{
+                            padding: '0.6rem 0.4rem',
+                            borderRadius: '8px',
+                            background: newApptData.time === slot ? 'var(--accent-gold)' : '#111',
+                            border: newApptData.time === slot ? '1px solid var(--accent-gold)' : '1px solid var(--glass-border)',
+                            color: newApptData.time === slot ? '#000' : 'white',
+                            fontWeight: '800',
+                            fontSize: '0.85rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {slot}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
