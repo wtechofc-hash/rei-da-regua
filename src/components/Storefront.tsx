@@ -335,19 +335,19 @@ const Storefront: React.FC = () => {
                     </p>
                   </div>
                 ) : selectedService ? (
-                  <form onSubmit={handleBooking} style={{ display: 'grid', gap: '1.5rem' }}>
+                  <form onSubmit={handleBooking} style={{ display: 'grid', gap: '2rem' }}>
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                       <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '5px' }}>Serviço Selecionado</label>
                       <p style={{ margin: 0, fontWeight: '700', color: 'var(--accent-gold)' }}>{services.find(s => s.id === selectedService)?.name}</p>
                     </div>
 
                     <div>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Seu Nome</label>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '10px' }}>Seu Nome</label>
                       <input 
                         required 
                         disabled={isCheckingOut}
                         type="text" 
-                        style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }} 
+                        style={{ width: '100%', padding: '1.1rem 1rem', borderRadius: '14px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }} 
                         value={clientName} 
                         onChange={e => setClientName(e.target.value)} 
                         placeholder="Como podemos te chamar?" 
@@ -355,13 +355,13 @@ const Storefront: React.FC = () => {
                     </div>
 
                     <div>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Profissional</label>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '10px' }}>Profissional</label>
                       <select 
                         required
                         disabled={isCheckingOut}
                         value={selectedProfessional}
                         onChange={e => setSelectedProfessional(e.target.value)}
-                        style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }}
+                        style={{ width: '100%', padding: '1.1rem 1rem', borderRadius: '14px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }}
                       >
                         <option value="">Selecione o profissional...</option>
                         {availableProfessionals.map(p => (
@@ -370,31 +370,39 @@ const Storefront: React.FC = () => {
                       </select>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
                       <div>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Data</label>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '10px' }}>Data</label>
                         <input 
                           required 
                           disabled={isCheckingOut}
                           type="date" 
                           min={new Date().toISOString().split('T')[0]}
-                          style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }} 
+                          style={{ width: '100%', padding: '1.1rem 1rem', borderRadius: '14px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }} 
                           value={bookingDate} 
                           onChange={e => setBookingDate(e.target.value)} 
                         />
                       </div>
                       <div>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Horário</label>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '10px' }}>Horário</label>
                         {!selectedProfessional ? (
-                          <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center', color: '#888', fontSize: '0.85rem' }}>
+                          <div style={{ padding: '1.2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center', color: '#888', fontSize: '0.85rem' }}>
                             Selecione um profissional para ver os horários.
                           </div>
                         ) : availableSlots.length === 0 ? (
-                          <div style={{ padding: '1rem', background: 'rgba(255,50,50,0.1)', borderRadius: '12px', border: '1px solid rgba(255,50,50,0.2)', textAlign: 'center', color: '#ff5252', fontSize: '0.85rem', fontWeight: '700' }}>
+                          <div style={{ padding: '1.2rem', background: 'rgba(255,50,50,0.1)', borderRadius: '14px', border: '1px solid rgba(255,50,50,0.2)', textAlign: 'center', color: '#ff5252', fontSize: '0.85rem', fontWeight: '700' }}>
                             Nenhum horário livre para este dia.
                           </div>
                         ) : (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '10px',
+                            maxHeight: '260px',
+                            overflowY: 'auto',
+                            paddingRight: '4px',
+                            scrollbarWidth: 'thin',
+                          }}>
                             {availableSlots.map(slot => (
                               <button
                                 key={slot}
@@ -402,15 +410,17 @@ const Storefront: React.FC = () => {
                                 disabled={isCheckingOut}
                                 onClick={() => setBookingTime(slot)}
                                 style={{
-                                  padding: '0.75rem 0.5rem',
-                                  borderRadius: '10px',
-                                  background: bookingTime === slot ? 'var(--accent-gold)' : '#111',
-                                  border: bookingTime === slot ? '1px solid var(--accent-gold)' : '1px solid var(--glass-border)',
+                                  padding: '1rem',
+                                  borderRadius: '14px',
+                                  background: bookingTime === slot ? 'var(--accent-gold)' : 'rgba(255,255,255,0.03)',
+                                  border: bookingTime === slot ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.08)',
                                   color: bookingTime === slot ? '#000' : 'white',
                                   fontWeight: '800',
-                                  fontSize: '0.9rem',
+                                  fontSize: '1rem',
                                   cursor: 'pointer',
-                                  transition: 'all 0.2s'
+                                  transition: 'all 0.2s',
+                                  textAlign: 'center',
+                                  flexShrink: 0,
                                 }}
                               >
                                 {slot}
