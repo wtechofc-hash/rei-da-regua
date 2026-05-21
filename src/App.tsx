@@ -71,6 +71,7 @@ const BOTTOM_NAV = [
   { id: '__fab__',      label: '+',        icon: Plus,  isFab: true },
   { id: 'clientes',     label: 'Clientes', icon: Users },
   { id: '__more__',     label: 'Mais',     icon: Menu },
+  { id: '__logout__',   label: 'Sair',     icon: LogOut },
 ];
 
 const MORE_NAV = [
@@ -275,9 +276,9 @@ const AppContent: React.FC = () => {
       }}>
         {BOTTOM_NAV.filter(item => {
           if (role === 'customer') {
-            return ['dashboard', 'agendamentos', '__more__'].includes(item.id);
+            return ['dashboard', 'agendamentos', '__logout__'].includes(item.id);
           }
-          return true;
+          return item.id !== '__logout__';
         }).map(item => {
           const Icon = item.icon;
           if (item.isFab) return (
@@ -297,7 +298,11 @@ const AppContent: React.FC = () => {
           const isAgenda = item.id === 'agendamentos';
 
           return (
-            <button key={item.id} onClick={() => isMais ? setPage('__more__') : setPage(item.id as Page)} style={{
+            <button key={item.id} onClick={() => {
+              if (item.id === '__logout__') return logout();
+              if (isMais) return setPage('__more__');
+              setPage(item.id as Page);
+            }} style={{
               background: 'transparent', border: 'none', flex: 1, cursor: 'pointer',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px',
               color: (isActive || (isMais && page === '__more__')) ? '#d4af37' : '#555',

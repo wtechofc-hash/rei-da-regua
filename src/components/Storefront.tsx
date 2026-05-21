@@ -226,18 +226,18 @@ const Storefront: React.FC = () => {
             {/* Services Carousel */}
             <section style={{ marginBottom: '5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '-0.02em' }}>Serviços em Destaque</h2>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.02em' }}>Serviços</h2>
                 <div style={{ fontSize: '0.85rem', color: 'var(--accent-gold)', fontWeight: '700', cursor: 'pointer' }}>Ver todos</div>
               </div>
               
               <div className="netflix-row" style={{ 
                 display: 'flex', gap: '1.5rem', overflowX: 'auto', paddingBottom: '1.5rem',
-                scrollbarWidth: 'none', msOverflowStyle: 'none'
+                scrollbarWidth: 'none', msOverflowStyle: 'none', scrollSnapType: 'x mandatory'
               }}>
                 {services.map(service => (
                   <div key={service.id} onClick={() => setSelectedService(service.id)} style={{ 
                     flex: '0 0 240px', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                    position: 'relative'
+                    position: 'relative', scrollSnapAlign: 'start'
                   }} className="netflix-card">
                     <div style={{ 
                       aspectRatio: '2/3', borderRadius: '16px', overflow: 'hidden', 
@@ -269,17 +269,17 @@ const Storefront: React.FC = () => {
             {/* Products Carousel */}
             <section style={{ marginBottom: '5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: '900', letterSpacing: '-0.02em' }}>Produtos Premium</h2>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.02em' }}>Produtos</h2>
                 <div style={{ fontSize: '0.85rem', color: 'var(--accent-gold)', fontWeight: '700', cursor: 'pointer' }}>Ver todos</div>
               </div>
               
               <div className="netflix-row" style={{ 
                 display: 'flex', gap: '1.5rem', overflowX: 'auto', paddingBottom: '1.5rem',
-                scrollbarWidth: 'none', msOverflowStyle: 'none'
+                scrollbarWidth: 'none', msOverflowStyle: 'none', scrollSnapType: 'x mandatory'
               }}>
                 {products.map(product => (
                   <div key={product.id} style={{ 
-                    flex: '0 0 240px', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                    flex: '0 0 240px', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', scrollSnapAlign: 'start'
                   }} className="netflix-card">
                     <div style={{ 
                       aspectRatio: '2/3', borderRadius: '16px', overflow: 'hidden', 
