@@ -232,12 +232,12 @@ const Storefront: React.FC = () => {
               
               <div className="netflix-row" style={{ 
                 display: 'flex', gap: '1.5rem', overflowX: 'auto', paddingBottom: '1.5rem',
-                scrollbarWidth: 'none', msOverflowStyle: 'none', scrollSnapType: 'x mandatory'
+                scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch'
               }}>
                 {services.map(service => (
                   <div key={service.id} onClick={() => setSelectedService(service.id)} style={{ 
                     flex: '0 0 240px', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                    position: 'relative', scrollSnapAlign: 'start'
+                    position: 'relative'
                   }} className="netflix-card">
                     <div style={{ 
                       aspectRatio: '2/3', borderRadius: '16px', overflow: 'hidden', 
@@ -275,11 +275,11 @@ const Storefront: React.FC = () => {
               
               <div className="netflix-row" style={{ 
                 display: 'flex', gap: '1.5rem', overflowX: 'auto', paddingBottom: '1.5rem',
-                scrollbarWidth: 'none', msOverflowStyle: 'none', scrollSnapType: 'x mandatory'
+                scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch'
               }}>
                 {products.map(product => (
                   <div key={product.id} style={{ 
-                    flex: '0 0 240px', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', scrollSnapAlign: 'start'
+                    flex: '0 0 240px', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
                   }} className="netflix-card">
                     <div style={{ 
                       aspectRatio: '2/3', borderRadius: '16px', overflow: 'hidden', 
