@@ -168,7 +168,7 @@ const Storefront: React.FC = () => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ background: '#050505', minHeight: '100vh', paddingBottom: '6rem' }}>
+    <div className="animate-fade-in" style={{ background: '#050505', minHeight: '100vh', paddingBottom: '6rem', overflowX: 'hidden', width: '100%' }}>
       {/* Hero Section */}
       <section style={{ 
         height: '75vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
