@@ -18,7 +18,7 @@ import { supabase } from '../lib/supabase';
 import { generateAvailableSlots } from '../utils/timeSlots';
 
 const Storefront: React.FC = () => {
-  const { services = [], products = [], addAppointment, profiles = [], config, logout, shopData, shopId, userId, clients = [] } = useApp();
+  const { services = [], products = [], addAppointment, profiles = [], config, logout, shopData, shopId, userId, clients = [], appointments = [] } = useApp();
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
   const [bookingTime, setBookingTime] = useState('');

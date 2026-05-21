@@ -242,7 +242,7 @@ const Appointments: React.FC = () => {
                           const currentStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
                           updateAppointmentEndTime(appt.id, currentStr);
                         }}
-                        style={{ padding: '8px 16px', borderRadius: '10px', border: 'none', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', border: '1px solid rgba(212,175,55,0.3)' }}
+                        style={{ padding: '8px 16px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', border: '1px solid rgba(212,175,55,0.3)' }}
                         title="Finalizar atendimento agora e liberar o resto do horário"
                       >
                         Adiantar
