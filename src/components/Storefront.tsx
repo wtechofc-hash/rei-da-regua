@@ -231,9 +231,11 @@ const Storefront: React.FC = () => {
               </div>
               
               <div className="netflix-row" style={{ 
-                display: 'flex', gap: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem',
+                display: 'flex', gap: '1.5rem',
+                overflowX: 'auto', overflowY: 'hidden',
                 scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch',
-                overflow: 'hidden auto'
+                padding: '0.75rem 1.5rem',
+                margin: '-0.75rem -1.5rem'
               }}>
                 {services.map(service => (
                   <div key={service.id} onClick={() => setSelectedService(service.id)} style={{ 
@@ -275,9 +277,11 @@ const Storefront: React.FC = () => {
               </div>
               
               <div className="netflix-row" style={{ 
-                display: 'flex', gap: '1.5rem', paddingBottom: '0.5rem',
+                display: 'flex', gap: '1.5rem',
+                overflowX: 'auto', overflowY: 'hidden',
                 scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch',
-                overflow: 'hidden auto'
+                padding: '0.75rem 1.5rem',
+                margin: '-0.75rem -1.5rem'
               }}>
                 {products.map(product => (
                   <div key={product.id} style={{ 
@@ -571,9 +575,9 @@ const Storefront: React.FC = () => {
           aside { position: static !important; }
         }
         
-        .netflix-row::-webkit-scrollbar { display: none; width: 0; height: 0; }
-        .netflix-row::-webkit-scrollbar-track { display: none; background: transparent; }
-        .netflix-row::-webkit-scrollbar-thumb { display: none; background: transparent; }
+        .netflix-row::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+        .netflix-row::-webkit-scrollbar-track { display: none !important; background: transparent !important; }
+        .netflix-row::-webkit-scrollbar-thumb { display: none !important; background: transparent !important; }
         
         @media (hover: hover) and (pointer: fine) {
           .netflix-card:hover {

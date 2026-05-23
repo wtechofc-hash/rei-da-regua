@@ -183,3 +183,29 @@ select option {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
+
+/* 
+  Hide scrollbars for the netflix-row horizontal scroll containers 
+  to prevent thin black/grey scrollbar track lines from ruining the visual.
+*/
+.netflix-row {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+.netflix-row::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.netflix-row::-webkit-scrollbar-track {
+  display: none !important;
+  background: transparent !important;
+}
+
+.netflix-row::-webkit-scrollbar-thumb {
+  display: none !important;
+  background: transparent !important;
+}
+
