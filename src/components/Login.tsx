@@ -86,6 +86,29 @@ const Login: React.FC = () => {
         return;
       }
 
+      // Check against professionals (using Supabase Auth)
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password: trimmedPassword
+      });
+
+      if (!authError && authData?.user) {
+        const { data: proMatch } = await supabase
+          .from('professionals')
+          .select('id, shop_id')
+          .eq('id', authData.user.id)
+          .maybeSingle();
+
+        if (proMatch) {
+          setAuth('professional', proMatch.id, proMatch.shop_id);
+          window.location.href = '/';
+          return;
+        } else {
+          // It's a valid Supabase Auth user, but not in professionals table
+          await supabase.auth.signOut();
+        }
+      }
+
       // Check against clients (registered customers)
       const { data: clientMatch } = await supabase
         .from('clients')
