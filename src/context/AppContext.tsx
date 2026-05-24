@@ -87,7 +87,7 @@ interface AppContextType {
   addClient: (client: Omit<Client, 'id'>) => void;
   updateClient: (id: string, client: Partial<Client>) => void;
   deleteClient: (id: string) => void;
-  addProfile: (profile: Omit<Profile, 'id'>) => void;
+  addProfile: (profile: Profile) => void;
   updateProfile: (id: string, profile: Partial<Profile>) => void;
   deleteProfile: (id: string) => void;
   updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
@@ -200,7 +200,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const { data: prosData } = await query(supabase.from('professionals').select('*'));
         if (prosData) setProfiles(prosData.map((p: any) => ({
           id: p.id, name: p.name, role: (p.role?.toLowerCase() === 'owner' ? 'owner' : 'professional') as UserRole, 
-          avatar: p.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`, commission: p.commission_rate
+          avatar: p.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`, commission: p.commission_rate,
+          email: p.email
         })));
 
         // Fetch Appointments
@@ -283,19 +284,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setClients(prev => prev.filter(c => c.id !== id));
   };
 
-  const addProfile = async (p: Omit<Profile, 'id'>) => {
-    const { data } = await supabase.from('professionals').insert([{ 
-      name: p.name, role: p.role, photo_url: p.avatar, commission_rate: p.commission, shop_id: shopId 
-    }]).select();
-    if (data) setProfiles(prev => [...prev, { ...p, id: data[0].id }]);
+  const addProfile = async (p: Profile) => {
+    // Professionals.tsx handles both Auth and DB insert. Just update state here.
+    setProfiles(prev => [...prev, p]);
   };
   const updateProfile = async (id: string, p: Partial<Profile>) => {
-    await supabase.from('professionals').update({ name: p.name, role: p.role, photo_url: p.avatar, commission_rate: p.commission }).eq('id', id);
+    const payload: any = { name: p.name, role: p.role, photo_url: p.avatar, commission_rate: p.commission };
+    if (p.email !== undefined) payload.email = p.email;
+    await supabase.from('professionals').update(payload).eq('id', id);
     setProfiles(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
   };
   const deleteProfile = async (id: string) => {
-    await supabase.from('professionals').delete().eq('id', id);
-    setProfiles(prev => prev.filter(p => p.id !== id));
+    const { error } = await supabase.from('professionals').delete().eq('id', id);
+    if (error) {
+      alert("Não foi possível excluir o profissional. Verifique se ele possui agendamentos atrelados.");
+    } else {
+      setProfiles(prev => prev.filter(p => p.id !== id));
+    }
   };
   
   const addAppointment = async (a: Omit<Appointment, 'id'>) => {
