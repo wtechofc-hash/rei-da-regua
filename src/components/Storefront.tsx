@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { 
   Scissors, 
   Package, 
@@ -254,7 +255,9 @@ const Storefront: React.FC = () => {
   const cartItemCount = cartServices.length + cartProducts.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="animate-fade-in" style={{ background: '#050505', minHeight: '100vh', paddingBottom: '8rem', overflowX: 'hidden', width: '100%' }}>
+    <div style={{ background: '#050505', minHeight: '100vh', overflowX: 'hidden', width: '100%', position: 'relative' }}>
+      {/* Principal content wrapper with animations and bottom padding to avoid floating card coverage */}
+      <div className="animate-fade-in" style={{ width: '100%', minHeight: '100vh', paddingBottom: '12rem' }}>
       
       {/* Success View from online checkouts redirect */}
       {onlineSuccess && (
@@ -926,7 +929,67 @@ const Storefront: React.FC = () => {
         </div>
       )}
 
-      {/* Reusable Dynamic Booking Modal */}
+
+
+      {/* Sleek Premium Footer */}
+      {!isCheckoutActive && !isSuccessState && !onlineSuccess && (
+        <footer style={{
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          background: 'rgba(5, 5, 5, 0.95)',
+          padding: '4rem 1.5rem',
+          marginTop: '6rem',
+          textAlign: 'center'
+        }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '3rem', textAlign: 'left' }}>
+            <div>
+              <h3 style={{ fontSize: '1.25rem', color: 'white', fontWeight: '900', marginBottom: '1.25rem', letterSpacing: '0.05em' }}>{(config?.businessName || 'REI DA RÉGUA').toUpperCase()}</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', maxWidth: '320px' }}>
+                Experiência premium de barbearia com profissionais altamente qualificados e produtos de altíssima qualidade.
+              </p>
+            </div>
+            <div>
+              <h4 style={{ fontSize: '1rem', color: 'var(--accent-gold)', fontWeight: '800', marginBottom: '1.25rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Contatos</h4>
+              <div style={{ display: 'grid', gap: '15px' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <MapPin size={18} style={{ color: 'var(--accent-gold)', flexShrink: 0, marginTop: '2px' }} />
+                  <div>
+                    <p style={{ fontSize: '0.9rem', fontWeight: '700', color: 'white', margin: '0 0 4px' }}>Localização</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Av. Villas Boas, 1200 - Centro</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <Phone size={18} style={{ color: 'var(--accent-gold)', flexShrink: 0, marginTop: '2px' }} />
+                  <div>
+                    <p style={{ fontSize: '0.9rem', fontWeight: '700', color: 'white', margin: '0 0 4px' }}>Telefone</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>(11) 98888-7777</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h4 style={{ fontSize: '1rem', color: 'var(--accent-gold)', fontWeight: '800', marginBottom: '1.25rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Redes Sociais</h4>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+                Compartilhe nosso estilo ou agende para um amigo!
+              </p>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button className="premium-card" style={{ width: '45px', height: '45px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.05)', color: 'white', cursor: 'pointer' }}>
+                  <Share2 size={18} />
+                </button>
+                <button className="premium-card" style={{ width: '45px', height: '45px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.05)', color: 'white', cursor: 'pointer' }}>
+                  <ExternalLink size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+          <div style={{ marginTop: '4rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+            © {new Date().getFullYear()} {(config?.businessName || 'REI DA RÉGUA')}. Todos os direitos reservados.
+          </div>
+        </footer>
+      )}
+
+      </div>
+
+      {/* Reusable Dynamic Booking Modal (moved outside animate-fade-in to prevent fixed context bugs) */}
       {openBookingModal && selectedService && (
         <div style={{
           position: 'fixed',
@@ -1102,36 +1165,39 @@ const Storefront: React.FC = () => {
         </div>
       )}
 
-      {/* Floating Bottom Bar cart summary */}
-      {cartItemCount > 0 && !isCheckoutActive && (
-        <div style={{
-          position: 'fixed',
-          bottom: '24px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 'min(92%, 650px)',
-          background: 'rgba(10, 10, 10, 0.85)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(212, 175, 55, 0.25)',
-          borderRadius: '24px',
-          padding: '1.25rem 1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(212,175,55,0.05)',
-          zIndex: 10000,
-          animation: 'slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards'
-        }}>
+      {/* Floating Bottom Bar - rendered via portal to escape overflow:auto stacking context */}
+      {cartItemCount > 0 && !isCheckoutActive && ReactDOM.createPortal(
+        <div 
+          className="floating-cart-bar"
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 'min(92%, 650px)',
+            background: 'rgba(10, 10, 10, 0.88)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            borderRadius: '24px',
+            padding: '1.25rem 1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.7), 0 0 30px rgba(212,175,55,0.08)',
+            zIndex: 99999,
+            animation: 'floatingBarSlideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+          }}
+        >
           <div>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700' }}>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>
               Sua Seleção
             </p>
-            <p style={{ margin: '2px 0 0', fontSize: '1.15rem', fontWeight: '900', color: 'white' }}>
+            <p className="floating-cart-bar-text" style={{ margin: '3px 0 0', fontSize: '1.1rem', fontWeight: '900', color: 'white', lineHeight: 1.2 }}>
               {cartServices.length > 0 && `${cartServices.length} ${cartServices.length === 1 ? 'Serviço' : 'Serviços'}`}
               {cartServices.length > 0 && cartProducts.length > 0 && ' + '}
-              {cartProducts.length > 0 && `${cartProducts.reduce((s, p) => s + p.quantity, 0)} Prod.`}
-              <span style={{ color: 'var(--accent-gold)', marginLeft: '10px' }}>
+              {cartProducts.length > 0 && `${cartProducts.reduce((s, p) => s + p.quantity, 0)} Produto${cartProducts.reduce((s,p)=>s+p.quantity,0)>1?'s':''}`}
+              <span style={{ color: '#d4af37', marginLeft: '10px', fontVariantNumeric: 'tabular-nums' }}>
                 R$ {grandTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </span>
             </p>
@@ -1139,7 +1205,7 @@ const Storefront: React.FC = () => {
           <button 
             type="button"
             onClick={() => setIsCheckoutActive(true)}
-            className="gold-button"
+            className="gold-button floating-cart-bar-btn"
             style={{
               padding: '0.9rem 1.8rem',
               borderRadius: '16px',
@@ -1147,68 +1213,14 @@ const Storefront: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              fontWeight: '900'
+              fontWeight: '900',
+              whiteSpace: 'nowrap'
             }}
           >
             Avançar <CheckCircle size={18} />
           </button>
-        </div>
-      )}
-
-      {/* Sleek Premium Footer */}
-      {!isCheckoutActive && !isSuccessState && !onlineSuccess && (
-        <footer style={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-          background: 'rgba(5, 5, 5, 0.95)',
-          padding: '4rem 1.5rem',
-          marginTop: '6rem',
-          textAlign: 'center'
-        }}>
-          <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '3rem', textAlign: 'left' }}>
-            <div>
-              <h3 style={{ fontSize: '1.25rem', color: 'white', fontWeight: '900', marginBottom: '1.25rem', letterSpacing: '0.05em' }}>{(config?.businessName || 'REI DA RÉGUA').toUpperCase()}</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', maxWidth: '320px' }}>
-                Experiência premium de barbearia com profissionais altamente qualificados e produtos de altíssima qualidade.
-              </p>
-            </div>
-            <div>
-              <h4 style={{ fontSize: '1rem', color: 'var(--accent-gold)', fontWeight: '800', marginBottom: '1.25rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Contatos</h4>
-              <div style={{ display: 'grid', gap: '15px' }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                  <MapPin size={18} style={{ color: 'var(--accent-gold)', flexShrink: 0, marginTop: '2px' }} />
-                  <div>
-                    <p style={{ fontSize: '0.9rem', fontWeight: '700', color: 'white', margin: '0 0 4px' }}>Localização</p>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Av. Villas Boas, 1200 - Centro</p>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                  <Phone size={18} style={{ color: 'var(--accent-gold)', flexShrink: 0, marginTop: '2px' }} />
-                  <div>
-                    <p style={{ fontSize: '0.9rem', fontWeight: '700', color: 'white', margin: '0 0 4px' }}>Telefone</p>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>(11) 98888-7777</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h4 style={{ fontSize: '1rem', color: 'var(--accent-gold)', fontWeight: '800', marginBottom: '1.25rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Redes Sociais</h4>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-                Compartilhe nosso estilo ou agende para um amigo!
-              </p>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button className="premium-card" style={{ width: '45px', height: '45px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.05)', color: 'white', cursor: 'pointer' }}>
-                  <Share2 size={18} />
-                </button>
-                <button className="premium-card" style={{ width: '45px', height: '45px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.05)', color: 'white', cursor: 'pointer' }}>
-                  <ExternalLink size={18} />
-                </button>
-              </div>
-            </div>
-          </div>
-          <div style={{ marginTop: '4rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            © {new Date().getFullYear()} {(config?.businessName || 'REI DA RÉGUA')}. Todos os direitos reservados.
-          </div>
-        </footer>
+        </div>,
+        document.body
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `
@@ -1231,6 +1243,11 @@ const Storefront: React.FC = () => {
           to { transform: translate(-50%, 0); opacity: 1; }
         }
         
+        @keyframes floatingBarSlideUp {
+          from { transform: translate(-50%, 120px); opacity: 0; }
+          to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        
         .qty-btn:hover {
           color: var(--accent-gold) !important;
         }
@@ -1240,6 +1257,40 @@ const Storefront: React.FC = () => {
           transform: scale(1.05);
         }
         
+        /* Floating bottom summary responsive adjustments */
+        @media (max-width: 768px) {
+          .floating-cart-bar {
+            padding: 0.9rem 1.1rem !important;
+            border-radius: 18px !important;
+            bottom: 84px !important; /* sits above mobile nav (72px) + 12px gap */
+            width: calc(100% - 2rem) !important;
+            max-width: 480px !important;
+          }
+          .floating-cart-bar-text {
+            font-size: 0.88rem !important;
+          }
+          .floating-cart-bar-btn {
+            padding: 0.7rem 1rem !important;
+            font-size: 0.82rem !important;
+            border-radius: 12px !important;
+          }
+        }
+        
+        @media (max-width: 380px) {
+          .floating-cart-bar {
+            bottom: 80px !important;
+            padding: 0.75rem 0.9rem !important;
+            border-radius: 16px !important;
+          }
+          .floating-cart-bar-text {
+            font-size: 0.8rem !important;
+          }
+          .floating-cart-bar-btn {
+            padding: 0.65rem 0.85rem !important;
+            font-size: 0.78rem !important;
+          }
+        }
+
         @media (hover: hover) and (pointer: fine) {
           .netflix-card:hover {
             transform: scale(1.05);
