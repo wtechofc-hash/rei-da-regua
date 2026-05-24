@@ -9,26 +9,33 @@ const Professionals: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', email: '', commission: '30' });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const data = {
-      name: formData.name, 
-      email: formData.email,
-      commission: Number(formData.commission), 
-      role: 'professional' as const,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(formData.name)}`
-    };
-
-    if (editingId) {
-      updateProfile(editingId, data);
-    } else {
-      addProfile(data);
-    }
-
-    setFormData({ name: '', email: '', commission: '30' });
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  const data: any = {
+    name: formData.name,
+    email: formData.email,
+    commission: Number(formData.commission),
+    role: 'professional' as const,
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(formData.name)}`
+  };
+  if (editingId) {
+    updateProfile(editingId, data);
+    setFormData({ name: '', email: '', password: '', commission: '30' });
     setEditingId(null);
     setIsAdding(false);
-  };
+  } else {
+    try {
+      const { error: signupError } = await supabase.auth.signUp({ email: data.email, password: formData.password });
+      if (signupError) throw signupError;
+      const { data: profileData } = await supabase.from('professionals').insert([data]);
+      if (profileData) setProfiles(prev => [...prev, { ...data, id: profileData[0].id }]);
+    } catch (err: any) {
+      alert("Erro ao criar profissional: " + err.message);
+    }
+  }
+  setFormData({ name: '', email: '', password: '', commission: '30' });
+  setIsAdding(false);
+};
 
   const handleEditClick = (pro: Profile) => {
     setEditingId(pro.id);
@@ -74,10 +81,14 @@ const Professionals: React.FC = () => {
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Nome Completo</label>
               <input required type="text" style={inputStyle} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Email</label>
-              <input required type="email" style={inputStyle} value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
-            </div>
+<div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Email</label>
+                <input required type="email" style={inputStyle} value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Senha</label>
+                <input required type="password" style={inputStyle} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+              </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Comissão (%)</label>
               <input required type="number" style={inputStyle} value={formData.commission} onChange={e => setFormData({ ...formData, commission: e.target.value })} />
