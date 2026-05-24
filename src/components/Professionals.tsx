@@ -25,10 +25,14 @@ const handleSubmit = async (e: React.FormEvent) => {
     setIsAdding(false);
   } else {
     try {
-      const { error: signupError } = await supabase.auth.signUp({ email: data.email, password: formData.password });
+      const { data: authData, error: signupError } = await supabase.auth.signUp({ email: data.email, password: formData.password });
       if (signupError) throw signupError;
-      const { data: profileData } = await supabase.from('professionals').insert([data]);
-      if (profileData && addProfile) addProfile({ ...data, id: (profileData as any[])[0].id });
+      if (!authData.user) throw new Error("Falha ao obter dados do usuário.");
+      
+      const dataWithId = { ...data, id: authData.user.id };
+      const { data: profileData, error: insertError } = await supabase.from('professionals').insert([dataWithId]).select();
+      if (insertError) throw insertError;
+      if (profileData && addProfile) addProfile({ ...dataWithId });
     } catch (err: any) {
       alert("Erro ao criar profissional: " + err.message);
     }
@@ -77,18 +81,18 @@ const handleSubmit = async (e: React.FormEvent) => {
           <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>
             {editingId ? 'Editar Profissional' : 'Cadastrar Profissional'}
           </h3>
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+          <form autoComplete="off" onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Nome Completo</label>
-              <input required type="text" style={inputStyle} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+              <input required autoComplete="off" type="text" style={inputStyle} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
             </div>
 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Email</label>
-                <input required type="email" style={inputStyle} value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+                <input required autoComplete="new-email" type="email" style={inputStyle} value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Senha</label>
-                <input required type="password" style={inputStyle} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+                <input required autoComplete="new-password" type="password" style={inputStyle} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
               </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Comissão (%)</label>
