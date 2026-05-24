@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { 
   Scissors, 
@@ -22,6 +22,19 @@ import {
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
 import { generateAvailableSlots } from '../utils/timeSlots';
+
+/* Hook: detecta se está em mobile para ajustar o offset do botão flutuante */
+const useIsMobile = (breakpoint = 768) => {
+  const [isMobile, setIsMobile] = useState(() => 
+    typeof window !== 'undefined' ? window.innerWidth <= breakpoint : false
+  );
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= breakpoint);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, [breakpoint]);
+  return isMobile;
+};
 
 const Storefront: React.FC = () => {
   const { 
@@ -60,6 +73,9 @@ const Storefront: React.FC = () => {
   const [isSuccessState, setIsSuccessState] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'offline' | 'online'>('offline');
   const [onlineSuccess, setOnlineSuccess] = useState(false);
+
+  // Mobile detection for floating bar offset
+  const isMobile = useIsMobile();
 
   const availableProfessionals = profiles.filter(p => p.role === 'professional' || p.role === 'owner');
 
@@ -1165,39 +1181,41 @@ const Storefront: React.FC = () => {
         </div>
       )}
 
-      {/* Floating Bottom Bar - rendered via portal to escape overflow:auto stacking context */}
+      {/* Floating Bottom Bar — portal renderiza direto no body, escapando qualquer overflow/stacking context */}
       {cartItemCount > 0 && !isCheckoutActive && ReactDOM.createPortal(
         <div 
-          className="floating-cart-bar"
           style={{
             position: 'fixed',
-            bottom: '24px',
+            bottom: isMobile ? '84px' : '24px',   /* acima da nav mobile (72px) + gap */
             left: '50%',
             transform: 'translateX(-50%)',
-            width: 'min(92%, 650px)',
-            background: 'rgba(10, 10, 10, 0.88)',
+            width: isMobile ? 'calc(100vw - 2rem)' : 'min(92%, 650px)',
+            maxWidth: isMobile ? '480px' : '650px',
+            background: 'rgba(10, 10, 10, 0.92)',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid rgba(212, 175, 55, 0.3)',
-            borderRadius: '24px',
-            padding: '1.25rem 1.5rem',
+            border: '1px solid rgba(212, 175, 55, 0.35)',
+            borderRadius: isMobile ? '18px' : '24px',
+            padding: isMobile ? '0.85rem 1rem' : '1.25rem 1.5rem',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.7), 0 0 30px rgba(212,175,55,0.08)',
+            gap: '12px',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.75), 0 0 30px rgba(212,175,55,0.1), inset 0 1px 0 rgba(255,255,255,0.05)',
             zIndex: 99999,
-            animation: 'floatingBarSlideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+            animation: 'floatingBarSlideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+            boxSizing: 'border-box'
           }}
         >
-          <div>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '700' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{ margin: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: '700' }}>
               Sua Seleção
             </p>
-            <p className="floating-cart-bar-text" style={{ margin: '3px 0 0', fontSize: '1.1rem', fontWeight: '900', color: 'white', lineHeight: 1.2 }}>
+            <p style={{ margin: '3px 0 0', fontSize: isMobile ? '0.88rem' : '1.05rem', fontWeight: '900', color: 'white', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {cartServices.length > 0 && `${cartServices.length} ${cartServices.length === 1 ? 'Serviço' : 'Serviços'}`}
               {cartServices.length > 0 && cartProducts.length > 0 && ' + '}
               {cartProducts.length > 0 && `${cartProducts.reduce((s, p) => s + p.quantity, 0)} Produto${cartProducts.reduce((s,p)=>s+p.quantity,0)>1?'s':''}`}
-              <span style={{ color: '#d4af37', marginLeft: '10px', fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ color: '#d4af37', marginLeft: '8px', fontVariantNumeric: 'tabular-nums' }}>
                 R$ {grandTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </span>
             </p>
@@ -1205,19 +1223,20 @@ const Storefront: React.FC = () => {
           <button 
             type="button"
             onClick={() => setIsCheckoutActive(true)}
-            className="gold-button floating-cart-bar-btn"
+            className="gold-button"
             style={{
-              padding: '0.9rem 1.8rem',
-              borderRadius: '16px',
-              fontSize: '0.95rem',
+              padding: isMobile ? '0.7rem 1.1rem' : '0.9rem 1.8rem',
+              borderRadius: '14px',
+              fontSize: isMobile ? '0.82rem' : '0.95rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '6px',
               fontWeight: '900',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
           >
-            Avançar <CheckCircle size={18} />
+            Avançar <CheckCircle size={isMobile ? 15 : 18} />
           </button>
         </div>,
         document.body

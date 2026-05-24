@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Users, Trash2, Mail, Percent, Shield, Edit2 } from 'lucide-react';
+import { Plus, Users, Trash2, Mail, Percent, Shield, Edit2, Eye, EyeOff } from 'lucide-react';
 import { useApp, Profile } from '../context/AppContext';
+import { supabase } from '../lib/supabase';
 
 const Professionals: React.FC = () => {
   const { profiles = [], addProfile, updateProfile, deleteProfile } = useApp();
