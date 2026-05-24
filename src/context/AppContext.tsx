@@ -295,9 +295,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProfiles(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
   };
   const deleteProfile = async (id: string) => {
-    const { error } = await supabase.from('professionals').delete().eq('id', id);
-    if (error) {
-      alert("Não foi possível excluir o profissional. Verifique se ele possui agendamentos atrelados.");
+    const { data, error } = await supabase.from('professionals').delete().eq('id', id).select();
+    if (error || !data || data.length === 0) {
+      alert("Não foi possível excluir o profissional. O registro já pode ter sido excluído ou há vínculos pendentes.");
     } else {
       setProfiles(prev => prev.filter(p => p.id !== id));
     }
