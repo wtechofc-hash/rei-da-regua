@@ -7,7 +7,7 @@ const Professionals: React.FC = () => {
   const { profiles = [], addProfile, updateProfile, deleteProfile } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', email: '', commission: '30' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', commission: '30' });
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -28,7 +28,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       const { error: signupError } = await supabase.auth.signUp({ email: data.email, password: formData.password });
       if (signupError) throw signupError;
       const { data: profileData } = await supabase.from('professionals').insert([data]);
-      if (profileData) setProfiles(prev => [...prev, { ...data, id: profileData[0].id }]);
+      if (profileData && addProfile) addProfile({ ...data, id: (profileData as any[])[0].id });
     } catch (err: any) {
       alert("Erro ao criar profissional: " + err.message);
     }
@@ -42,13 +42,14 @@ const handleSubmit = async (e: React.FormEvent) => {
     setFormData({
       name: pro.name,
       email: pro.email || '',
+      password: '',
       commission: (pro.commission ?? 30).toString()
     });
     setIsAdding(true);
   };
 
   const handleCancel = () => {
-    setFormData({ name: '', email: '', commission: '30' });
+    setFormData({ name: '', email: '', password: '', commission: '30' });
     setEditingId(null);
     setIsAdding(false);
   };
