@@ -1026,7 +1026,10 @@ const Storefront: React.FC = () => {
             style={{
               width: '100%',
               maxWidth: '580px',
-              padding: cartItemCount > 0 ? '2.5rem 2.5rem 8rem 2.5rem' : '2.5rem',
+              padding: isMobile 
+                ? (cartItemCount > 0 ? '1.5rem 1rem 7rem 1rem' : '1.5rem 1rem') 
+                : (cartItemCount > 0 ? '2.5rem 2.5rem 8rem 2.5rem' : '2.5rem'),
+              boxSizing: 'border-box',
               border: '1px solid rgba(212,175,55,0.25)',
               background: 'rgba(15, 15, 15, 0.98)',
               boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(212,175,55,0.05)',

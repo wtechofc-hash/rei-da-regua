@@ -173,11 +173,10 @@ const TimePicker: React.FC<TimePickerProps> = ({
       </div>
 
       {/* ── Clock face SVG ── */}
-      <div style={{ position: 'relative', width: '320px', height: '320px' }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: '320px', aspectRatio: '1/1' }}>
         <svg
-          width="320"
-          height="320"
-          style={{ overflow: 'visible', display: 'block' }}
+          viewBox="0 0 320 320"
+          style={{ overflow: 'visible', display: 'block', width: '100%', height: '100%' }}
         >
           {/* Background circles */}
           <circle cx={CX} cy={CY} r={OUTER_R + 22} fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
@@ -328,7 +327,7 @@ const TimePicker: React.FC<TimePickerProps> = ({
       </div>
 
       {/* ── Legend ── */}
-      <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.72rem', fontWeight: '700', letterSpacing: '0.05em' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', fontSize: '0.72rem', fontWeight: '700', letterSpacing: '0.05em' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'rgba(212,175,55,0.4)', border: '1px solid rgba(212,175,55,0.6)' }} />
           <span style={{ color: '#888' }}>Disponível</span>
