@@ -28,11 +28,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
     { id: 'dashboard',    label: role === 'customer' ? 'Vitrine' : 'Dashboard', icon: LayoutDashboard, roles: ['owner', 'professional', 'customer'] },
     { id: 'agendamentos', label: role === 'customer' ? 'Meus Agendamentos' : 'Agenda', icon: Calendar, roles: ['owner', 'professional', 'customer'], badge: notificationCount },
     { id: 'pdv',           label: 'Ponto de Venda', icon: ShoppingCart,    roles: ['owner'] },
-    { id: 'servicos',      label: 'Serviços',      icon: Scissors,        roles: ['owner', 'professional'] },
-    { id: 'produtos',      label: 'Produtos',      icon: Package,         roles: ['owner', 'professional'] },
+    { id: 'servicos',      label: 'Serviços',      icon: Scissors,        roles: ['owner'] },
+    { id: 'produtos',      label: 'Produtos',      icon: Package,         roles: ['owner'] },
     { id: 'clientes',     label: 'Clientes',     icon: Users,           roles: ['owner'] },
     { id: 'profissionais', label: 'Equipe',         icon: User,            roles: ['owner'] },
-    { id: 'relatorios',    label: 'Relatórios',     icon: BarChart3,       roles: ['owner', 'professional'] },
+    { id: 'relatorios',    label: 'Relatórios',     icon: BarChart3,       roles: ['owner'] },
     { id: 'configuracoes', label: 'Configurações',  icon: Settings,        roles: ['owner', 'customer'] },
   ];
 

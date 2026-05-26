@@ -22,6 +22,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
 import { generateAvailableSlots } from '../utils/timeSlots';
+import TimePicker from './TimePicker';
 
 /* Hook: detecta se está em mobile para ajustar o offset do botão flutuante */
 const useIsMobile = (breakpoint = 768) => {
@@ -1024,12 +1025,12 @@ const Storefront: React.FC = () => {
             className="premium-card" 
             style={{
               width: '100%',
-              maxWidth: '500px',
+              maxWidth: '580px',
               padding: '2.5rem',
               border: '1px solid rgba(212,175,55,0.25)',
               background: 'rgba(15, 15, 15, 0.98)',
               boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(212,175,55,0.05)',
-              maxHeight: '90vh',
+              maxHeight: '92vh',
               overflowY: 'auto',
               borderRadius: '24px'
             }}
@@ -1072,51 +1073,30 @@ const Storefront: React.FC = () => {
                 />
               </div>
 
-              {/* Dynamic scrollable time slots */}
+              {/* Clock-style Time Picker */}
               <div>
-                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '10px' }}>
-                  Horário Disponível
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '14px' }}>
+                  Horário
                 </label>
                 {!selectedProfessional ? (
                   <div style={{ padding: '1.2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center', color: '#888', fontSize: '0.85rem' }}>
                     Selecione um profissional para ver os horários.
                   </div>
-                ) : availableSlots.length === 0 ? (
-                  <div style={{ padding: '1.2rem', background: 'rgba(255,50,50,0.1)', borderRadius: '14px', border: '1px solid rgba(255,50,50,0.2)', textAlign: 'center', color: '#ff5252', fontSize: '0.85rem', fontWeight: '700' }}>
-                    Nenhum horário livre para este dia.
-                  </div>
                 ) : (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '10px',
-                    maxHeight: '180px',
-                    overflowY: 'auto',
-                    paddingRight: '4px',
-                    scrollbarWidth: 'thin',
-                  }}>
-                    {availableSlots.map(slot => (
-                      <button
-                        key={slot}
-                        type="button"
-                        onClick={() => setBookingTime(slot)}
-                        style={{
-                          padding: '1rem',
-                          borderRadius: '14px',
-                          background: bookingTime === slot ? 'var(--accent-gold)' : 'rgba(255,255,255,0.03)',
-                          border: bookingTime === slot ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.08)',
-                          color: bookingTime === slot ? '#000' : 'white',
-                          fontWeight: '800',
-                          fontSize: '1rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          textAlign: 'center',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {slot}
-                      </button>
-                    ))}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    {availableSlots.length === 0 && (
+                      <div style={{ marginBottom: '1rem', padding: '0.75rem 1.25rem', background: 'rgba(255,50,50,0.08)', borderRadius: '10px', border: '1px solid rgba(255,50,50,0.2)', color: '#ff5252', fontSize: '0.82rem', fontWeight: '700', textAlign: 'center', width: '100%' }}>
+                        Nenhum horário disponível para este dia — todos marcados em vermelho.
+                      </div>
+                    )}
+                    <TimePicker
+                      availableSlots={availableSlots}
+                      shopOpen="08:00"
+                      shopClose="20:00"
+                      intervalMinutes={15}
+                      value={bookingTime}
+                      onChange={(t) => setBookingTime(t)}
+                    />
                   </div>
                 )}
               </div>
