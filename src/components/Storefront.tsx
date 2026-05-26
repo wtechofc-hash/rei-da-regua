@@ -429,6 +429,12 @@ const Storefront: React.FC = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
+                                const existing = cartServices.find(item => item.service.id === service.id);
+                                if (existing) {
+                                  setSelectedProfessional(existing.professional.id);
+                                  setBookingDate(existing.date);
+                                  setBookingTime(existing.time);
+                                }
                                 setOpenBookingModal(true);
                               }}
                               className="gold-button"
@@ -441,7 +447,7 @@ const Storefront: React.FC = () => {
                                 animation: 'fadeIn 0.2s ease-out'
                               }}
                             >
-                              Agendar
+                              {isScheduled ? 'Editar' : 'Agendar'}
                             </button>
                           )}
                           <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '4px', color: 'white' }}>{service.name}</h3>
@@ -1132,16 +1138,25 @@ const Storefront: React.FC = () => {
                     const service = services.find(s => s.id === selectedService);
                     const professional = availableProfessionals.find(p => p.id === selectedProfessional);
                     if (service && professional && bookingDate && bookingTime) {
-                      setCartServices(prev => [
-                        ...prev, 
-                        { 
-                          id: Math.random().toString(36).substring(2, 9), 
-                          service, 
-                          professional, 
-                          date: bookingDate, 
-                          time: bookingTime 
+                      setCartServices(prev => {
+                        const existingIdx = prev.findIndex(item => item.service.id === service.id);
+                        if (existingIdx !== -1) {
+                          const newCart = [...prev];
+                          newCart[existingIdx] = { ...newCart[existingIdx], professional, date: bookingDate, time: bookingTime };
+                          return newCart;
+                        } else {
+                          return [
+                            ...prev, 
+                            { 
+                              id: Math.random().toString(36).substring(2, 9), 
+                              service, 
+                              professional, 
+                              date: bookingDate, 
+                              time: bookingTime 
+                            }
+                          ];
                         }
-                      ]);
+                      });
                       setOpenBookingModal(false);
                       setSelectedService(null);
                     }
@@ -1156,7 +1171,7 @@ const Storefront: React.FC = () => {
                     opacity: (!selectedProfessional || !bookingDate || !bookingTime) ? 0.5 : 1
                   }}
                 >
-                  Adicionar
+                  {cartServices.some(item => item.service.id === selectedService) ? 'Atualizar' : 'Adicionar'}
                 </button>
               </div>
             </div>
@@ -1194,14 +1209,16 @@ const Storefront: React.FC = () => {
             <p style={{ margin: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: '700' }}>
               Sua Seleção
             </p>
-            <p style={{ margin: '3px 0 0', fontSize: isMobile ? '0.88rem' : '1.05rem', fontWeight: '900', color: 'white', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {cartServices.length > 0 && `${cartServices.length} ${cartServices.length === 1 ? 'Serviço' : 'Serviços'}`}
-              {cartServices.length > 0 && cartProducts.length > 0 && ' + '}
-              {cartProducts.length > 0 && `${cartProducts.reduce((s, p) => s + p.quantity, 0)} Produto${cartProducts.reduce((s,p)=>s+p.quantity,0)>1?'s':''}`}
-              <span style={{ color: '#d4af37', marginLeft: '8px', fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ margin: '3px 0 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: isMobile ? '0.88rem' : '1.05rem', fontWeight: '900', color: 'white', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {cartServices.length > 0 && `${cartServices.length} ${cartServices.length === 1 ? 'Serviço' : 'Serviços'}`}
+                {cartServices.length > 0 && cartProducts.length > 0 && ' + '}
+                {cartProducts.length > 0 && `${cartProducts.reduce((s, p) => s + p.quantity, 0)} Prod.`}
+              </span>
+              <span style={{ fontSize: isMobile ? '0.88rem' : '1.05rem', fontWeight: '900', color: '#d4af37', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                 R$ {grandTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </span>
-            </p>
+            </div>
           </div>
           <button 
             type="button"
