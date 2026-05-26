@@ -4,7 +4,7 @@ interface TimePickerProps {
   availableSlots: string[];      // slots that CAN be booked, e.g. ["08:00","08:15",…]
   shopOpen?: string;             // default "08:00"
   shopClose?: string;            // default "20:00"
-  intervalMinutes?: number;      // default 15
+  intervalMinutes?: number;      // default 5
   value: string;                 // currently selected time "HH:MM"
   onChange: (time: string) => void;
 }

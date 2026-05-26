@@ -91,7 +91,7 @@ const Storefront: React.FC = () => {
     if (selectedService && selectedProfessional && bookingDate) {
       const service = services.find(s => s.id === selectedService);
       const duration = service?.duration || 30;
-      const slots = generateAvailableSlots(bookingDate, selectedProfessional, duration, appointments);
+      const slots = generateAvailableSlots(bookingDate, selectedProfessional, duration, appointments, '08:00', '20:00', 5);
       setAvailableSlots(slots);
       
       // Auto-select first slot or reset if current is invalid
@@ -1093,7 +1093,7 @@ const Storefront: React.FC = () => {
                       availableSlots={availableSlots}
                       shopOpen="08:00"
                       shopClose="20:00"
-                      intervalMinutes={15}
+                      intervalMinutes={5}
                       value={bookingTime}
                       onChange={(t) => setBookingTime(t)}
                     />
