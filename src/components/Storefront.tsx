@@ -615,8 +615,15 @@ const Storefront: React.FC = () => {
       {/* Checkout Screen View */}
       {isCheckoutActive && !isSuccessState && (
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
-          {/* Header & Back Link */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3rem', marginTop: '1rem' }}>
+          {/* Checkout Header */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: isMobile ? 'column-reverse' : 'row', 
+            alignItems: isMobile ? 'flex-start' : 'center', 
+            justifyContent: 'space-between', 
+            gap: isMobile ? '1.5rem' : '0',
+            marginBottom: '3rem' 
+          }}>
             <button 
               onClick={() => setIsCheckoutActive(false)}
               style={{
@@ -629,14 +636,15 @@ const Storefront: React.FC = () => {
                 cursor: 'pointer',
                 fontSize: '1rem',
                 fontWeight: '700',
-                transition: 'color 0.2s'
+                transition: 'color 0.2s',
+                padding: 0
               }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-gold)')}
               onMouseLeave={e => (e.currentTarget.style.color = '#888')}
             >
-              <ArrowLeft size={20} /> Voltar para Serviços e Produtos
+              <ArrowLeft size={20} /> {isMobile ? 'Voltar e editar pedido' : 'Voltar para Serviços e Produtos'}
             </button>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: '900', letterSpacing: '-0.02em', margin: 0 }}>Finalizar Agendamento</h2>
+            <h2 style={{ fontSize: isMobile ? '1.6rem' : '1.8rem', fontWeight: '900', letterSpacing: '-0.02em', margin: 0, textAlign: isMobile ? 'left' : 'right' }}>Finalizar Agendamento</h2>
           </div>
 
           {/* Checkout Main Content */}
@@ -658,9 +666,11 @@ const Storefront: React.FC = () => {
                         className="premium-card animate-fade-in"
                         style={{
                           display: 'flex',
+                          flexDirection: isMobile ? 'column' : 'row',
+                          gap: isMobile ? '1.5rem' : '0',
                           justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '1.5rem',
+                          alignItems: isMobile ? 'flex-start' : 'center',
+                          padding: isMobile ? '1.25rem' : '1.5rem',
                           background: 'rgba(255,255,255,0.01)',
                           border: '1px solid rgba(255,255,255,0.05)',
                         }}
@@ -676,7 +686,7 @@ const Storefront: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end', borderTop: isMobile ? '1px solid rgba(255,255,255,0.05)' : 'none', paddingTop: isMobile ? '1rem' : '0' }}>
                           <span style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)' }}>
                             R$ {item.service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
@@ -719,9 +729,11 @@ const Storefront: React.FC = () => {
                         className="premium-card animate-fade-in"
                         style={{
                           display: 'flex',
+                          flexDirection: isMobile ? 'column' : 'row',
+                          gap: isMobile ? '1.5rem' : '0',
                           justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '1.5rem',
+                          alignItems: isMobile ? 'flex-start' : 'center',
+                          padding: isMobile ? '1.25rem' : '1.5rem',
                           background: 'rgba(255,255,255,0.01)',
                           border: '1px solid rgba(255,255,255,0.05)',
                         }}
@@ -737,7 +749,7 @@ const Storefront: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '1rem' : '2rem', width: isMobile ? '100%' : 'auto', justifyContent: 'space-between', borderTop: isMobile ? '1px solid rgba(255,255,255,0.05)' : 'none', paddingTop: isMobile ? '1rem' : '0' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '2px' }}>
                             <button
                               type="button"
