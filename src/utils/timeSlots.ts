@@ -1,4 +1,4 @@
-import { Appointment } from '../context/AppContext';
+import { Appointment, Service } from '../context/AppContext';
 
 export const parseTimeToMinutes = (timeStr: string): number => {
   const [hours, minutes] = timeStr.split(':').map(Number);
@@ -16,6 +16,28 @@ export const addMinutesToTime = (timeStr: string, minutesToAdd: number): string 
   return formatMinutesToTime(totalMin);
 };
 
+/**
+ * Resolves the actual end time for an appointment.
+ * Old appointments may have end_time === start_time (data integrity bug).
+ * In that case we fall back to the service's duration or a default of 30 min.
+ */
+export const resolveApptEndTime = (
+  appt: Appointment,
+  services?: Service[],
+  defaultDuration = 30
+): string => {
+  const apptStartMin = parseTimeToMinutes(appt.time);
+  
+  // If endTime is missing or equals start time → calculate from service duration
+  if (!appt.endTime || appt.endTime === appt.time || parseTimeToMinutes(appt.endTime) <= apptStartMin) {
+    const svc = services?.find(s => s.id === appt.serviceId);
+    const duration = svc?.duration || defaultDuration;
+    return formatMinutesToTime(apptStartMin + duration);
+  }
+
+  return appt.endTime;
+};
+
 export const generateAvailableSlots = (
   date: string,
   professionalId: string,
@@ -23,7 +45,8 @@ export const generateAvailableSlots = (
   appointments: Appointment[],
   shopOpenTime: string = '08:00',
   shopCloseTime: string = '20:00',
-  intervalMinutes: number = 15 // suggests slots every 15 mins
+  intervalMinutes: number = 15, // suggests slots every 15 mins
+  services?: Service[]
 ): string[] => {
   if (!date || !professionalId || !serviceDuration) return [];
 
@@ -43,8 +66,8 @@ export const generateAvailableSlots = (
 
   const slots: string[] = [];
 
-  // Determine the start time for the slots
-  // If the selected date is today, don't allow slots in the past
+  // Determine the start time for the slots.
+  // If the selected date is today, don't allow slots in the past.
   const startMin = (date === currentDateStr && currentMin > openMin) 
     ? Math.ceil(currentMin / intervalMinutes) * intervalMinutes // round up to next interval
     : openMin;
@@ -56,12 +79,12 @@ export const generateAvailableSlots = (
     // Check if this slot conflicts with any existing appointment
     const hasConflict = proAppointments.some(appt => {
       const apptStart = parseTimeToMinutes(appt.time);
-      // Fallback to duration of 30 mins if endTime is somehow missing
-      const apptEnd = appt.endTime ? parseTimeToMinutes(appt.endTime) : apptStart + 30;
+      // Resolve the real end time (handles old data where end_time === start_time)
+      const resolvedEnd = resolveApptEndTime(appt, services);
+      const apptEnd = parseTimeToMinutes(resolvedEnd);
 
-      // Conflict logic: 
-      // (slotStart < apptEnd) AND (slotEnd > apptStart)
-      // Wait, let's be careful. A slot ending at 09:30 and appt starting at 09:30 is NOT a conflict.
+      // Conflict: new slot overlaps with an existing appointment block
+      // A slot from 09:30-10:00 does NOT conflict with an appt ending at 09:30
       return slotStart < apptEnd && slotEnd > apptStart;
     });
 

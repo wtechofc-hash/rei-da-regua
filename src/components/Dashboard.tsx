@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, DollarSign, Users, Star, Clock } from 'lucide-react';
+import { Calendar, DollarSign, Users, Clock, Percent } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell
@@ -13,22 +13,49 @@ interface DashboardProps {
 const PIE_COLORS = ['#d4af37', '#a68a2d', '#7d6822', '#f0d060'];
 
 const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
-  const { appointments = [], clients = [], services = [], profiles = [] } = useApp();
+  const { role, userId, appointments = [], clients = [], services = [], profiles = [] } = useApp();
+
+  const userAppointments = role === 'professional'
+    ? appointments.filter(a => a.professionalId === userId)
+    : appointments;
 
   const today = new Date().toISOString().split('T')[0];
-  const todayAppts = appointments.filter(a => a.date === today);
-  const revenueToday = appointments
+  const todayAppts = userAppointments.filter(a => a.date === today);
+  const revenueToday = userAppointments
     .filter(a => a.date === today && (a.status === 'confirmed' || a.status === 'completed'))
     .reduce((s, a) => s + (a.priceAtTime || 0), 0);
+
+  const currentProfile = profiles.find(p => p.id === userId);
+  const commissionRate = currentProfile?.commission ?? 0;
+
+  const commissionToday = userAppointments
+    .filter(a => a.date === today && (a.status === 'confirmed' || a.status === 'completed'))
+    .reduce((sum, a) => {
+      const prof = profiles.find(p => p.id === a.professionalId);
+      const rate = prof?.commission ?? 0;
+      return sum + (a.priceAtTime || 0) * (rate / 100);
+    }, 0);
+
+  const activeClientsCount = role === 'professional'
+    ? new Set(userAppointments.map(a => a.clientId)).size
+    : clients.length;
 
   const stats = [
     { label: 'Agendamentos Hoje', value: todayAppts.length, sub: '+12% vs ontem', icon: Calendar, gold: false },
     { label: 'Faturamento Hoje',  value: `R$ ${revenueToday.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, sub: '+8% vs ontem', icon: DollarSign, gold: true },
-    { label: 'Clientes Ativos',   value: clients.length, sub: '+15% este mês', icon: Users, gold: false },
-    { label: 'Avaliações',        value: '4,8', sub: '★★★★★', icon: Star, gold: false },
+    { 
+      label: role === 'professional' ? 'Minha Comissão' : 'Comissões Hoje',
+      value: role === 'professional' 
+        ? `${commissionRate}%` 
+        : `R$ ${commissionToday.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      sub: role === 'professional' ? 'Por cada serviço' : 'Total pago hoje',
+      icon: Percent,
+      gold: false
+    },
+    { label: 'Clientes Ativos',   value: activeClientsCount, sub: role === 'professional' ? 'Clientes atendidos' : '+15% este mês', icon: Users, gold: false },
   ];
 
-  const totalRev = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((s, a) => s + (a.priceAtTime || 0), 0);
+  const totalRev = userAppointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((s, a) => s + (a.priceAtTime || 0), 0);
   const base = Math.max(totalRev, 800);
   const weeklyData = [
     { name: 'Seg', value: Math.round(base * 0.35) },
@@ -41,14 +68,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
   ];
 
   const svcCounts: Record<string, number> = {};
-  appointments.forEach(a => {
+  userAppointments.forEach(a => {
     const s = services.find(sv => sv.id === a.serviceId);
     if (s) svcCounts[s.name] = (svcCounts[s.name] || 0) + 1;
   });
   const pieData = Object.entries(svcCounts).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, 4);
   if (pieData.length === 0) pieData.push({ name: 'Sem dados', value: 1 });
 
-  const upcoming = [...appointments]
+  const upcoming = [...userAppointments]
     .filter(a => a.status !== 'cancelled')
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
     .slice(0, 8);

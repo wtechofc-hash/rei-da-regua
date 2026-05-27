@@ -91,7 +91,7 @@ const Storefront: React.FC = () => {
     if (selectedService && selectedProfessional && bookingDate) {
       const service = services.find(s => s.id === selectedService);
       const duration = service?.duration || 30;
-      const slots = generateAvailableSlots(bookingDate, selectedProfessional, duration, appointments, '08:00', '20:00', 5);
+      const slots = generateAvailableSlots(bookingDate, selectedProfessional, duration, appointments, '08:00', '20:00', 5, services);
       setAvailableSlots(slots);
       
       // Auto-select first slot or reset if current is invalid
@@ -163,6 +163,10 @@ const Storefront: React.FC = () => {
       // 1. Create all scheduled appointments
       const createdAppts = [];
       for (const item of cartServices) {
+        const serviceDuration = item.service.duration || 30;
+        const [startH, startM] = item.time.split(':').map(Number);
+        const endTotalMin = startH * 60 + startM + serviceDuration;
+        const endTime = `${Math.floor(endTotalMin / 60).toString().padStart(2, '0')}:${(endTotalMin % 60).toString().padStart(2, '0')}`;
         const appt = await addAppointment({
           clientId: userId || 'online-customer',
           clientName,
@@ -170,6 +174,7 @@ const Storefront: React.FC = () => {
           serviceId: item.service.id,
           date: item.date,
           time: item.time,
+          endTime,
           status: 'pending',
           priceAtTime: item.service.price,
           commissionAtTime: 0

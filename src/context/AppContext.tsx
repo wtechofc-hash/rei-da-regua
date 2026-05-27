@@ -262,7 +262,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               serviceId: newRow.service_id,
               date: newRow.date,
               time: newRow.time,
-              endTime: newRow.end_time || newRow.time,
+              // Only store end_time if it's different from start time (otherwise resolveApptEndTime will compute it)
+              endTime: (newRow.end_time && newRow.end_time !== newRow.time) ? newRow.end_time : undefined,
               status: newRow.status as any,
               priceAtTime: newRow.total_price || 0,
               commissionAtTime: 0,
@@ -459,13 +460,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
+    // Compute end_time: use provided endTime, or calculate from service duration
+    let computedEndTime = a.endTime;
+    if (!computedEndTime || computedEndTime === a.time) {
+      const svc = services.find(s => s.id === a.serviceId);
+      const duration = svc?.duration || 30;
+      const [startH, startM] = a.time.split(':').map(Number);
+      const endTotalMin = startH * 60 + startM + duration;
+      computedEndTime = `${Math.floor(endTotalMin / 60).toString().padStart(2, '0')}:${(endTotalMin % 60).toString().padStart(2, '0')}`;
+    }
+
     const { data, error: apptError } = await supabase.from('appointments').insert([{ 
       client_id: resolvedClientId, 
       professional_id: a.professionalId, 
       service_id: a.serviceId, 
       date: a.date, 
       time: a.time, 
-      end_time: a.endTime || a.time,
+      end_time: computedEndTime,
       status: a.status, 
       total_price: a.priceAtTime, 
       shop_id: resolvedShopId 
