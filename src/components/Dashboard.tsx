@@ -265,6 +265,137 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
         </div>
       </div>
 
+      {/* Commission Breakdown - only for professionals */}
+      {role === 'professional' && (
+        <div className="premium-card" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: '0 0 4px' }}>Detalhamento de Comissões</h3>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>
+                Comissão por serviço no período selecionado
+              </p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total no Período</p>
+              <p style={{ fontSize: '1.3rem', fontWeight: '900', color: '#d4af37', margin: 0 }}>
+                R$ {commissionInPeriod.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+
+          {(() => {
+            const commissionEntries = periodAppointments
+              .filter(a => a.status === 'confirmed' || a.status === 'completed')
+              .map(a => {
+                const prof = profiles.find(p => p.id === a.professionalId);
+                const rate = prof?.commission ?? 0;
+                const svc = services.find(s => s.id === a.serviceId);
+                const commissionValue = (a.priceAtTime || 0) * (rate / 100);
+                return { ...a, commissionValue, rate, svcName: svc?.name ?? '—' };
+              })
+              .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+
+            if (commissionEntries.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                  <Percent size={28} style={{ opacity: 0.3, marginBottom: '8px' }} />
+                  <p style={{ margin: 0, fontSize: '0.85rem' }}>Nenhuma comissão no período selecionado.</p>
+                </div>
+              );
+            }
+
+            const formatDate = (dateStr: string) => {
+              if (!dateStr) return '—';
+              const parts = dateStr.split('-');
+              if (parts.length !== 3) return dateStr;
+              const [year, month, day] = parts;
+              return `${day}/${month}/${year}`;
+            };
+
+            return (
+              <>
+                {/* Desktop Table */}
+                <div id="commission-table-desktop" style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        {['Data', 'Horário', 'Cliente', 'Serviço', 'Valor do Serviço', 'Taxa', 'Comissão'].map(h => (
+                          <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {commissionEntries.map((entry) => (
+                        <tr key={entry.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                          <td style={{ padding: '1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{formatDate(entry.date)}</td>
+                          <td style={{ padding: '1rem', fontWeight: '700', color: '#d4af37', whiteSpace: 'nowrap' }}>{entry.time.slice(0, 5)}</td>
+                          <td style={{ padding: '1rem', fontWeight: '600' }}>{entry.clientName}</td>
+                          <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{entry.svcName}</td>
+                          <td style={{ padding: '1rem', fontWeight: '700', color: 'white' }}>
+                            R$ {(entry.priceAtTime || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td style={{ padding: '1rem' }}>
+                            <span style={{ padding: '3px 8px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: '800', background: 'rgba(212,175,55,0.1)', color: '#d4af37' }}>
+                              {entry.rate}%
+                            </span>
+                          </td>
+                          <td style={{ padding: '1rem', fontWeight: '900', color: '#00e676', fontSize: '0.95rem' }}>
+                            R$ {entry.commissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ borderTop: '2px solid rgba(212,175,55,0.2)' }}>
+                        <td colSpan={6} style={{ padding: '1rem', fontWeight: '800', fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'right' }}>Total:</td>
+                        <td style={{ padding: '1rem', fontWeight: '900', color: '#d4af37', fontSize: '1rem' }}>
+                          R$ {commissionInPeriod.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div id="commission-list-mobile" style={{ display: 'none', flexDirection: 'column', gap: '0.75rem' }}>
+                  {commissionEntries.map((entry) => (
+                    <div key={entry.id} style={{
+                      padding: '1rem', background: 'rgba(255,255,255,0.02)',
+                      borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{ fontWeight: '800', color: '#d4af37', fontSize: '0.85rem' }}>
+                            {entry.date.split('-').reverse().join('/')} {entry.time.slice(0, 5)}
+                          </span>
+                          <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>{entry.clientName}</span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          {entry.svcName} · R$ {(entry.priceAtTime || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} · Taxa {entry.rate}%
+                        </div>
+                      </div>
+                      <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                        <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Comissão</p>
+                        <p style={{ margin: 0, fontWeight: '900', color: '#00e676', fontSize: '1rem' }}>
+                          R$ {entry.commissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{ padding: '0.75rem 1rem', background: 'rgba(212,175,55,0.05)', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: '800', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Total no Período</span>
+                    <span style={{ fontWeight: '900', color: '#d4af37', fontSize: '1.1rem' }}>
+                      R$ {commissionInPeriod.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Upcoming Appointments */}
       <div className="premium-card" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -382,6 +513,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
         @media (max-width: 768px) {
           #desktop-table { display: none !important; }
           #mobile-list { display: flex !important; }
+          #commission-table-desktop { display: none !important; }
+          #commission-list-mobile { display: flex !important; }
         }
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(4px); }
