@@ -15,47 +15,98 @@ const PIE_COLORS = ['#d4af37', '#a68a2d', '#7d6822', '#f0d060'];
 const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
   const { role, userId, appointments = [], clients = [], services = [], profiles = [] } = useApp();
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'custom'>('today');
+  const [customStart, setCustomStart] = useState<string>(todayStr);
+  const [customEnd, setCustomEnd] = useState<string>(todayStr);
+
   const userAppointments = role === 'professional'
     ? appointments.filter(a => a.professionalId === userId)
     : appointments;
 
-  const today = new Date().toISOString().split('T')[0];
-  const todayAppts = userAppointments.filter(a => a.date === today);
-  const revenueToday = userAppointments
-    .filter(a => a.date === today && (a.status === 'confirmed' || a.status === 'completed'))
+  const getPeriodRange = () => {
+    const now = new Date();
+    let startStr = todayStr;
+    let endStr = todayStr;
+
+    if (period === 'today') {
+      startStr = todayStr;
+      endStr = todayStr;
+    } else if (period === 'week') {
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      const startOfWeek = new Date(new Date(now).setDate(diff));
+      startStr = startOfWeek.toISOString().split('T')[0];
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endStr = endOfWeek.toISOString().split('T')[0];
+    } else if (period === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      startStr = startOfMonth.toISOString().split('T')[0];
+      
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      endStr = endOfMonth.toISOString().split('T')[0];
+    } else if (period === 'custom') {
+      startStr = customStart;
+      endStr = customEnd;
+    }
+    return { start: startStr, end: endStr };
+  };
+
+  const { start: filterStart, end: filterEnd } = getPeriodRange();
+
+  const periodAppointments = userAppointments.filter(a => a.date >= filterStart && a.date <= filterEnd);
+
+  const periodAppts = periodAppointments.length;
+  const revenueInPeriod = periodAppointments
+    .filter(a => a.status === 'confirmed' || a.status === 'completed')
     .reduce((s, a) => s + (a.priceAtTime || 0), 0);
 
-  const currentProfile = profiles.find(p => p.id === userId);
-  const commissionRate = currentProfile?.commission ?? 0;
-
-  const commissionToday = userAppointments
-    .filter(a => a.date === today && (a.status === 'confirmed' || a.status === 'completed'))
+  const commissionInPeriod = periodAppointments
+    .filter(a => a.status === 'confirmed' || a.status === 'completed')
     .reduce((sum, a) => {
       const prof = profiles.find(p => p.id === a.professionalId);
       const rate = prof?.commission ?? 0;
       return sum + (a.priceAtTime || 0) * (rate / 100);
     }, 0);
 
-  const activeClientsCount = role === 'professional'
-    ? new Set(userAppointments.map(a => a.clientId)).size
-    : clients.length;
+  const activeClientsInPeriod = new Set(periodAppointments.map(a => a.clientId)).size;
 
   const stats = [
-    { label: 'Agendamentos Hoje', value: todayAppts.length, sub: '+12% vs ontem', icon: Calendar, gold: false },
-    { label: 'Faturamento Hoje',  value: `R$ ${revenueToday.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, sub: '+8% vs ontem', icon: DollarSign, gold: true },
     { 
-      label: role === 'professional' ? 'Minha Comissão' : 'Comissões Hoje',
-      value: role === 'professional' 
-        ? `${commissionRate}%` 
-        : `R$ ${commissionToday.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      sub: role === 'professional' ? 'Por cada serviço' : 'Total pago hoje',
+      label: period === 'today' ? 'Agendamentos Hoje' : 'Agendamentos no Período', 
+      value: periodAppts, 
+      sub: period === 'today' ? 'Hoje' : period === 'week' ? 'Esta semana' : period === 'month' ? 'Este mês' : 'Personalizado', 
+      icon: Calendar, 
+      gold: false 
+    },
+    { 
+      label: period === 'today' ? 'Faturamento Hoje' : 'Faturamento no Período',  
+      value: `R$ ${revenueInPeriod.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
+      sub: 'Total faturado', 
+      icon: DollarSign, 
+      gold: true 
+    },
+    { 
+      label: role === 'professional' 
+        ? 'Minha Comissão' 
+        : (period === 'today' ? 'Comissões Hoje' : 'Comissões no Período'),
+      value: `R$ ${commissionInPeriod.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      sub: role === 'professional' ? 'Sua comissão no período' : 'Total pago à equipe',
       icon: Percent,
       gold: false
     },
-    { label: 'Clientes Ativos',   value: activeClientsCount, sub: role === 'professional' ? 'Clientes atendidos' : '+15% este mês', icon: Users, gold: false },
+    { 
+      label: 'Clientes Ativos',   
+      value: activeClientsInPeriod, 
+      sub: 'No período selecionado', 
+      icon: Users, 
+      gold: false 
+    },
   ];
 
-  const totalRev = userAppointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((s, a) => s + (a.priceAtTime || 0), 0);
+  const totalRev = periodAppointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((s, a) => s + (a.priceAtTime || 0), 0);
   const base = Math.max(totalRev, 800);
   const weeklyData = [
     { name: 'Seg', value: Math.round(base * 0.35) },
@@ -68,17 +119,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
   ];
 
   const svcCounts: Record<string, number> = {};
-  userAppointments.forEach(a => {
+  periodAppointments.forEach(a => {
     const s = services.find(sv => sv.id === a.serviceId);
     if (s) svcCounts[s.name] = (svcCounts[s.name] || 0) + 1;
   });
   const pieData = Object.entries(svcCounts).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, 4);
   if (pieData.length === 0) pieData.push({ name: 'Sem dados', value: 1 });
 
-  const upcoming = [...userAppointments]
+  const upcoming = [...periodAppointments]
     .filter(a => a.status !== 'cancelled')
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
-    .slice(0, 8);
+    .slice(0, 15);
 
   const statusBadge: Record<string, { label: string; bg: string; color: string }> = {
     pending:   { label: 'Pendente',   bg: 'rgba(255,179,0,0.12)',   color: '#ffb300' },
@@ -101,6 +152,50 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
         </div>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', alignSelf: 'center' }}>{dateLabel}</p>
       </header>
+
+      {/* Period Selector */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
+        <div className="premium-card" style={{ padding: '4px', display: 'inline-flex', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', gap: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          {[
+            { id: 'today', label: 'Hoje' },
+            { id: 'week', label: 'Esta Semana' },
+            { id: 'month', label: 'Este Mês' },
+            { id: 'custom', label: 'Personalizado' },
+          ].map(p => (
+            <button 
+              key={p.id}
+              onClick={() => setPeriod(p.id as any)}
+              style={{
+                padding: '0.5rem 1rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                background: period === p.id ? 'var(--accent-gold)' : 'transparent',
+                color: period === p.id ? '#000' : '#888',
+                fontSize: '0.75rem', fontWeight: '800', transition: 'all 0.2s'
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {period === 'custom' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.02)', padding: '6px 12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', animation: 'fadeIn 0.2s ease-out' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>De:</span>
+            <input 
+              type="date" 
+              value={customStart} 
+              onChange={e => setCustomStart(e.target.value)} 
+              style={{ background: '#111', border: '1px solid #333', color: 'white', fontSize: '0.75rem', borderRadius: '6px', padding: '4px 8px', outline: 'none' }} 
+            />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Até:</span>
+            <input 
+              type="date" 
+              value={customEnd} 
+              onChange={e => setCustomEnd(e.target.value)} 
+              style={{ background: '#111', border: '1px solid #333', color: 'white', fontSize: '0.75rem', borderRadius: '6px', padding: '4px 8px', outline: 'none' }} 
+            />
+          </div>
+        )}
+      </div>
 
       {/* Stats */}
       <div className="stats-grid" style={{ marginBottom: '2rem' }}>
@@ -173,7 +268,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
       {/* Upcoming Appointments */}
       <div className="premium-card" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0 }}>Próximos Agendamentos</h3>
+          <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0 }}>
+            {period === 'today' ? 'Agendamentos Hoje' : 'Agendamentos no Período'}
+          </h3>
           <button onClick={onViewAll} style={{ background: 'transparent', border: 'none', color: '#d4af37', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}>
             Ver todos →
           </button>
@@ -259,6 +356,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
         @media (max-width: 768px) {
           #desktop-table { display: none !important; }
           #mobile-list { display: flex !important; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}} />
     </div>
