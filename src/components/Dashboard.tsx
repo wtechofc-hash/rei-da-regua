@@ -287,7 +287,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    {['Horário', 'Cliente', 'Serviço', 'Profissional', 'Status'].map(h => (
+                    {['Data', 'Horário', 'Cliente', 'Serviço', 'Valor', 'Profissional', 'Status'].map(h => (
                       <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -297,11 +297,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                     const svc  = services.find(s => s.id === appt.serviceId);
                     const prof = profiles.find(p => p.id === appt.professionalId);
                     const badge = statusBadge[appt.status] ?? statusBadge.pending;
+                    
+                    const formatDate = (dateStr: string) => {
+                      if (!dateStr) return '—';
+                      const parts = dateStr.split('-');
+                      if (parts.length !== 3) return dateStr;
+                      const [year, month, day] = parts;
+                      return `${day}/${month}/${year}`;
+                    };
+
                     return (
                       <tr key={appt.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        <td style={{ padding: '1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{formatDate(appt.date)}</td>
                         <td style={{ padding: '1rem', fontWeight: '700', color: '#d4af37', whiteSpace: 'nowrap' }}>{appt.time.slice(0, 5)}</td>
                         <td style={{ padding: '1rem', fontWeight: '600' }}>{appt.clientName}</td>
                         <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{svc?.name ?? '—'}</td>
+                        <td style={{ padding: '1rem', fontWeight: '700', color: 'white' }}>
+                          R$ {(appt.priceAtTime || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </td>
                         <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{prof?.name ?? '—'}</td>
                         <td style={{ padding: '1rem' }}>
                           <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: '700', background: badge.bg, color: badge.color }}>
@@ -321,6 +334,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                 const svc  = services.find(s => s.id === appt.serviceId);
                 const prof = profiles.find(p => p.id === appt.professionalId);
                 const badge = statusBadge[appt.status] ?? statusBadge.pending;
+
+                const formatDate = (dateStr: string) => {
+                  if (!dateStr) return '—';
+                  const parts = dateStr.split('-');
+                  if (parts.length !== 3) return dateStr;
+                  const [year, month, day] = parts;
+                  return `${day}/${month}`;
+                };
+
                 return (
                   <div key={appt.id} style={{ 
                     padding: '1rem', background: 'rgba(255,255,255,0.02)', 
@@ -329,11 +351,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                   }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{ fontWeight: '800', color: '#d4af37', fontSize: '0.95rem' }}>{appt.time.slice(0, 5)}</span>
+                        <span style={{ fontWeight: '800', color: '#d4af37', fontSize: '0.9rem' }}>
+                          {formatDate(appt.date)} - {appt.time.slice(0, 5)}
+                        </span>
                         <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{appt.clientName}</span>
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={11} /> {svc?.name}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={11} /> {svc?.name} (R$ {(appt.priceAtTime || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                        </span>
                         <span>·</span>
                         <span>{prof?.name?.split(' ')[0]}</span>
                       </div>
