@@ -174,9 +174,10 @@ const Storefront: React.FC = () => {
           priceAtTime: item.service.price,
           commissionAtTime: 0
         });
-        if (appt) {
-          createdAppts.push(appt);
+        if (!appt) {
+          throw new Error(`Não foi possível salvar o agendamento para o serviço ${item.service.name}. Por favor, tente novamente ou entre em contato.`);
         }
+        createdAppts.push(appt);
       }
 
       // 2. Create products sale if products exist in cart

@@ -231,6 +231,119 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchData();
   }, []);
 
+  // Real-time synchronization
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'appointments' },
+        async (payload: any) => {
+          const newRow = payload.new;
+          const oldRow = payload.old;
+          
+          // Filter by shopId if active
+          if (shopId && newRow?.shop_id && newRow.shop_id !== shopId) return;
+          if (shopId && oldRow?.shop_id && oldRow.shop_id !== shopId) return;
+
+          if (payload.eventType === 'INSERT') {
+            // Fetch client name
+            let clientName = 'Cliente Online';
+            if (newRow.client_id) {
+              const { data: cData } = await supabase.from('clients').select('name').eq('id', newRow.client_id).maybeSingle();
+              if (cData) clientName = cData.name;
+            }
+            
+            const newAppt: Appointment = {
+              id: newRow.id,
+              clientId: newRow.client_id || 'online-customer',
+              clientName,
+              professionalId: newRow.professional_id,
+              serviceId: newRow.service_id,
+              date: newRow.date,
+              time: newRow.time,
+              endTime: newRow.end_time || newRow.time,
+              status: newRow.status as any,
+              priceAtTime: newRow.total_price || 0,
+              commissionAtTime: 0,
+              isNewForPro: true
+            };
+
+            setAppointments(prev => {
+              if (prev.some(a => a.id === newAppt.id)) return prev;
+              return [...prev, newAppt];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setAppointments(prev => prev.map(a => {
+              if (a.id === newRow.id) {
+                return {
+                  ...a,
+                  clientId: newRow.client_id || a.clientId,
+                  professionalId: newRow.professional_id,
+                  serviceId: newRow.service_id,
+                  date: newRow.date,
+                  time: newRow.time,
+                  endTime: newRow.end_time || newRow.time,
+                  status: newRow.status as any,
+                  priceAtTime: newRow.total_price || 0
+                };
+              }
+              return a;
+            }));
+          } else if (payload.eventType === 'DELETE') {
+            setAppointments(prev => prev.filter(a => a.id !== oldRow.id));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'clients' },
+        (payload: any) => {
+          const newRow = payload.new;
+          const oldRow = payload.old;
+
+          if (shopId && newRow?.shop_id && newRow.shop_id !== shopId) return;
+          if (shopId && oldRow?.shop_id && oldRow.shop_id !== shopId) return;
+
+          if (payload.eventType === 'INSERT') {
+            const newClient: Client = {
+              id: newRow.id,
+              name: newRow.name,
+              phone: newRow.phone || '',
+              email: newRow.email || '',
+              lastVisit: newRow.last_visit,
+              totalSpent: newRow.total_spent || 0,
+              appointmentsCount: 0
+            };
+            setClients(prev => {
+              if (prev.some(c => c.id === newClient.id)) return prev;
+              return [...prev, newClient];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setClients(prev => prev.map(c => {
+              if (c.id === newRow.id) {
+                return {
+                  ...c,
+                  name: newRow.name,
+                  phone: newRow.phone || '',
+                  email: newRow.email || '',
+                  lastVisit: newRow.last_visit,
+                  totalSpent: newRow.total_spent || 0
+                };
+              }
+              return c;
+            }));
+          } else if (payload.eventType === 'DELETE') {
+            setClients(prev => prev.filter(c => c.id !== oldRow.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [shopId]);
 
   const addService = async (s: Omit<Service, 'id'>) => {
     const { data, error } = await supabase.from('services').insert([{ 
@@ -272,11 +385,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addClient = async (c: Omit<Client, 'id'>) => {
-    const { data } = await supabase.from('clients').insert([{ name: c.name, phone: c.phone, email: c.email, shop_id: shopId }]).select();
+    const { data, error } = await supabase.from('clients').insert([{ 
+      name: c.name, 
+      phone: c.phone || null, 
+      email: c.email?.trim().toLowerCase() || null, 
+      shop_id: shopId 
+    }]).select();
+    if (error) console.error("Error adding client:", error);
     if (data) setClients(prev => [...prev, { ...c, id: data[0].id }]);
   };
   const updateClient = async (id: string, c: Partial<Client>) => {
-    await supabase.from('clients').update({ name: c.name, phone: c.phone, email: c.email }).eq('id', id);
+    const { error } = await supabase.from('clients').update({ 
+      name: c.name, 
+      phone: c.phone || null, 
+      email: c.email?.trim().toLowerCase() || null 
+    }).eq('id', id);
+    if (error) console.error("Error updating client:", error);
     setClients(prev => prev.map(i => i.id === id ? {...i, ...c} : i));
   };
   const deleteClient = async (id: string) => {
@@ -309,19 +433,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Determine shopId by checking the professional if current shopId is null
     let resolvedShopId = shopId;
     if (!resolvedShopId && a.professionalId) {
-      const { data: proData } = await supabase.from('professionals').select('shop_id').eq('id', a.professionalId).maybeSingle();
+      const { data: proData, error: proError } = await supabase.from('professionals').select('shop_id').eq('id', a.professionalId).maybeSingle();
+      if (proError) console.error("Error fetching professional shop_id:", proError);
       if (proData && proData.shop_id) {
         resolvedShopId = proData.shop_id;
       }
     }
     
     if (!a.clientId || a.clientId === 'online-customer' || a.clientId.length < 10) {
-      const { data: newClient } = await supabase.from('clients').insert([{
+      const { data: newClient, error: clientError } = await supabase.from('clients').insert([{
         name: a.clientName || 'Cliente Online',
-        phone: '',
-        email: '',
+        phone: null,
+        email: null,
         shop_id: resolvedShopId
       }]).select();
+      
+      if (clientError) {
+        console.error("Error creating new client for appointment:", clientError);
+      }
+      
       if (newClient && newClient.length > 0) {
         resolvedClientId = newClient[0].id;
       } else {
@@ -329,7 +459,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    const { data } = await supabase.from('appointments').insert([{ 
+    const { data, error: apptError } = await supabase.from('appointments').insert([{ 
       client_id: resolvedClientId, 
       professional_id: a.professionalId, 
       service_id: a.serviceId, 
@@ -341,6 +471,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       shop_id: resolvedShopId 
     }]).select();
 
+    if (apptError) {
+      console.error("Error creating appointment:", apptError);
+    }
+
     if (data) {
       const newAppt = { 
         ...a, 
@@ -349,7 +483,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         clientName: a.clientName || 'Cliente Online',
         isNewForPro: true 
       };
-      setAppointments(prev => [...prev, newAppt]);
+      setAppointments(prev => {
+        if (prev.some(x => x.id === newAppt.id)) return prev;
+        return [...prev, newAppt];
+      });
       return newAppt;
     }
     return null;
