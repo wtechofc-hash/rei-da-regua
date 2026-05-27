@@ -285,8 +285,8 @@ const Storefront: React.FC = () => {
       
       {/* Success View from online checkouts redirect */}
       {onlineSuccess && (
-        <div style={{ maxWidth: '600px', margin: '4rem auto', padding: '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
-          <div className="premium-card" style={{ padding: '3.5rem', border: '1px solid rgba(0, 204, 68, 0.2)', background: 'rgba(5,5,5,0.95)', boxShadow: '0 20px 50px rgba(0,0,0,0.8)', borderRadius: '24px', textAlign: 'center' }}>
+        <div style={{ maxWidth: '600px', margin: isMobile ? '1.5rem auto' : '4rem auto', padding: isMobile ? '0 0.5rem' : '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
+          <div className="premium-card" style={{ padding: isMobile ? '2.5rem 1.25rem' : '3.5rem', border: '1px solid rgba(0, 204, 68, 0.2)', background: 'rgba(5,5,5,0.95)', boxShadow: '0 20px 50px rgba(0,0,0,0.8)', borderRadius: '24px', textAlign: 'center' }}>
             <div style={{ background: 'rgba(0, 204, 68, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', border: '1px solid rgba(0,204,68,0.2)' }}>
               <CheckCircle size={48} color="#00cc44" />
             </div>
@@ -816,7 +816,7 @@ const Storefront: React.FC = () => {
             {/* Right Column: Checkout forms & Payment summary */}
             <aside>
               <div style={{ position: 'sticky', top: '2rem' }}>
-                <div className="premium-card" style={{ padding: '2.5rem', border: '1px solid rgba(212,175,55,0.2)' }}>
+                <div className="premium-card" style={{ padding: isMobile ? '1.5rem 1.25rem' : '2.5rem', border: '1px solid rgba(212,175,55,0.2)' }}>
                   <h3 style={{ fontSize: '1.3rem', fontWeight: '900', marginBottom: '2rem', color: 'var(--accent-gold)', textAlign: 'center' }}>Resumo do Pedido</h3>
                   
                   <div style={{ display: 'grid', gap: '1rem', marginBottom: '2rem', fontSize: '0.9rem' }}>
@@ -944,8 +944,8 @@ const Storefront: React.FC = () => {
 
       {/* Checkout Success View (Offline checks) */}
       {isSuccessState && (
-        <div style={{ maxWidth: '600px', margin: '4rem auto', padding: '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
-          <div className="premium-card" style={{ padding: '3.5rem', border: '1px solid rgba(0, 204, 68, 0.2)', background: 'rgba(5,5,5,0.95)', boxShadow: '0 20px 50px rgba(0,0,0,0.8)', borderRadius: '24px', textAlign: 'center' }}>
+        <div style={{ maxWidth: '600px', margin: isMobile ? '1.5rem auto' : '4rem auto', padding: isMobile ? '0 0.5rem' : '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
+          <div className="premium-card" style={{ padding: isMobile ? '2.5rem 1.25rem' : '3.5rem', border: '1px solid rgba(0, 204, 68, 0.2)', background: 'rgba(5,5,5,0.95)', boxShadow: '0 20px 50px rgba(0,0,0,0.8)', borderRadius: '24px', textAlign: 'center' }}>
             <div style={{ background: 'rgba(0, 204, 68, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', border: '1px solid rgba(0,204,68,0.2)' }}>
               <CheckCircle size={48} color="#00cc44" />
             </div>
