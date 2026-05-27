@@ -306,12 +306,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addAppointment = async (a: Omit<Appointment, 'id'>) => {
     let resolvedClientId: string | null = a.clientId;
     
+    // Determine shopId by checking the professional if current shopId is null
+    let resolvedShopId = shopId;
+    if (!resolvedShopId && a.professionalId) {
+      const { data: proData } = await supabase.from('professionals').select('shop_id').eq('id', a.professionalId).maybeSingle();
+      if (proData && proData.shop_id) {
+        resolvedShopId = proData.shop_id;
+      }
+    }
+    
     if (!a.clientId || a.clientId === 'online-customer' || a.clientId.length < 10) {
       const { data: newClient } = await supabase.from('clients').insert([{
         name: a.clientName || 'Cliente Online',
         phone: '',
         email: '',
-        shop_id: shopId
+        shop_id: resolvedShopId
       }]).select();
       if (newClient && newClient.length > 0) {
         resolvedClientId = newClient[0].id;
@@ -329,7 +338,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       end_time: a.endTime || a.time,
       status: a.status, 
       total_price: a.priceAtTime, 
-      shop_id: shopId 
+      shop_id: resolvedShopId 
     }]).select();
 
     if (data) {

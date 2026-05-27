@@ -181,9 +181,15 @@ const Storefront: React.FC = () => {
 
       // 2. Create products sale if products exist in cart
       if (cartProducts.length > 0) {
+        let resolvedShopId = shopId;
+        if (!resolvedShopId) {
+          const { data: shopMatch } = await supabase.from('shops').select('id').limit(1).maybeSingle();
+          if (shopMatch) resolvedShopId = shopMatch.id;
+        }
+
         const cartTotal = cartProducts.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
         const { data: saleData, error: saleError } = await supabase.from('sales').insert([{
-          shop_id: shopId,
+          shop_id: resolvedShopId,
           total_amount: cartTotal,
           payment_method: paymentMethod,
         }]).select();
