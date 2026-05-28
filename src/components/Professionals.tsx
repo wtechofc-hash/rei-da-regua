@@ -4,7 +4,7 @@ import { useApp, Profile } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
 
 const Professionals: React.FC = () => {
-  const { profiles = [], addProfile, updateProfile, deleteProfile } = useApp();
+  const { profiles = [], addProfile, updateProfile, deleteProfile, shopId } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -25,19 +25,51 @@ const handleSubmit = async (e: React.FormEvent) => {
   } else {
     try {
       const { data: authData, error: signupError } = await supabase.auth.signUp({ email: data.email, password: formData.password });
-      if (signupError) throw signupError;
-      if (!authData.user) throw new Error("Falha ao obter dados do usuário.");
-      
-      const dataWithId = { ...data, id: authData.user.id };
-      const { data: profileData, error: insertError } = await supabase.from('professionals').insert([dataWithId]).select();
+
+      let userId: string | null = null;
+
+      if (signupError) {
+        // If email already exists in Auth, check if it's already a professional
+        if (signupError.message?.toLowerCase().includes('already registered') || signupError.message?.toLowerCase().includes('already exists')) {
+          // Try to find if already exists in professionals table
+          const { data: existing } = await supabase.from('professionals').select('id').eq('email', data.email).maybeSingle();
+          if (existing) {
+            alert('Este e-mail já está cadastrado como profissional.');
+            return;
+          }
+          // Auth user exists but no professional record — not recoverable without admin API
+          alert('Este e-mail já está registrado no sistema de autenticação. Use um e-mail diferente ou contate o suporte.');
+          return;
+        }
+        throw signupError;
+      }
+
+      if (!authData.user) throw new Error('Falha ao obter dados do usuário.');
+      userId = authData.user.id;
+
+      const dbPayload = {
+        id: userId,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        photo_url: data.avatar,
+        shop_id: shopId
+      };
+      const { data: profileData, error: insertError } = await supabase.from('professionals').insert([dbPayload]).select();
       if (insertError) throw insertError;
-      if (profileData && addProfile) addProfile({ ...dataWithId });
+      if (profileData && addProfile) addProfile({ ...data, id: userId });
+
+      setFormData({ name: '', email: '', password: '' });
+      setIsAdding(false);
     } catch (err: any) {
-      alert("Erro ao criar profissional: " + err.message);
+      const msg = err.message || '';
+      if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already exists')) {
+        alert('Este e-mail já está cadastrado. Use um e-mail diferente.');
+      } else {
+        alert('Erro ao criar profissional: ' + msg);
+      }
     }
   }
-  setFormData({ name: '', email: '', password: '' });
-  setIsAdding(false);
 };
 
   const handleEditClick = (pro: Profile) => {
