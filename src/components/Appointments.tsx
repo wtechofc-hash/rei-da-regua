@@ -101,7 +101,9 @@ const Appointments: React.FC = () => {
 
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newApptData.serviceId || !newApptData.professionalId || !newApptData.clientName) {
+    
+    // Validate for admins/professionals. Clients auto-fill their own info.
+    if (!newApptData.serviceId || !newApptData.professionalId || (role !== 'customer' && !newApptData.clientName)) {
       alert("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
@@ -112,14 +114,14 @@ const Appointments: React.FC = () => {
 
     try {
       const added = await addAppointment({
-        clientId: newClientToggle ? 'online-customer' : newApptData.clientId,
-        clientName: newApptData.clientName,
+        clientId: role === 'customer' ? (userId || '') : (newClientToggle ? 'online-customer' : newApptData.clientId),
+        clientName: role === 'customer' ? (profiles.find(p => p.id === userId)?.name || 'Cliente') : newApptData.clientName,
         professionalId: newApptData.professionalId,
         serviceId: newApptData.serviceId,
         date: newApptData.date,
         time: newApptData.time,
         endTime,
-        status: 'confirmed',
+        status: role === 'customer' ? 'pending' : 'confirmed',
         priceAtTime: newApptData.price,
         commissionAtTime: 0
       });
@@ -160,8 +162,11 @@ const Appointments: React.FC = () => {
     // Role filter: professional sees only theirs
     if (role === 'professional' && appt.professionalId !== userId) return false;
 
+    // Role filter: client sees only theirs
+    if (role === 'customer' && appt.clientId !== userId) return false;
+
     // Professional filter (for admin/owner)
-    if (role !== 'professional' && proFilter !== 'all' && appt.professionalId !== proFilter) return false;
+    if (role !== 'professional' && role !== 'customer' && proFilter !== 'all' && appt.professionalId !== proFilter) return false;
 
     // Status filter
     if (statusFilter !== 'all' && appt.status !== statusFilter) return false;
@@ -208,7 +213,7 @@ const Appointments: React.FC = () => {
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0 }}>Agenda</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '4px 0 0' }}>
-            {role === 'professional' ? 'Gerencie seus horários e atendimentos.' : 'Gestão completa de agendamentos da barbearia.'}
+            {role === 'customer' ? 'Histórico e agendamentos realizados.' : role === 'professional' ? 'Gerencie seus horários e atendimentos.' : 'Gestão completa de agendamentos da barbearia.'}
           </p>
         </div>
         <button onClick={() => setIsModalOpen(true)} className="gold-button" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -231,8 +236,8 @@ const Appointments: React.FC = () => {
             />
           </div>
 
-          {/* Professional filter dropdown (only for non-professionals) */}
-          {role !== 'professional' && (
+          {/* Professional filter dropdown (only for non-professionals and non-clients) */}
+          {role !== 'professional' && role !== 'customer' && (
             <div style={{ position: 'relative', minWidth: '180px' }}>
               <select
                 value={proFilter}
@@ -502,66 +507,69 @@ const Appointments: React.FC = () => {
 
             <form onSubmit={handleCreateAppointment} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               
-              {/* Toggle Cliente */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Tipo de Cliente</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setNewClientToggle(false)}
-                    style={{
-                      flex: 1, padding: '0.6rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                      background: !newClientToggle ? 'var(--accent-gold)' : 'rgba(255,255,255,0.03)',
-                      color: !newClientToggle ? '#000' : '#888', fontSize: '0.75rem', fontWeight: '700'
-                    }}
-                  >
-                    Cadastrado
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewClientToggle(true)}
-                    style={{
-                      flex: 1, padding: '0.6rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                      background: newClientToggle ? 'var(--accent-gold)' : 'rgba(255,255,255,0.03)',
-                      color: newClientToggle ? '#000' : '#888', fontSize: '0.75rem', fontWeight: '700'
-                    }}
-                  >
-                    Novo Cliente
-                  </button>
-                </div>
-              </div>
+              {/* Toggle e Input Cliente (Oculto para Clientes) */}
+              {role !== 'customer' && (
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Tipo de Cliente</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setNewClientToggle(false)}
+                        style={{
+                          flex: 1, padding: '0.6rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                          background: !newClientToggle ? 'var(--accent-gold)' : 'rgba(255,255,255,0.03)',
+                          color: !newClientToggle ? '#000' : '#888', fontSize: '0.75rem', fontWeight: '700'
+                        }}
+                      >
+                        Cadastrado
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewClientToggle(true)}
+                        style={{
+                          flex: 1, padding: '0.6rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                          background: newClientToggle ? 'var(--accent-gold)' : 'rgba(255,255,255,0.03)',
+                          color: newClientToggle ? '#000' : '#888', fontSize: '0.75rem', fontWeight: '700'
+                        }}
+                      >
+                        Novo Cliente
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Input Cliente */}
-              {!newClientToggle ? (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Cliente</label>
-                  <select
-                    required
-                    value={newApptData.clientId}
-                    onChange={e => {
-                      const selected = clients.find(c => c.id === e.target.value);
-                      setNewApptData(prev => ({ ...prev, clientId: e.target.value, clientName: selected?.name || '' }));
-                    }}
-                    style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
-                  >
-                    <option value="" style={{ background: '#050505' }}>Selecione um cliente...</option>
-                    {clients.map(c => (
-                      <option key={c.id} value={c.id} style={{ background: '#050505' }}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Nome do Novo Cliente</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Digite o nome..."
-                    value={newApptData.clientName}
-                    onChange={e => setNewApptData(prev => ({ ...prev, clientName: e.target.value, clientId: 'new' }))}
-                    style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
-                  />
-                </div>
+                  {!newClientToggle ? (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Cliente</label>
+                      <select
+                        required
+                        value={newApptData.clientId}
+                        onChange={e => {
+                          const selected = clients.find(c => c.id === e.target.value);
+                          setNewApptData(prev => ({ ...prev, clientId: e.target.value, clientName: selected?.name || '' }));
+                        }}
+                        style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                      >
+                        <option value="" style={{ background: '#050505' }}>Selecione um cliente...</option>
+                        {clients.map(c => (
+                          <option key={c.id} value={c.id} style={{ background: '#050505' }}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Nome do Novo Cliente</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Digite o nome..."
+                        value={newApptData.clientName}
+                        onChange={e => setNewApptData(prev => ({ ...prev, clientName: e.target.value, clientId: 'new' }))}
+                        style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                      />
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Serviço */}
@@ -647,18 +655,20 @@ const Appointments: React.FC = () => {
                 </div>
               </div>
 
-              {/* Valor */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Preço do Serviço (R$)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  value={newApptData.price}
-                  onChange={e => setNewApptData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                  style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
-                />
-              </div>
+              {/* Valor (Oculto para Clientes, o preço é atrelado ao serviço) */}
+              {role !== 'customer' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Preço do Serviço (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={newApptData.price}
+                    onChange={e => setNewApptData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                  />
+                </div>
+              )}
 
               <button
                 type="submit"
