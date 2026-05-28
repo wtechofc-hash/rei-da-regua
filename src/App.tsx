@@ -89,8 +89,36 @@ const MORE_NAV = [
 const AppContent: React.FC = () => {
   const { role, userId, shopData, setAuth, logout, profiles = [], appointments = [], clearProNotifications, config } = useApp();
   const [page, setPage] = useState<Page>('dashboard');
+  const isPopState = React.useRef(false);
   const mainRef = React.useRef<HTMLDivElement>(null);
   const handleOpenMore = () => setPage('__more__');
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      isPopState.current = true;
+      if (event.state && event.state.page) {
+        setPage(event.state.page as Page);
+      } else {
+        setPage('dashboard');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    if (!window.history.state) {
+      window.history.replaceState({ page: 'dashboard' }, '');
+    }
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (isPopState.current) {
+      isPopState.current = false;
+      return;
+    }
+    const currentState = window.history.state;
+    if (currentState && currentState.page !== page) {
+      window.history.pushState({ page }, '');
+    }
+  }, [page]);
 
   // Reset scroll to top on every page change
   useEffect(() => {
