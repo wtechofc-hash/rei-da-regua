@@ -509,31 +509,14 @@ const Storefront: React.FC = () => {
           </div>
 
           <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '0 1rem', width: '100%' }}>
-            {/* Logout Button */}
-            <button 
-              onClick={logout}
-              style={{ 
-                position: 'absolute', top: '-50px', right: '20px', 
-                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                padding: '8px 15px', borderRadius: '10px', color: '#ff4444', 
-                display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', fontWeight: '700',
-                cursor: 'pointer', backdropFilter: 'blur(10px)'
-              }}
-            >
-              <LogOut size={14} /> Sair
-            </button>
-
             <div style={{ marginBottom: '2rem' }}>
               <img 
                 src={config?.logoUrl || "/logo3.png"} 
                 alt="Logo" 
-                style={{ width: '150px', filter: 'drop-shadow(0 0 20px rgba(212,175,55,0.4))' }} 
+                style={{ width: 'clamp(220px, 45vw, 350px)', filter: 'drop-shadow(0 0 25px rgba(212,175,55,0.4))' }} 
                 onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
             </div>
-            <h1 style={{ fontSize: 'clamp(2.5rem, 10vw, 5rem)', fontWeight: '900', color: 'white', letterSpacing: '-0.02em', marginBottom: '1rem', textShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
-              {(config?.businessName || 'REI DA RÉGUA').toUpperCase()}
-            </h1>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
               <div style={{ height: '1px', width: '40px', background: 'var(--accent-gold)' }}></div>
               <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1.1rem)', color: 'var(--accent-gold)', fontWeight: '700', letterSpacing: '0.4em', textTransform: 'uppercase', margin: 0 }}>
