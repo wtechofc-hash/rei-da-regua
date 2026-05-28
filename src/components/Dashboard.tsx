@@ -15,7 +15,13 @@ const PIE_COLORS = ['#d4af37', '#a68a2d', '#7d6822', '#f0d060'];
 const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
   const { role, userId, appointments = [], clients = [], services = [], profiles = [] } = useApp();
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = (() => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  })();
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'custom'>('today');
   const [customStart, setCustomStart] = useState<string>(todayStr);
   const [customEnd, setCustomEnd] = useState<string>(todayStr);
@@ -26,6 +32,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
 
   const getPeriodRange = () => {
     const now = new Date();
+    const toLocal = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
     let startStr = todayStr;
     let endStr = todayStr;
 
@@ -35,18 +47,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
     } else if (period === 'week') {
       const day = now.getDay();
       const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      const startOfWeek = new Date(new Date(now).setDate(diff));
-      startStr = startOfWeek.toISOString().split('T')[0];
+      const startOfWeek = new Date(now.getFullYear(), now.getMonth(), diff);
+      startStr = toLocal(startOfWeek);
       
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6);
-      endStr = endOfWeek.toISOString().split('T')[0];
+      endStr = toLocal(endOfWeek);
     } else if (period === 'month') {
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      startStr = startOfMonth.toISOString().split('T')[0];
+      startStr = toLocal(startOfMonth);
       
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      endStr = endOfMonth.toISOString().split('T')[0];
+      endStr = toLocal(endOfMonth);
     } else if (period === 'custom') {
       startStr = customStart;
       endStr = customEnd;
