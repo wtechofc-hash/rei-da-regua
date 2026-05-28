@@ -12,7 +12,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useApp, Appointment } from '../context/AppContext';
-import { generateAvailableSlots, addMinutesToTime, resolveApptEndTime } from '../utils/timeSlots';
+import { generateAvailableSlots, addMinutesToTime, resolveApptEndTime, getLocalDateString } from '../utils/timeSlots';
 
 // Date helpers
 const getWeekRange = (base: Date) => {
@@ -24,16 +24,16 @@ const getWeekRange = (base: Date) => {
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
   return {
-    start: monday.toISOString().split('T')[0],
-    end: sunday.toISOString().split('T')[0]
+    start: getLocalDateString(monday),
+    end: getLocalDateString(sunday)
   };
 };
 
 const getMonthRange = (base: Date) => {
   const y = base.getFullYear();
   const m = base.getMonth();
-  const start = new Date(y, m, 1).toISOString().split('T')[0];
-  const end = new Date(y, m + 1, 0).toISOString().split('T')[0];
+  const start = getLocalDateString(new Date(y, m, 1));
+  const end = getLocalDateString(new Date(y, m + 1, 0));
   return { start, end };
 };
 
@@ -54,7 +54,7 @@ const Appointments: React.FC = () => {
     deleteAppointment
   } = useApp();
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
 
   // Status filter
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -66,6 +66,9 @@ const Appointments: React.FC = () => {
 
   // Search
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Professional filter
+  const [proFilter, setProFilter] = useState<string>('all');
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -157,6 +160,9 @@ const Appointments: React.FC = () => {
     // Role filter: professional sees only theirs
     if (role === 'professional' && appt.professionalId !== userId) return false;
 
+    // Professional filter (for admin/owner)
+    if (role !== 'professional' && proFilter !== 'all' && appt.professionalId !== proFilter) return false;
+
     // Status filter
     if (statusFilter !== 'all' && appt.status !== statusFilter) return false;
 
@@ -212,7 +218,7 @@ const Appointments: React.FC = () => {
 
       {/* Filters & Search */}
       <div className="premium-card" style={{ padding: '1.25rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {/* Row 1: Search + Date Filter */}
+        {/* Row 1: Search + Filters */}
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
             <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
@@ -224,6 +230,28 @@ const Appointments: React.FC = () => {
               style={{ width: '100%', padding: '0.7rem 1rem 0.7rem 2.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: 'white', outline: 'none', fontSize: '0.875rem' }}
             />
           </div>
+
+          {/* Professional filter dropdown (only for non-professionals) */}
+          {role !== 'professional' && (
+            <div style={{ position: 'relative', minWidth: '180px' }}>
+              <select
+                value={proFilter}
+                onChange={e => setProFilter(e.target.value)}
+                style={{
+                  width: '100%', padding: '0.7rem 1rem', background: 'rgba(255,255,255,0.03)',
+                  border: proFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '12px', color: proFilter !== 'all' ? 'var(--accent-gold)' : '#aaa',
+                  outline: 'none', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', appearance: 'none'
+                }}
+              >
+                <option value="all" style={{ background: '#050505' }}>Todos Profissionais</option>
+                {profiles.map(p => (
+                  <option key={p.id} value={p.id} style={{ background: '#050505' }}>{p.name}</option>
+                ))}
+              </select>
+              <ChevronDown size={14} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} />
+            </div>
+          )}
 
           {/* Date filter dropdown */}
           <div style={{ position: 'relative' }}>

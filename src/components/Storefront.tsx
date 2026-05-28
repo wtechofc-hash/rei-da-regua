@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
-import { generateAvailableSlots } from '../utils/timeSlots';
+import { generateAvailableSlots, getLocalDateString } from '../utils/timeSlots';
 import TimePicker from './TimePicker';
 
 /* Hook: detecta se está em mobile para ajustar o offset do botão flutuante */
@@ -62,7 +62,7 @@ const Storefront: React.FC = () => {
 
   // Selection modal state
   const [openBookingModal, setOpenBookingModal] = useState(false);
-  const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bookingDate, setBookingDate] = useState(getLocalDateString());
   const [bookingTime, setBookingTime] = useState('');
   const [selectedProfessional, setSelectedProfessional] = useState<string>('');
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
@@ -1099,7 +1099,7 @@ const Storefront: React.FC = () => {
                 <input 
                   required 
                   type="date" 
-                  min={new Date().toISOString().split('T')[0]}
+                  min={getLocalDateString()}
                   style={{ width: '100%', padding: '1.1rem 1rem', borderRadius: '14px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }} 
                   value={bookingDate} 
                   onChange={e => setBookingDate(e.target.value)} 

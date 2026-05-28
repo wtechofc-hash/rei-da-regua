@@ -38,6 +38,13 @@ export const resolveApptEndTime = (
   return appt.endTime;
 };
 
+export const getLocalDateString = (d: Date = new Date()): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const generateAvailableSlots = (
   date: string,
   professionalId: string,
@@ -61,7 +68,7 @@ export const generateAvailableSlots = (
   const closeMin = parseTimeToMinutes(shopCloseTime);
   
   const now = new Date();
-  const currentDateStr = now.toISOString().split('T')[0];
+  const currentDateStr = getLocalDateString(now);
   const currentMin = now.getHours() * 60 + now.getMinutes();
 
   const slots: string[] = [];
