@@ -182,6 +182,9 @@ const Storefront: React.FC = () => {
           });
           localStorage.removeItem('pending_mp_subscription');
           setVipSuccess(true);
+          const mainEl = document.querySelector('main');
+          if (mainEl) mainEl.scrollTop = 0;
+          window.scrollTo({ top: 0 });
           window.history.replaceState({}, document.title, window.location.pathname);
         } catch (err) {
           console.error('Erro ao ativar assinatura VIP:', err);
@@ -702,6 +705,9 @@ const Storefront: React.FC = () => {
                                   }
                                   setVipCheckoutPlan(plan);
                                   setIsVipCheckoutActive(true);
+                                  window.scrollTo({ top: 0 });
+                                  const mainEl = document.querySelector('main');
+                                  if (mainEl) mainEl.scrollTop = 0;
                                 }}
                                 className="gold-button"
                                 style={{ padding: '0.6rem 1rem', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '0.75rem', width: '100%' }}
