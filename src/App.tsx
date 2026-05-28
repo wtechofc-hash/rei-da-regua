@@ -260,8 +260,17 @@ const AppContent: React.FC = () => {
           </div>
         </header>
 
-        <main ref={mainRef} className="main-content" style={{ flex: 1, overflowY: 'auto', paddingBottom: '88px' }}>
-          <div style={{ padding: '1.25rem 1.25rem 40px' }}>
+        <main 
+          ref={mainRef} 
+          className={(role === 'customer' && page === 'dashboard') ? "" : "main-content"} 
+          style={{ 
+            flex: 1, 
+            overflowY: 'auto', 
+            paddingBottom: (role === 'customer' && page === 'dashboard') ? '0' : '88px',
+            background: 'var(--bg-primary)'
+          }}
+        >
+          <div style={{ padding: (role === 'customer' && page === 'dashboard') ? '0' : '1.25rem 1.25rem 40px' }}>
             <ErrorBoundary>
               <Suspense key={page} fallback={<Spinner />}>
                 {renderPage()}
