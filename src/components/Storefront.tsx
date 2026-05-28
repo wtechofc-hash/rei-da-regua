@@ -54,7 +54,8 @@ const Storefront: React.FC = () => {
     updateProduct,
     subscriptionPlans = [],
     subscriptions = [],
-    addSubscription
+    addSubscription,
+    useSubscriptionCredit
   } = useApp();
 
   // Selected state for the active card click
