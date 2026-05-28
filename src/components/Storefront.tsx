@@ -561,8 +561,8 @@ const Storefront: React.FC = () => {
                 display: 'flex', gap: '1.5rem',
                 overflowX: 'auto', overflowY: 'hidden',
                 scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch',
-                padding: '0.75rem 1.5rem',
-                margin: '-0.75rem -1.5rem'
+                padding: '2.5rem 1.5rem',
+                margin: '-2.5rem -1.5rem'
               }}>
                 {services.map(service => {
                   const scheduledItem = cartServices.find(item => item.service.id === service.id);
@@ -574,7 +574,9 @@ const Storefront: React.FC = () => {
                       onClick={() => setSelectedService(service.id)} 
                       style={{ 
                         flex: '0 0 240px', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                        position: 'relative'
+                        position: 'relative',
+                        transform: selectedService === service.id ? 'scale(1.05)' : undefined,
+                        zIndex: selectedService === service.id ? 10 : undefined
                       }} 
                       className="netflix-card"
                     >
@@ -582,7 +584,8 @@ const Storefront: React.FC = () => {
                         aspectRatio: '2/3', borderRadius: '16px', overflow: 'hidden', 
                         background: 'rgba(255,255,255,0.03)', 
                         border: selectedService === service.id ? '2px solid var(--accent-gold)' : isScheduled ? '1px solid rgba(212,175,55,0.5)' : '1px solid rgba(255,255,255,0.08)',
-                        position: 'relative', transition: 'all 0.3s'
+                        position: 'relative', transition: 'all 0.3s',
+                        boxShadow: selectedService === service.id ? '0 0 30px rgba(212,175,55,0.3)' : undefined
                       }}>
                         
                         {/* Scheduled badge */}
@@ -668,8 +671,8 @@ const Storefront: React.FC = () => {
                   display: 'flex', gap: '1.5rem',
                   overflowX: 'auto', overflowY: 'hidden',
                   scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch',
-                  padding: '0.75rem 1.5rem',
-                  margin: '-0.75rem -1.5rem'
+                  padding: '2.5rem 1.5rem',
+                  margin: '-2.5rem -1.5rem'
                 }}>
                   {subscriptionPlans.filter(p => p.active).map(plan => {
                     const hasActiveSub = subscriptions.some(s => s.clientId === userId && s.status === 'active' && s.planId === plan.id);
@@ -748,8 +751,8 @@ const Storefront: React.FC = () => {
                 display: 'flex', gap: '1.5rem',
                 overflowX: 'auto', overflowY: 'hidden',
                 scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch',
-                padding: '0.75rem 1.5rem',
-                margin: '-0.75rem -1.5rem'
+                padding: '2.5rem 1.5rem',
+                margin: '-2.5rem -1.5rem'
               }}>
                 {products.map(product => {
                   const cartItem = cartProducts.find(item => item.product.id === product.id);
@@ -764,7 +767,9 @@ const Storefront: React.FC = () => {
                         }
                       }}
                       style={{ 
-                        flex: '0 0 240px', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                        flex: '0 0 240px', cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transform: isSelected ? 'scale(1.05)' : undefined,
+                        zIndex: isSelected ? 10 : undefined
                       }} 
                       className="netflix-card"
                     >
@@ -772,8 +777,8 @@ const Storefront: React.FC = () => {
                         aspectRatio: '2/3', borderRadius: '16px', overflow: 'hidden', 
                         background: 'rgba(255,255,255,0.03)', 
                         border: isSelected ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.08)',
-                        position: 'relative',
-                        boxShadow: isSelected ? '0 0 20px rgba(212,175,55,0.15)' : undefined
+                        position: 'relative', transition: 'all 0.3s',
+                        boxShadow: isSelected ? '0 0 30px rgba(212,175,55,0.3)' : undefined
                       }}>
                         
                         {/* Product Selected badge */}
