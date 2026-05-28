@@ -499,8 +499,8 @@ const Storefront: React.FC = () => {
       {/* Hero Section (Visible only when not in checkout/success) */}
       {!isCheckoutActive && !isSuccessState && !onlineSuccess && !isVipCheckoutActive && !vipSuccess && (
         <section style={{ 
-          height: '75vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          overflow: 'hidden', marginBottom: '4rem'
+          height: isMobile ? '55vh' : '75vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden', marginBottom: isMobile ? '1.5rem' : '4rem'
         }}>
           <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
             <img 
