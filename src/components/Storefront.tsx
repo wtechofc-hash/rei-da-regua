@@ -403,8 +403,8 @@ const Storefront: React.FC = () => {
 
       {/* VIP Subscription Success Screen */}
       {vipSuccess && (
-        <div style={{ maxWidth: '600px', margin: '4rem auto', padding: '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
-          <div className="premium-card" style={{ padding: '3.5rem', border: '1px solid rgba(212,175,55,0.3)', textAlign: 'center', borderRadius: '24px' }}>
+        <div style={{ maxWidth: '600px', margin: isMobile ? '1.5rem auto' : '4rem auto', padding: isMobile ? '0.75rem' : '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
+          <div className="premium-card" style={{ padding: isMobile ? '2rem 1.25rem' : '3.5rem', border: '1px solid rgba(212,175,55,0.3)', textAlign: 'center', borderRadius: '24px' }}>
             <div style={{ background: 'rgba(212,175,55,0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', border: '1px solid rgba(212,175,55,0.3)' }}>
               <Crown size={40} color="var(--accent-gold)" />
             </div>
@@ -422,13 +422,13 @@ const Storefront: React.FC = () => {
 
       {/* VIP Checkout Screen */}
       {isVipCheckoutActive && vipCheckoutPlan && !vipSuccess && (
-        <div style={{ maxWidth: '500px', margin: '4rem auto', padding: '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
-          <button onClick={() => setIsVipCheckoutActive(false)} style={{ background: 'transparent', border: 'none', color: '#888', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '2rem', fontWeight: '700', fontSize: '1rem' }}>
+        <div style={{ maxWidth: '500px', margin: isMobile ? '1.5rem auto 5rem' : '4rem auto', padding: isMobile ? '0.75rem' : '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
+          <button onClick={() => setIsVipCheckoutActive(false)} style={{ background: 'transparent', border: 'none', color: '#888', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: isMobile ? '1rem' : '2rem', fontWeight: '700', fontSize: '1rem' }}>
             <ArrowLeft size={20} /> Voltar
           </button>
 
-          <div className="premium-card" style={{ padding: '2.5rem', border: '1px solid rgba(212,175,55,0.2)' }}>
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div className="premium-card" style={{ padding: isMobile ? '1.5rem 1.25rem' : '2.5rem', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <div style={{ textAlign: 'center', marginBottom: isMobile ? '1.25rem' : '2rem' }}>
               <div style={{ background: 'var(--accent-gold-soft)', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
                 <Crown size={32} color="var(--accent-gold)" />
               </div>
@@ -436,7 +436,7 @@ const Storefront: React.FC = () => {
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{vipCheckoutPlan.servicesCount} serviços por mês</p>
             </div>
 
-            <div style={{ background: 'rgba(212,175,55,0.05)', padding: '1.5rem', borderRadius: '14px', border: '1px solid rgba(212,175,55,0.15)', marginBottom: '2rem' }}>
+            <div style={{ background: 'rgba(212,175,55,0.05)', padding: isMobile ? '1rem' : '1.5rem', borderRadius: '14px', border: '1px solid rgba(212,175,55,0.15)', marginBottom: isMobile ? '1.25rem' : '2rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Plano mensal</span>
                 <span style={{ fontWeight: '800', fontSize: '1.1rem', color: 'white' }}>R$ {vipCheckoutPlan.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
