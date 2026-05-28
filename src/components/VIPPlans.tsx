@@ -1,0 +1,150 @@
+import React, { useState } from 'react';
+import { Plus, Crown, Trash2, Edit2, Check } from 'lucide-react';
+import { useApp, SubscriptionPlan } from '../context/AppContext';
+
+const VIPPlans: React.FC = () => {
+  const { subscriptionPlans = [], addSubscriptionPlan, updateSubscriptionPlan, deleteSubscriptionPlan } = useApp();
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ name: '', servicesCount: '', price: '', active: true });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const data = { 
+      name: formData.name, 
+      servicesCount: Number(formData.servicesCount) || 1, 
+      price: Number(formData.price) || 0,
+      active: formData.active
+    };
+
+    if (editingId) {
+      updateSubscriptionPlan(editingId, data);
+    } else {
+      addSubscriptionPlan(data);
+    }
+
+    setFormData({ name: '', servicesCount: '', price: '', active: true });
+    setEditingId(null);
+    setIsAdding(false);
+  };
+
+  const handleEditClick = (plan: SubscriptionPlan) => {
+    setEditingId(plan.id);
+    setFormData({
+      name: plan.name,
+      servicesCount: plan.servicesCount.toString(),
+      price: plan.price.toString(),
+      active: plan.active
+    });
+    setIsAdding(true);
+  };
+
+  const handleCancel = () => {
+    setFormData({ name: '', servicesCount: '', price: '', active: true });
+    setEditingId(null);
+    setIsAdding(false);
+  };
+
+  const inputStyle: React.CSSProperties = {
+    padding: '0.85rem', borderRadius: '10px',
+    background: '#1a1a1a', border: '1px solid var(--glass-border)', color: 'white', width: '100%'
+  };
+
+  return (
+    <div className="animate-fade-in">
+      <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0 }}>Planos VIP</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '4px' }}>Gerencie pacotes de assinatura para seus clientes</p>
+        </div>
+        <button className="gold-button" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => { handleCancel(); setIsAdding(true); }}>
+          <Plus size={18} /> Novo Plano
+        </button>
+      </header>
+
+      {isAdding && (
+        <div className="premium-card" style={{ marginBottom: '2rem', border: '1px solid var(--accent-gold)', animation: 'slideUp 0.3s ease-out' }}>
+          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>
+            {editingId ? 'Editar Plano VIP' : 'Adicionar Plano VIP'}
+          </h3>
+          <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' }}>
+              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Nome do Plano</label>
+              <input required type="text" placeholder="Ex: VIP 4 Cortes" style={inputStyle}
+                value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Quantidade de Serviços/Mês</label>
+              <input required type="number" placeholder="Ex: 4" style={inputStyle}
+                value={formData.servicesCount} onChange={e => setFormData({ ...formData, servicesCount: e.target.value })} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Preço Mensal (R$)</label>
+              <input required type="number" step="0.01" style={inputStyle}
+                value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', gridColumn: '1 / -1' }}>
+              <input type="checkbox" id="activePlan" checked={formData.active} onChange={e => setFormData({ ...formData, active: e.target.checked })} style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }} />
+              <label htmlFor="activePlan" style={{ fontSize: '0.9rem', color: 'white' }}>Plano Ativo (Disponível para clientes)</label>
+            </div>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <button type="submit" className="gold-button" style={{ flex: 1 }}>
+                {editingId ? 'Salvar Alterações' : 'Salvar Plano'}
+              </button>
+              <button type="button" onClick={handleCancel} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
+        {subscriptionPlans.map(plan => (
+          <div key={plan.id} className="premium-card" style={{ padding: '1.5rem', position: 'relative', border: plan.active ? '1px solid rgba(212,175,55,0.3)' : '1px solid rgba(255,255,255,0.05)' }}>
+            {!plan.active && (
+              <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.7rem', color: '#888', fontWeight: 'bold' }}>INATIVO</div>
+            )}
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ background: plan.active ? 'var(--accent-gold-soft)' : 'rgba(255,255,255,0.05)', padding: '14px', borderRadius: '14px', color: plan.active ? 'var(--accent-gold)' : '#888', flexShrink: 0 }}>
+                <Crown size={28} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h4 style={{ fontWeight: '800', fontSize: '1.1rem', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: plan.active ? 'white' : '#888' }}>{plan.name}</h4>
+                <p style={{ fontSize: '1.2rem', fontWeight: '900', color: plan.active ? 'var(--accent-gold)' : '#888', margin: 0 }}>
+                  R$ {plan.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<span style={{ fontSize: '0.8rem', fontWeight: 'normal', color: 'var(--text-secondary)' }}>/mês</span>
+                </p>
+              </div>
+            </div>
+            
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '10px', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', fontSize: '0.9rem' }}>
+                <Check size={16} color="var(--accent-gold)" />
+                <strong>{plan.servicesCount}</strong> serviços mensais
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button onClick={() => handleEditClick(plan)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', padding: '8px 12px', borderRadius: '8px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }} title="Editar">
+                <Edit2 size={14} /> Editar
+              </button>
+              <button onClick={() => deleteSubscriptionPlan(plan.id)} style={{ background: 'rgba(255,23,68,0.1)', border: 'none', color: '#ff1744', cursor: 'pointer', padding: '8px 12px', borderRadius: '8px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }} title="Remover">
+                <Trash2 size={14} /> Excluir
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {subscriptionPlans.length === 0 && (
+          <div className="premium-card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 2rem' }}>
+            <Crown size={48} style={{ color: 'var(--accent-gold)', opacity: 0.2, margin: '0 auto 1rem', display: 'block' }} />
+            <p style={{ color: 'var(--text-secondary)' }}>Nenhum plano VIP cadastrado.</p>
+            <button className="gold-button" style={{ marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }} onClick={() => setIsAdding(true)}>
+              <Plus size={18} /> Criar primeiro plano
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default VIPPlans;

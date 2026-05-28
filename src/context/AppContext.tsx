@@ -63,6 +63,32 @@ export interface Client {
   appointmentsCount: number;
 }
 
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  servicesCount: number;
+  price: number;
+  active: boolean;
+}
+
+export interface Subscription {
+  id: string;
+  clientId: string;
+  planId: string;
+  status: 'active' | 'expired' | 'canceled' | 'pending';
+  startDate: string;
+  endDate: string;
+  servicesUsed: number;
+  servicesTotal: number;
+}
+
+export interface SubscriptionUsage {
+  id: string;
+  subscriptionId: string;
+  appointmentId: string;
+  usedAt: string;
+}
+
 interface AppContextType {
   role: UserRole | null;
   userId: string | null;
@@ -75,6 +101,8 @@ interface AppContextType {
   appointments: Appointment[];
   profiles: Profile[];
   clients: Client[];
+  subscriptionPlans: SubscriptionPlan[];
+  subscriptions: Subscription[];
   addService: (service: Omit<Service, 'id'>) => void;
   updateService: (id: string, service: Partial<Service>) => void;
   deleteService: (id: string) => void;
@@ -90,6 +118,12 @@ interface AppContextType {
   addProfile: (profile: Profile) => void;
   updateProfile: (id: string, profile: Partial<Profile>) => void;
   deleteProfile: (id: string) => void;
+  addSubscriptionPlan: (plan: Omit<SubscriptionPlan, 'id'>) => void;
+  updateSubscriptionPlan: (id: string, plan: Partial<SubscriptionPlan>) => void;
+  deleteSubscriptionPlan: (id: string) => void;
+  addSubscription: (sub: Omit<Subscription, 'id'>) => Promise<Subscription | null>;
+  updateSubscription: (id: string, sub: Partial<Subscription>) => void;
+  useSubscriptionCredit: (subscriptionId: string, appointmentId: string) => Promise<boolean>;
   updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
   updateAppointmentEndTime: (id: string, newEndTime: string) => void;
   clearProNotifications: (proId: string) => void;
@@ -113,6 +147,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [shopData, setShopData] = useState<any>(null);
   const [config, setConfig] = useState({
     businessName: 'Barbearia Premium',
@@ -194,6 +230,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const { data: clientsData } = await query(supabase.from('clients').select('*'));
         if (clientsData) setClients(clientsData.map((c: any) => ({
           id: c.id, name: c.name, phone: c.phone || '', email: c.email, lastVisit: c.last_visit, totalSpent: c.total_spent, appointmentsCount: 0
+        })));
+
+        // Fetch Subscription Plans
+        const { data: plansData } = await query(supabase.from('subscription_plans').select('*'));
+        if (plansData) setSubscriptionPlans(plansData.map((p: any) => ({
+          id: p.id, name: p.name, servicesCount: p.services_count, price: p.price, active: p.active
+        })));
+
+        // Fetch Subscriptions
+        const { data: subsData } = await query(supabase.from('subscriptions').select('*'));
+        if (subsData) setSubscriptions(subsData.map((s: any) => ({
+          id: s.id, clientId: s.client_id, planId: s.plan_id, status: s.status, 
+          startDate: s.start_date, endDate: s.end_date, servicesUsed: s.services_used, servicesTotal: s.services_total
         })));
 
         // Fetch Professionals
@@ -412,6 +461,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setClients(prev => prev.filter(c => c.id !== id));
   };
 
+  const addSubscriptionPlan = async (p: Omit<SubscriptionPlan, 'id'>) => {
+    const { data } = await supabase.from('subscription_plans').insert([{ 
+      name: p.name, services_count: p.servicesCount, price: p.price, active: p.active, shop_id: shopId 
+    }]).select();
+    if (data) setSubscriptionPlans(prev => [...prev, { ...p, id: data[0].id }]);
+  };
+
+  const updateSubscriptionPlan = async (id: string, p: Partial<SubscriptionPlan>) => {
+    const updatePayload: any = {};
+    if (p.name !== undefined) updatePayload.name = p.name;
+    if (p.servicesCount !== undefined) updatePayload.services_count = p.servicesCount;
+    if (p.price !== undefined) updatePayload.price = p.price;
+    if (p.active !== undefined) updatePayload.active = p.active;
+    await supabase.from('subscription_plans').update(updatePayload).eq('id', id);
+    setSubscriptionPlans(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
+  };
+
+  const deleteSubscriptionPlan = async (id: string) => {
+    await supabase.from('subscription_plans').delete().eq('id', id);
+    setSubscriptionPlans(prev => prev.filter(p => p.id !== id));
+  };
+
+  const addSubscription = async (s: Omit<Subscription, 'id'>) => {
+    const { data } = await supabase.from('subscriptions').insert([{ 
+      client_id: s.clientId, plan_id: s.planId, status: s.status, start_date: s.startDate, end_date: s.endDate,
+      services_used: s.servicesUsed, services_total: s.servicesTotal, shop_id: shopId 
+    }]).select();
+    if (data) {
+      const newSub = { ...s, id: data[0].id };
+      setSubscriptions(prev => [...prev, newSub]);
+      return newSub;
+    }
+    return null;
+  };
+
+  const updateSubscription = async (id: string, s: Partial<Subscription>) => {
+    const updatePayload: any = {};
+    if (s.status !== undefined) updatePayload.status = s.status;
+    if (s.servicesUsed !== undefined) updatePayload.services_used = s.servicesUsed;
+    await supabase.from('subscriptions').update(updatePayload).eq('id', id);
+    setSubscriptions(prev => prev.map(i => i.id === id ? {...i, ...s} : i));
+  };
+
+  const useSubscriptionCredit = async (subscriptionId: string, appointmentId: string) => {
+    const sub = subscriptions.find(s => s.id === subscriptionId);
+    if (!sub || sub.servicesUsed >= sub.servicesTotal || sub.status !== 'active') return false;
+
+    const newUsed = sub.servicesUsed + 1;
+    await supabase.from('subscriptions').update({ services_used: newUsed }).eq('id', subscriptionId);
+    await supabase.from('subscription_usage').insert([{ subscription_id: subscriptionId, appointment_id: appointmentId }]);
+    
+    setSubscriptions(prev => prev.map(s => s.id === subscriptionId ? { ...s, servicesUsed: newUsed } : s));
+    return true;
+  };
+
   const addProfile = async (p: Profile) => {
     // Professionals.tsx handles both Auth and DB insert. Just update state here.
     setProfiles(prev => [...prev, p]);
@@ -568,12 +672,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <AppContext.Provider value={{
-      role, userId, shopId, shopData, setAuth, logout, services, products, appointments, profiles, clients,
+      role, userId, shopId, shopData, setAuth, logout, services, products, appointments, profiles, clients, subscriptionPlans, subscriptions,
       addService, updateService, deleteService,
       addProduct, updateProduct, deleteProduct,
       addAppointment, updateAppointment, deleteAppointment, updateAppointmentStatus, updateAppointmentEndTime, clearProNotifications,
       addClient, updateClient, deleteClient,
       addProfile, updateProfile, deleteProfile,
+      addSubscriptionPlan, updateSubscriptionPlan, deleteSubscriptionPlan,
+      addSubscription, updateSubscription, useSubscriptionCredit,
       config, updateConfig
     }}>
       {children}

@@ -12,12 +12,13 @@ import {
   User, 
   Plus,
   LogOut,
-  ShoppingCart
+  ShoppingCart,
+  Crown
 } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import './index.css';
 
-export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais' | 'pdv' | '__more__';
+export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais' | 'pdv' | 'vipplans' | '__more__';
 
 const Sidebar      = React.lazy(() => import('./components/Sidebar'));
 const Dashboard    = React.lazy(() => import('./components/Dashboard'));
@@ -32,6 +33,7 @@ const Login        = React.lazy(() => import('./components/Login'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 const Settings     = React.lazy(() => import('./components/Settings'));
 const PDV          = React.lazy(() => import('./components/PDV'));
+const VIPPlans     = React.lazy(() => import('./components/VIPPlans'));
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: string | null }> {
   constructor(props: any) {
@@ -77,6 +79,7 @@ const BOTTOM_NAV = [
 const MORE_NAV = [
   { id: 'pdv',           label: 'Ponto de Venda', icon: ShoppingCart },
   { id: 'servicos',      label: 'Serviços',      icon: Scissors },
+  { id: 'vipplans',      label: 'Planos VIP',    icon: Crown },
   { id: 'produtos',      label: 'Produtos',      icon: Package },
   { id: 'profissionais', label: 'Equipe',         icon: User },
   { id: 'relatorios',    label: 'Relatórios',     icon: BarChart3 },
@@ -170,6 +173,7 @@ const AppContent: React.FC = () => {
         return <Dashboard onViewAll={() => setPage('agendamentos')} />;
       case 'agendamentos':  return <Appointments />;
       case 'servicos':      return <Services />;
+      case 'vipplans':      return <VIPPlans />;
       case 'produtos':      return <Products />;
       case 'clientes':      return <Clients />;
       case 'relatorios':    return <Reports />;

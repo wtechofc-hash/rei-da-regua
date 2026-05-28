@@ -9,7 +9,8 @@ import {
   Scissors, 
   XCircle, 
   Check,
-  ChevronDown
+  ChevronDown,
+  Crown
 } from 'lucide-react';
 import { useApp, Appointment } from '../context/AppContext';
 import { generateAvailableSlots, addMinutesToTime, resolveApptEndTime, getLocalDateString } from '../utils/timeSlots';
@@ -51,7 +52,9 @@ const Appointments: React.FC = () => {
     addAppointment,
     updateAppointmentStatus,
     updateAppointmentEndTime,
-    deleteAppointment
+    deleteAppointment,
+    subscriptions = [],
+    useSubscriptionCredit
   } = useApp();
 
   const today = getLocalDateString();
@@ -432,12 +435,39 @@ const Appointments: React.FC = () => {
                     )}
                     
                     {appt.status === 'confirmed' && (
-                      <button 
-                        onClick={() => updateAppointmentStatus(appt.id, 'completed')}
-                        style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', background: '#2196f3', color: 'white', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
-                      >
-                        Finalizar
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => updateAppointmentStatus(appt.id, 'completed')}
+                          style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', background: '#2196f3', color: 'white', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
+                          title="Finalizar com pagamento padrão"
+                        >
+                          Finalizar
+                        </button>
+                        {(() => {
+                           const activeSub = subscriptions.find(s => s.clientId === appt.clientId && s.status === 'active' && s.servicesUsed < s.servicesTotal);
+                           if (activeSub) {
+                             return (
+                               <button 
+                                 onClick={async () => {
+                                   if (window.confirm('Deseja abater 1 crédito VIP para este agendamento?')) {
+                                     const success = await useSubscriptionCredit(activeSub.id, appt.id);
+                                     if (success) {
+                                       updateAppointmentStatus(appt.id, 'completed');
+                                     } else {
+                                       alert('Erro ao usar crédito VIP.');
+                                     }
+                                   }
+                                 }}
+                                 style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', background: 'var(--accent-gold)', color: 'black', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                 title="Abater do plano VIP do cliente"
+                               >
+                                 <Crown size={14} /> Usar Crédito VIP
+                               </button>
+                             );
+                           }
+                           return null;
+                        })()}
+                      </>
                     )}
 
                     {(appt.status === 'pending' || appt.status === 'confirmed') && 

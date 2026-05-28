@@ -17,7 +17,8 @@ import {
   Plus,
   Minus,
   Check,
-  ArrowLeft
+  ArrowLeft,
+  Crown
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
@@ -50,7 +51,10 @@ const Storefront: React.FC = () => {
     userId, 
     clients = [], 
     appointments = [],
-    updateProduct
+    updateProduct,
+    subscriptionPlans = [],
+    subscriptions = [],
+    addSubscription
   } = useApp();
 
   // Selected state for the active card click
@@ -74,6 +78,7 @@ const Storefront: React.FC = () => {
   const [isSuccessState, setIsSuccessState] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'offline' | 'online'>('offline');
   const [onlineSuccess, setOnlineSuccess] = useState(false);
+  const [useVipCredits, setUseVipCredits] = useState(false);
 
   // Mobile detection for floating bar offset
   const isMobile = useIsMobile();
@@ -162,11 +167,27 @@ const Storefront: React.FC = () => {
     try {
       // 1. Create all scheduled appointments
       const createdAppts = [];
-      for (const item of cartServices) {
+      const userSub = subscriptions.find(s => s.clientId === userId && s.status === 'active' && s.servicesUsed < s.servicesTotal);
+      const maxCreditsToUse = userSub ? Math.min(userSub.servicesTotal - userSub.servicesUsed, cartServices.length) : 0;
+      let creditsRemaining = useVipCredits ? maxCreditsToUse : 0;
+
+      // Sort services by price descending to apply discount to most expensive ones
+      const sortedCartServices = [...cartServices].sort((a, b) => b.service.price - a.service.price);
+
+      for (const item of sortedCartServices) {
         const serviceDuration = item.service.duration || 30;
         const [startH, startM] = item.time.split(':').map(Number);
         const endTotalMin = startH * 60 + startM + serviceDuration;
         const endTime = `${Math.floor(endTotalMin / 60).toString().padStart(2, '0')}:${(endTotalMin % 60).toString().padStart(2, '0')}`;
+        
+        let finalPrice = item.service.price;
+        let usedCredit = false;
+        if (creditsRemaining > 0) {
+           finalPrice = 0;
+           creditsRemaining--;
+           usedCredit = true;
+        }
+
         const appt = await addAppointment({
           clientId: userId || 'online-customer',
           clientName,
@@ -176,12 +197,17 @@ const Storefront: React.FC = () => {
           time: item.time,
           endTime,
           status: 'pending',
-          priceAtTime: item.service.price,
+          priceAtTime: finalPrice,
           commissionAtTime: 0
         });
         if (!appt) {
           throw new Error(`Não foi possível salvar o agendamento para o serviço ${item.service.name}. Por favor, tente novamente ou entre em contato.`);
         }
+        
+        if (usedCredit && userSub) {
+           await useSubscriptionCredit(userSub.id, appt.id);
+        }
+
         createdAppts.push(appt);
       }
 
@@ -278,9 +304,20 @@ const Storefront: React.FC = () => {
   };
 
   // Math totals for bottom bar and checkout
+  const userSub = subscriptions.find(s => s.clientId === userId && s.status === 'active' && s.servicesUsed < s.servicesTotal);
+  const maxCreditsToUse = userSub ? Math.min(userSub.servicesTotal - userSub.servicesUsed, cartServices.length) : 0;
+  
+  const sortedServices = [...cartServices].sort((a, b) => b.service.price - a.service.price);
+  let vipDiscount = 0;
+  if (useVipCredits && maxCreditsToUse > 0) {
+    for (let i = 0; i < maxCreditsToUse; i++) {
+      vipDiscount += sortedServices[i].service.price;
+    }
+  }
+
   const totalServicesPrice = cartServices.reduce((sum, item) => sum + item.service.price, 0);
   const totalProductsPrice = cartProducts.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  const grandTotal = totalServicesPrice + totalProductsPrice;
+  const grandTotal = totalServicesPrice + totalProductsPrice - vipDiscount;
   const cartItemCount = cartServices.length + cartProducts.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -474,6 +511,99 @@ const Storefront: React.FC = () => {
                 })}
               </div>
             </section>
+
+            {/* VIP Plans Section */}
+            {subscriptionPlans.length > 0 && (
+              <section style={{ marginBottom: '5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}><Crown size={24} color="var(--accent-gold)" /> Planos VIP</h2>
+                </div>
+                
+                <div className="netflix-row" style={{ 
+                  display: 'flex', gap: '1.5rem',
+                  overflowX: 'auto', overflowY: 'hidden',
+                  scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch',
+                  padding: '0.75rem 1.5rem',
+                  margin: '-0.75rem -1.5rem'
+                }}>
+                  {subscriptionPlans.filter(p => p.active).map(plan => {
+                    const hasActiveSub = subscriptions.some(s => s.clientId === userId && s.status === 'active' && s.planId === plan.id);
+
+                    return (
+                      <div 
+                        key={plan.id} 
+                        style={{ 
+                          flex: '0 0 240px', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                          position: 'relative'
+                        }} 
+                        className="netflix-card"
+                      >
+                        <div style={{ 
+                          aspectRatio: '2/3', borderRadius: '16px', overflow: 'hidden', 
+                          background: 'linear-gradient(135deg, rgba(212,175,55,0.1) 0%, rgba(0,0,0,0.8) 100%)', 
+                          border: hasActiveSub ? '2px solid #00cc44' : '1px solid rgba(212,175,55,0.3)',
+                          position: 'relative', transition: 'all 0.3s'
+                        }}>
+                          {hasActiveSub && (
+                            <div style={{
+                              position: 'absolute', top: '12px', right: '12px',
+                              background: '#00cc44', color: '#fff', padding: '4px 10px',
+                              borderRadius: '20px', fontSize: '0.7rem', fontWeight: '900',
+                              display: 'flex', alignItems: 'center', gap: '4px', zIndex: 2
+                            }}>
+                              <Check size={12} strokeWidth={3} /> Ativo
+                            </div>
+                          )}
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                             <Crown size={48} style={{ opacity: 0.2, color: 'var(--accent-gold)' }} />
+                          </div>
+                          <div style={{ 
+                            position: 'absolute', inset: 0, 
+                            background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.95))',
+                            display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '1.5rem'
+                          }}>
+                            {!hasActiveSub && (
+                              <button
+                                onClick={async () => {
+                                  if (!userId) {
+                                    alert("Você precisa estar logado para assinar um plano.");
+                                    return;
+                                  }
+                                  const confirm = window.confirm(`Deseja assinar o plano ${plan.name} por R$ ${plan.price}? O valor será cobrado no balcão.`);
+                                  if (confirm) {
+                                    const end = new Date();
+                                    end.setMonth(end.getMonth() + 1);
+                                    const sub = await addSubscription({
+                                      clientId: userId,
+                                      planId: plan.id,
+                                      status: 'active',
+                                      startDate: new Date().toISOString().split('T')[0],
+                                      endDate: end.toISOString().split('T')[0],
+                                      servicesUsed: 0,
+                                      servicesTotal: plan.servicesCount
+                                    });
+                                    if (sub) alert("Assinatura realizada com sucesso!");
+                                  }
+                                }}
+                                className="gold-button"
+                                style={{ padding: '0.6rem 1rem', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '0.75rem', width: '100%' }}
+                              >
+                                Assinar
+                              </button>
+                            )}
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '4px', color: 'var(--accent-gold)' }}>{plan.name}</h3>
+                            <p style={{ fontSize: '1.1rem', fontWeight: '900', color: 'white', margin: '0 0 8px 0' }}>R$ {plan.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#ccc' }}>
+                              <Check size={14} color="var(--accent-gold)" /> {plan.servicesCount} serviços
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
             {/* Products Section */}
             <section style={{ marginBottom: '5rem' }}>
@@ -829,6 +959,12 @@ const Storefront: React.FC = () => {
                       <span>Serviços ({cartServices.length}):</span>
                       <span>R$ {totalServicesPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                     </div>
+                    {useVipCredits && vipDiscount > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#00cc44' }}>
+                        <span>Desconto VIP ({maxCreditsToUse} {maxCreditsToUse === 1 ? 'serviço' : 'serviços'}):</span>
+                        <span>- R$ {vipDiscount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
                       <span>Produtos ({cartProducts.reduce((s, p) => s + p.quantity, 0)}):</span>
                       <span>R$ {totalProductsPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
@@ -853,6 +989,22 @@ const Storefront: React.FC = () => {
                         placeholder="Como podemos te chamar?" 
                       />
                     </div>
+
+                    {maxCreditsToUse > 0 && cartServices.length > 0 && (
+                      <div style={{ padding: '1rem', background: 'rgba(212,175,55,0.05)', borderRadius: '14px', border: '1px solid rgba(212,175,55,0.3)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <input 
+                          type="checkbox" 
+                          id="useVip" 
+                          checked={useVipCredits} 
+                          onChange={e => setUseVipCredits(e.target.checked)} 
+                          style={{ width: '20px', height: '20px', accentColor: 'var(--accent-gold)', cursor: 'pointer' }}
+                        />
+                        <label htmlFor="useVip" style={{ color: 'white', fontSize: '0.9rem', cursor: 'pointer', flex: 1 }}>
+                          Utilizar créditos do Plano VIP <br/>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--accent-gold)' }}>({userSub?.servicesTotal! - userSub?.servicesUsed!} restantes)</span>
+                        </label>
+                      </div>
+                    )}
 
                     {shopData?.mp_enabled && (
                       <div>
