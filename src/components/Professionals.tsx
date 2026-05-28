@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, Trash2, Mail, Percent, Shield, Edit2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Users, Trash2, Mail, Shield, Edit2 } from 'lucide-react';
 import { useApp, Profile } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
 
@@ -7,20 +7,19 @@ const Professionals: React.FC = () => {
   const { profiles = [], addProfile, updateProfile, deleteProfile } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', commission: '30' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   const data: any = {
     name: formData.name,
     email: formData.email,
-    commission: Number(formData.commission),
     role: 'professional' as const,
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(formData.name)}`
   };
   if (editingId) {
     updateProfile(editingId, data);
-    setFormData({ name: '', email: '', password: '', commission: '30' });
+    setFormData({ name: '', email: '', password: '' });
     setEditingId(null);
     setIsAdding(false);
   } else {
@@ -37,7 +36,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       alert("Erro ao criar profissional: " + err.message);
     }
   }
-  setFormData({ name: '', email: '', password: '', commission: '30' });
+  setFormData({ name: '', email: '', password: '' });
   setIsAdding(false);
 };
 
@@ -47,13 +46,12 @@ const handleSubmit = async (e: React.FormEvent) => {
       name: pro.name,
       email: pro.email || '',
       password: '',
-      commission: (pro.commission ?? 30).toString()
     });
     setIsAdding(true);
   };
 
   const handleCancel = () => {
-    setFormData({ name: '', email: '', password: '', commission: '30' });
+    setFormData({ name: '', email: '', password: '' });
     setEditingId(null);
     setIsAdding(false);
   };
@@ -94,10 +92,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Senha</label>
                 <input required autoComplete="new-password" type="password" style={inputStyle} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
               </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Comissão (%)</label>
-              <input required type="number" style={inputStyle} value={formData.commission} onChange={e => setFormData({ ...formData, commission: e.target.value })} />
-            </div>
+
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem' }}>
               <button type="submit" className="gold-button" style={{ flex: 1 }}>
                 {editingId ? 'Salvar Alterações' : 'Salvar'}
@@ -139,10 +134,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   {pro.email}
                 </div>
               )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                <Percent size={13} style={{ color: 'var(--accent-gold)', flexShrink: 0 }} />
-                {pro.commission ?? 0}% de comissão
-              </div>
+
             </div>
 
             <div style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

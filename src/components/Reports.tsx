@@ -18,7 +18,7 @@ import { useApp } from '../context/AppContext';
 type Period = 'day' | 'week' | 'month' | 'custom';
 
 const Reports: React.FC = () => {
-  const { role, userId, appointments = [], services = [], profiles = [] } = useApp();
+  const { role, userId, appointments = [], services = [] } = useApp();
   const [period, setPeriod] = useState<Period>('week');
 
   // Filtrar agendamentos do usuário logado (se for pro)
@@ -31,8 +31,8 @@ const Reports: React.FC = () => {
   // Cálculo de Métricas
   const totalRevenue = userAppointments.reduce((s, a) => s + (a.priceAtTime || 0), 0);
   const totalCommission = userAppointments.reduce((s, a) => {
-    const prof = profiles.find(p => p.id === a.professionalId);
-    const rate = prof?.commission ?? 0;
+    const svc = services.find(sv => sv.id === a.serviceId);
+    const rate = svc?.commission ?? 0;
     return s + (a.priceAtTime || 0) * (rate / 100);
   }, 0);
   const avgTicket = userAppointments.length > 0 ? totalRevenue / userAppointments.length : 0;

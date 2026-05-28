@@ -78,8 +78,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
   const commissionInPeriod = periodAppointments
     .filter(a => a.status === 'confirmed' || a.status === 'completed')
     .reduce((sum, a) => {
-      const prof = profiles.find(p => p.id === a.professionalId);
-      const rate = prof?.commission ?? 0;
+      const svc = services.find(s => s.id === a.serviceId);
+      const rate = svc?.commission ?? 0;
       return sum + (a.priceAtTime || 0) * (rate / 100);
     }, 0);
 
@@ -299,9 +299,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
             const commissionEntries = periodAppointments
               .filter(a => a.status === 'confirmed' || a.status === 'completed')
               .map(a => {
-                const prof = profiles.find(p => p.id === a.professionalId);
-                const rate = prof?.commission ?? 0;
                 const svc = services.find(s => s.id === a.serviceId);
+                const rate = svc?.commission ?? 0;
                 const commissionValue = (a.priceAtTime || 0) * (rate / 100);
                 return { ...a, commissionValue, rate, svcName: svc?.name ?? '—' };
               })

@@ -180,13 +180,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Fetch Services
         const { data: servicesData } = await query(supabase.from('services').select('*'));
         if (servicesData) setServices(servicesData.map((s: any) => ({
-          id: s.id, name: s.name, description: s.category || '', price: s.price, commission: 0, duration: s.duration || 30
+          id: s.id, name: s.name, description: s.category || '', price: s.price, commission: s.commission_rate ?? 0, duration: s.duration || 30
         })));
 
         // Fetch Products
         const { data: productsData } = await query(supabase.from('products').select('*'));
         if (productsData) setProducts(productsData.map((p: any) => ({
-          id: p.id, name: p.name, description: p.category || '', price: p.price, stock: p.stock, image: p.image_url, commission: 0,
+          id: p.id, name: p.name, description: p.category || '', price: p.price, stock: p.stock, image: p.image_url, commission: p.commission_rate ?? 0,
           barcode: p.barcode || '', itemCode: p.item_code || ''
         })));
 
@@ -200,7 +200,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const { data: prosData } = await query(supabase.from('professionals').select('*'));
         if (prosData) setProfiles(prosData.map((p: any) => ({
           id: p.id, name: p.name, role: (p.role?.toLowerCase() === 'owner' ? 'owner' : 'professional') as UserRole, 
-          avatar: p.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`, commission: p.commission_rate,
+          avatar: p.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`,
           email: p.email
         })));
 
@@ -348,13 +348,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addService = async (s: Omit<Service, 'id'>) => {
     const { data, error } = await supabase.from('services').insert([{ 
-      name: s.name, price: s.price, duration: s.duration || 30, category: s.description, shop_id: shopId 
+      name: s.name, price: s.price, duration: s.duration || 30, category: s.description,
+      commission_rate: s.commission, shop_id: shopId 
     }]).select();
     if (data) setServices(prev => [...prev, { ...s, id: data[0].id, duration: s.duration || 30 }]);
   };
   const updateService = async (id: string, s: Partial<Service>) => {
     const updatePayload: any = { name: s.name, price: s.price };
     if (s.duration !== undefined) updatePayload.duration = s.duration;
+    if (s.commission !== undefined) updatePayload.commission_rate = s.commission;
     await supabase.from('services').update(updatePayload).eq('id', id);
     setServices(prev => prev.map(i => i.id === id ? {...i, ...s} : i));
   };
@@ -366,7 +368,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addProduct = async (p: Omit<Product, 'id'>) => {
     const { data } = await supabase.from('products').insert([{ 
       name: p.name, price: p.price, stock: p.stock, category: p.description, image_url: p.image, shop_id: shopId,
-      barcode: p.barcode || null, item_code: p.itemCode || null
+      barcode: p.barcode || null, item_code: p.itemCode || null, commission_rate: p.commission ?? 0
     }]).select();
     if (data) setProducts(prev => [...prev, { ...p, id: data[0].id }]);
   };
@@ -377,6 +379,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (p.stock !== undefined) updatePayload.stock = p.stock;
     if (p.barcode !== undefined) updatePayload.barcode = p.barcode;
     if (p.itemCode !== undefined) updatePayload.item_code = p.itemCode;
+    if (p.commission !== undefined) updatePayload.commission_rate = p.commission;
     await supabase.from('products').update(updatePayload).eq('id', id);
     setProducts(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
   };
@@ -414,7 +417,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProfiles(prev => [...prev, p]);
   };
   const updateProfile = async (id: string, p: Partial<Profile>) => {
-    const payload: any = { name: p.name, role: p.role, photo_url: p.avatar, commission_rate: p.commission };
+    const payload: any = { name: p.name, role: p.role, photo_url: p.avatar };
     if (p.email !== undefined) payload.email = p.email;
     await supabase.from('professionals').update(payload).eq('id', id);
     setProfiles(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
