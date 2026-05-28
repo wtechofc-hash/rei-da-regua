@@ -509,20 +509,20 @@ const Storefront: React.FC = () => {
           </div>
 
           <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '0 1rem', width: '100%' }}>
-            <div style={{ marginBottom: '2rem' }}>
+            <div style={{ marginBottom: '3rem' }}>
               <img 
                 src={config?.logoUrl || "/logo3.png"} 
                 alt="Logo" 
-                style={{ width: 'clamp(220px, 45vw, 350px)', filter: 'drop-shadow(0 0 25px rgba(212,175,55,0.4))' }} 
+                style={{ width: 'clamp(350px, 75vw, 600px)', filter: 'drop-shadow(0 0 40px rgba(212,175,55,0.45))' }} 
                 onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
-              <div style={{ height: '1px', width: '40px', background: 'var(--accent-gold)' }}></div>
-              <p style={{ fontSize: 'clamp(0.8rem, 3vw, 1.1rem)', color: 'var(--accent-gold)', fontWeight: '700', letterSpacing: '0.4em', textTransform: 'uppercase', margin: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '30px' }}>
+              <div style={{ height: '3px', width: '80px', background: 'var(--accent-gold)' }}></div>
+              <p style={{ fontSize: 'clamp(1.5rem, 4.5vw, 2.5rem)', color: 'var(--accent-gold)', fontWeight: '900', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0, textShadow: '0 0 10px rgba(212,175,55,0.3)' }}>
                 Barbearia Premium
               </p>
-              <div style={{ height: '1px', width: '40px', background: 'var(--accent-gold)' }}></div>
+              <div style={{ height: '3px', width: '80px', background: 'var(--accent-gold)' }}></div>
             </div>
           </div>
         </section>
