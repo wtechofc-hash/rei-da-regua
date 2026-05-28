@@ -396,7 +396,7 @@ const Storefront: React.FC = () => {
   return (
     <div style={{ background: '#050505', minHeight: '100vh', overflowX: 'hidden', width: '100%', position: 'relative' }}>
       {/* Principal content wrapper with animations and bottom padding to avoid floating card coverage */}
-      <div className="animate-fade-in" style={{ width: '100%', minHeight: '100vh', paddingBottom: '12rem' }}>
+      <div className="animate-fade-in" style={{ width: '100%', minHeight: '100vh', paddingBottom: '0' }}>
 
       {/* VIP Subscription Success Screen */}
       {vipSuccess && (
@@ -547,7 +547,7 @@ const Storefront: React.FC = () => {
 
       {/* Main Storefront view (Visible when not checking out and not in success redirect) */}
       {!isCheckoutActive && !isSuccessState && !onlineSuccess && !isVipCheckoutActive && !vipSuccess && (
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem 8rem' }}>
           <div style={{ width: '100%' }}>
             
             {/* Services Section */}
