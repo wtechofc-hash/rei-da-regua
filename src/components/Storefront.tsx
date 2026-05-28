@@ -81,6 +81,12 @@ const Storefront: React.FC = () => {
   const [onlineSuccess, setOnlineSuccess] = useState(false);
   const [useVipCredits, setUseVipCredits] = useState(false);
 
+  // VIP Plan checkout state
+  const [vipCheckoutPlan, setVipCheckoutPlan] = useState<any | null>(null);
+  const [isVipCheckoutActive, setIsVipCheckoutActive] = useState(false);
+  const [isVipProcessing, setIsVipProcessing] = useState(false);
+  const [vipSuccess, setVipSuccess] = useState(false);
+
   // Mobile detection for floating bar offset
   const isMobile = useIsMobile();
 
@@ -155,6 +161,33 @@ const Storefront: React.FC = () => {
     } else if (mpStatus === 'failure') {
       alert("O pagamento falhou ou foi cancelado. Por favor, tente novamente.");
       window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // Handle VIP subscription MP redirect
+    const pendingSubStr = localStorage.getItem('pending_mp_subscription');
+    if ((mpStatus === 'success' || mpStatus === 'approved') && shopRef && pendingSubStr) {
+      const pendingSub = JSON.parse(pendingSubStr);
+      const activateSub = async () => {
+        try {
+          const end = new Date();
+          end.setMonth(end.getMonth() + 1);
+          await addSubscription({
+            clientId: pendingSub.clientId,
+            planId: pendingSub.planId,
+            status: 'active',
+            startDate: new Date().toISOString().split('T')[0],
+            endDate: end.toISOString().split('T')[0],
+            servicesUsed: 0,
+            servicesTotal: pendingSub.servicesCount
+          });
+          localStorage.removeItem('pending_mp_subscription');
+          setVipSuccess(true);
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (err) {
+          console.error('Erro ao ativar assinatura VIP:', err);
+        }
+      };
+      activateSub();
     }
   }, []);
 
@@ -304,6 +337,45 @@ const Storefront: React.FC = () => {
     }
   };
 
+  // VIP Plan payment via Mercado Pago
+  const handleVipCheckout = async () => {
+    if (!vipCheckoutPlan || !userId) return;
+    if (!shopData?.mp_enabled) {
+      alert('Pagamento online não habilitado pelo lojista.');
+      return;
+    }
+    setIsVipProcessing(true);
+    try {
+      localStorage.setItem('pending_mp_subscription', JSON.stringify({
+        clientId: userId,
+        planId: vipCheckoutPlan.id,
+        servicesCount: vipCheckoutPlan.servicesCount
+      }));
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-mp-preference`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          shopId: shopId,
+          title: `Plano VIP - ${vipCheckoutPlan.name}`,
+          price: vipCheckoutPlan.price,
+          appointmentData: { ids: [], id: null }
+        })
+      });
+
+      const resData = await response.json();
+      if (!response.ok) throw new Error(resData.error || 'Erro ao gerar pagamento.');
+      window.location.href = resData.initPoint;
+    } catch (err: any) {
+      alert('Erro ao processar pagamento: ' + err.message);
+      localStorage.removeItem('pending_mp_subscription');
+      setIsVipProcessing(false);
+    }
+  };
+
   // Math totals for bottom bar and checkout
   const userSub = subscriptions.find(s => s.clientId === userId && s.status === 'active' && s.servicesUsed < s.servicesTotal);
   const maxCreditsToUse = userSub ? Math.min(userSub.servicesTotal - userSub.servicesUsed, cartServices.length) : 0;
@@ -325,6 +397,78 @@ const Storefront: React.FC = () => {
     <div style={{ background: '#050505', minHeight: '100vh', overflowX: 'hidden', width: '100%', position: 'relative' }}>
       {/* Principal content wrapper with animations and bottom padding to avoid floating card coverage */}
       <div className="animate-fade-in" style={{ width: '100%', minHeight: '100vh', paddingBottom: '12rem' }}>
+
+      {/* VIP Subscription Success Screen */}
+      {vipSuccess && (
+        <div style={{ maxWidth: '600px', margin: '4rem auto', padding: '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
+          <div className="premium-card" style={{ padding: '3.5rem', border: '1px solid rgba(212,175,55,0.3)', textAlign: 'center', borderRadius: '24px' }}>
+            <div style={{ background: 'rgba(212,175,55,0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', border: '1px solid rgba(212,175,55,0.3)' }}>
+              <Crown size={40} color="var(--accent-gold)" />
+            </div>
+            <h3 style={{ fontSize: '1.6rem', fontWeight: '900', marginBottom: '1rem', color: 'var(--accent-gold)' }}>Você agora é VIP!</h3>
+            <p style={{ fontSize: '1rem', color: 'white', fontWeight: '700', marginBottom: '1rem' }}>Sua assinatura foi ativada com sucesso.</p>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '2.5rem' }}>
+              Seus créditos já estão disponíveis para uso nos agendamentos. Aproveite!
+            </p>
+            <button onClick={() => setVipSuccess(false)} className="gold-button" style={{ padding: '1.1rem 2.5rem', width: '100%', borderRadius: '14px' }}>
+              Ir para Vitrine
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* VIP Checkout Screen */}
+      {isVipCheckoutActive && vipCheckoutPlan && !vipSuccess && (
+        <div style={{ maxWidth: '500px', margin: '4rem auto', padding: '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
+          <button onClick={() => setIsVipCheckoutActive(false)} style={{ background: 'transparent', border: 'none', color: '#888', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: '2rem', fontWeight: '700', fontSize: '1rem' }}>
+            <ArrowLeft size={20} /> Voltar
+          </button>
+
+          <div className="premium-card" style={{ padding: '2.5rem', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{ background: 'var(--accent-gold-soft)', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                <Crown size={32} color="var(--accent-gold)" />
+              </div>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: '900', marginBottom: '4px' }}>{vipCheckoutPlan.name}</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{vipCheckoutPlan.servicesCount} serviços por mês</p>
+            </div>
+
+            <div style={{ background: 'rgba(212,175,55,0.05)', padding: '1.5rem', borderRadius: '14px', border: '1px solid rgba(212,175,55,0.15)', marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Plano mensal</span>
+                <span style={{ fontWeight: '800', fontSize: '1.1rem', color: 'white' }}>R$ {vipCheckoutPlan.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '0.75rem 0' }}></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: '800', fontSize: '1rem' }}>Total</span>
+                <span style={{ fontWeight: '900', fontSize: '1.5rem', color: 'var(--accent-gold)' }}>R$ {vipCheckoutPlan.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '1.5rem' }}>
+              O pagamento é processado com segurança pelo <strong style={{ color: '#00b1ea' }}>Mercado Pago</strong>. Aceitamos cartão de crédito e PIX.
+            </p>
+
+            <button
+              onClick={handleVipCheckout}
+              disabled={isVipProcessing}
+              style={{
+                width: '100%', padding: '1.25rem', borderRadius: '14px', border: 'none',
+                background: isVipProcessing ? '#333' : '#00b1ea',
+                color: 'white', fontSize: '1rem', fontWeight: '900', cursor: isVipProcessing ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                transition: 'all 0.2s', boxShadow: isVipProcessing ? 'none' : '0 8px 25px rgba(0,177,234,0.3)'
+              }}
+            >
+              {isVipProcessing ? (
+                <><div style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Aguarde...</>
+              ) : (
+                <><CreditCard size={20} /> Pagar com Cartão ou PIX</>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* Success View from online checkouts redirect */}
       {onlineSuccess && (
@@ -350,7 +494,7 @@ const Storefront: React.FC = () => {
       )}
 
       {/* Hero Section (Visible only when not in checkout/success) */}
-      {!isCheckoutActive && !isSuccessState && !onlineSuccess && (
+      {!isCheckoutActive && !isSuccessState && !onlineSuccess && !isVipCheckoutActive && !vipSuccess && (
         <section style={{ 
           height: '75vh', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
           overflow: 'hidden', marginBottom: '4rem'
@@ -402,7 +546,7 @@ const Storefront: React.FC = () => {
       )}
 
       {/* Main Storefront view (Visible when not checking out and not in success redirect) */}
-      {!isCheckoutActive && !isSuccessState && !onlineSuccess && (
+      {!isCheckoutActive && !isSuccessState && !onlineSuccess && !isVipCheckoutActive && !vipSuccess && (
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem' }}>
           <div style={{ width: '100%' }}>
             
@@ -565,26 +709,13 @@ const Storefront: React.FC = () => {
                           }}>
                             {!hasActiveSub && (
                               <button
-                                onClick={async () => {
+                                onClick={() => {
                                   if (!userId) {
                                     alert("Você precisa estar logado para assinar um plano.");
                                     return;
                                   }
-                                  const confirm = window.confirm(`Deseja assinar o plano ${plan.name} por R$ ${plan.price}? O valor será cobrado no balcão.`);
-                                  if (confirm) {
-                                    const end = new Date();
-                                    end.setMonth(end.getMonth() + 1);
-                                    const sub = await addSubscription({
-                                      clientId: userId,
-                                      planId: plan.id,
-                                      status: 'active',
-                                      startDate: new Date().toISOString().split('T')[0],
-                                      endDate: end.toISOString().split('T')[0],
-                                      servicesUsed: 0,
-                                      servicesTotal: plan.servicesCount
-                                    });
-                                    if (sub) alert("Assinatura realizada com sucesso!");
-                                  }
+                                  setVipCheckoutPlan(plan);
+                                  setIsVipCheckoutActive(true);
                                 }}
                                 className="gold-button"
                                 style={{ padding: '0.6rem 1rem', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '0.75rem', width: '100%' }}
@@ -1357,7 +1488,7 @@ const Storefront: React.FC = () => {
       )}
 
       {/* Floating Bottom Bar — portal renderiza direto no body, escapando qualquer overflow/stacking context */}
-      {cartItemCount > 0 && !isCheckoutActive && ReactDOM.createPortal(
+      {cartItemCount > 0 && !isCheckoutActive && !isVipCheckoutActive && !vipSuccess && ReactDOM.createPortal(
         <div 
           style={{
             position: 'fixed',
