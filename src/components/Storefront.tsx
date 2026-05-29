@@ -710,18 +710,18 @@ const Storefront: React.FC = () => {
                             </button>
                           )}
                           <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '4px', color: 'white' }}>{service.name}</h3>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                               {service.promotionPrice && (
-                                <span style={{ fontSize: '0.8rem', textDecoration: 'line-through', color: '#888' }}>
+                                <span style={{ fontSize: '0.8rem', textDecoration: 'line-through', color: '#888', marginBottom: '-2px' }}>
                                   R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                 </span>
                               )}
-                              <span style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)' }}>
+                              <span style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)', lineHeight: 1 }}>
                                 R$ {(service.promotionPrice || service.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </span>
                             </div>
-                            <span style={{ fontSize: '0.75rem', color: '#888' }}>• {service.duration || 30}m</span>
+                            <span style={{ fontSize: '0.75rem', color: '#888', marginBottom: '1px' }}>• {service.duration || 30}m</span>
                           </div>
                         </div>
                       </div>
