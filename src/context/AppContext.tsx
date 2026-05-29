@@ -136,6 +136,12 @@ interface AppContextType {
       sections: string[];
       servicesOrder: string[];
       productsOrder: string[];
+      sectionsMetadata?: {
+        [key: string]: {
+          name: string;
+          icon: string;
+        }
+      };
     };
   };
   updateConfig: (config: Partial<AppContextType['config']>) => void;
@@ -160,13 +166,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     logoUrl: string;
     primaryColor: string;
     accentColor: string;
-    layoutConfig: { sections: string[]; servicesOrder: string[]; productsOrder: string[] };
+    layoutConfig: { 
+      sections: string[]; 
+      servicesOrder: string[]; 
+      productsOrder: string[];
+      sectionsMetadata?: {
+        [key: string]: {
+          name: string;
+          icon: string;
+        }
+      }
+    };
   }>({
     businessName: 'Barbearia Premium',
     logoUrl: '/logo3.png',
     primaryColor: '#050505',
     accentColor: '#d4af37',
-    layoutConfig: { sections: ['services', 'vipplans', 'products'], servicesOrder: [], productsOrder: [] }
+    layoutConfig: { 
+      sections: ['services', 'vipplans', 'products'], 
+      servicesOrder: [], 
+      productsOrder: [],
+      sectionsMetadata: {
+        services: { name: 'Serviços', icon: 'Scissors' },
+        vipplans: { name: 'Planos VIP', icon: 'Crown' },
+        products: { name: 'Produtos', icon: 'Package' }
+      }
+    }
   });
   
   const [isReady, setIsReady] = useState(false);
@@ -291,13 +316,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             .maybeSingle();
           configData = data;
         }
-        if (configData) setConfig({
-          businessName: configData.business_name,
-          logoUrl: configData.logo_url || '/logo3.png',
-          primaryColor: '#050505',
-          accentColor: configData.theme_color || '#d4af37',
-          layoutConfig: configData.layout_config || { sections: ['services', 'vipplans', 'products'], servicesOrder: [], productsOrder: [] }
-        });
+        if (configData) {
+          const rawLayout = configData.layout_config || {};
+          setConfig({
+            businessName: configData.business_name,
+            logoUrl: configData.logo_url || '/logo3.png',
+            primaryColor: '#050505',
+            accentColor: configData.theme_color || '#d4af37',
+            layoutConfig: {
+              sections: rawLayout.sections || ['services', 'vipplans', 'products'],
+              servicesOrder: rawLayout.servicesOrder || [],
+              productsOrder: rawLayout.productsOrder || [],
+              sectionsMetadata: rawLayout.sectionsMetadata || {
+                services: { name: 'Serviços', icon: 'Scissors' },
+                vipplans: { name: 'Planos VIP', icon: 'Crown' },
+                products: { name: 'Produtos', icon: 'Package' }
+              }
+            }
+          });
+        }
 
       } catch (error) {
         console.error("Error fetching data from Supabase:", error);

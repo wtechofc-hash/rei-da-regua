@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
-import { Banknote, Upload, CheckCircle, ShieldAlert, Power, Clock, Copy, Plus, FileText, X, CreditCard, ArrowUp, ArrowDown, LayoutTemplate, Settings as SettingsIcon } from 'lucide-react';
+import { Banknote, Upload, CheckCircle, ShieldAlert, Power, Clock, Copy, Plus, FileText, X, CreditCard, ArrowUp, ArrowDown, LayoutTemplate, Settings as SettingsIcon, Scissors, Crown, Package, Sparkles, ShoppingBag, Star, Calendar, Heart, Flame, Edit2, Trash2, PlusCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
 const Settings: React.FC = () => {
@@ -496,11 +496,40 @@ const Settings: React.FC = () => {
   );
 };
 
+const IconMap: { [key: string]: any } = {
+  Scissors,
+  Crown,
+  Package,
+  Sparkles,
+  ShoppingBag,
+  Star,
+  Calendar,
+  Heart,
+  Flame
+};
+
+const RenderSectionIcon = ({ name, color = 'var(--accent-gold)', size = 20 }: { name: string; color?: string; size?: number }) => {
+  const IconComp = IconMap[name];
+  if (!IconComp) return null;
+  return <IconComp size={size} color={color} />;
+};
+
 const LayoutTab = ({ services, products, config, updateConfig }: any) => {
   const [sections, setSections] = useState<string[]>(config.layoutConfig?.sections || ['services', 'vipplans', 'products']);
   const [servicesOrder, setServicesOrder] = useState<string[]>(config.layoutConfig?.servicesOrder || []);
   const [productsOrder, setProductsOrder] = useState<string[]>(config.layoutConfig?.productsOrder || []);
+  const [sectionsMetadata, setSectionsMetadata] = useState<{
+    [key: string]: { name: string; icon: string };
+  }>(config.layoutConfig?.sectionsMetadata || {
+    services: { name: 'Serviços', icon: 'Scissors' },
+    vipplans: { name: 'Planos VIP', icon: 'Crown' },
+    products: { name: 'Produtos', icon: 'Package' }
+  });
+
   const [isSaving, setIsSaving] = useState(false);
+  const [editingSecKey, setEditingSecKey] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editIcon, setEditIcon] = useState('');
 
   useEffect(() => {
     if (servicesOrder.length === 0 && services.length > 0) {
@@ -531,36 +560,189 @@ const LayoutTab = ({ services, products, config, updateConfig }: any) => {
     setter(newArray);
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    await updateConfig({ layoutConfig: { sections, servicesOrder, productsOrder } });
-    setIsSaving(false);
-    alert('Layout salvo com sucesso!');
-  };
-
-  const getSectionName = (key: string) => {
+  const getSectionDefaultName = (key: string) => {
     if (key === 'services') return 'Serviços';
     if (key === 'vipplans') return 'Planos VIP';
     if (key === 'products') return 'Produtos';
     return key;
   };
 
+  const getSectionDefaultIcon = (key: string) => {
+    if (key === 'services') return 'Scissors';
+    if (key === 'vipplans') return 'Crown';
+    if (key === 'products') return 'Package';
+    return 'Star';
+  };
+
+  const startEditing = (key: string) => {
+    setEditingSecKey(key);
+    setEditName(sectionsMetadata[key]?.name || getSectionDefaultName(key));
+    setEditIcon(sectionsMetadata[key]?.icon || getSectionDefaultIcon(key));
+  };
+
+  const cancelEditing = () => {
+    setEditingSecKey(null);
+  };
+
+  const saveSectionChanges = (key: string) => {
+    if (!editName.trim()) return alert('O nome da categoria não pode estar vazio.');
+    setSectionsMetadata(prev => ({
+      ...prev,
+      [key]: { name: editName.trim(), icon: editIcon }
+    }));
+    setEditingSecKey(null);
+  };
+
+  const removeSection = (key: string) => {
+    if (confirm(`Tem certeza que deseja ocultar a categoria "${sectionsMetadata[key]?.name || getSectionDefaultName(key)}" na vitrine?`)) {
+      setSections(prev => prev.filter(s => s !== key));
+      if (editingSecKey === key) setEditingSecKey(null);
+    }
+  };
+
+  const addSection = (key: string) => {
+    setSections(prev => [...prev, key]);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await updateConfig({ 
+      layoutConfig: { 
+        sections, 
+        servicesOrder, 
+        productsOrder, 
+        sectionsMetadata 
+      } 
+    });
+    setIsSaving(false);
+    alert('Layout salvo com sucesso!');
+  };
+
+  const availableToAdd = ['services', 'vipplans', 'products'].filter(s => !sections.includes(s));
+  const availableIcons = ['Scissors', 'Crown', 'Package', 'Sparkles', 'ShoppingBag', 'Star', 'Calendar', 'Heart', 'Flame'];
+
   return (
     <div className="animate-fade-in">
       <div className="premium-card" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem', color: 'white' }}>Ordem das Seções da Vitrine</h2>
-        <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Altere a ordem em que as categorias principais aparecem na página inicial dos seus clientes.</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {sections.map((sec: string, index: number) => (
-            <div key={sec} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <span style={{ fontWeight: '700', fontSize: '1rem', color: 'white' }}>{getSectionName(sec)}</span>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => moveItem(sections, index, 'up', setSections)} disabled={index === 0} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: index === 0 ? 'not-allowed' : 'pointer', opacity: index === 0 ? 0.3 : 1 }}><ArrowUp size={18} color="white" /></button>
-                <button onClick={() => moveItem(sections, index, 'down', setSections)} disabled={index === sections.length - 1} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: index === sections.length - 1 ? 'not-allowed' : 'pointer', opacity: index === sections.length - 1 ? 0.3 : 1 }}><ArrowDown size={18} color="white" /></button>
+        <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Altere a ordem, o nome e o ícone das categorias principais na vitrine do seu cliente. Oculte-as caso não as utilize.</p>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {sections.map((sec: string, index: number) => {
+            const currentMeta = sectionsMetadata[sec] || {
+              name: getSectionDefaultName(sec),
+              icon: getSectionDefaultIcon(sec)
+            };
+            const isEditing = editingSecKey === sec;
+
+            return (
+              <div key={sec} style={{ display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ background: 'rgba(212,175,55,0.1)', width: '38px', height: '38px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(212,175,55,0.15)' }}>
+                      <RenderSectionIcon name={currentMeta.icon} size={18} />
+                    </div>
+                    <span style={{ fontWeight: '700', fontSize: '0.95rem', color: 'white' }}>{currentMeta.name}</span>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => moveItem(sections, index, 'up', setSections)} disabled={index === 0} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: 'none', cursor: index === 0 ? 'not-allowed' : 'pointer', opacity: index === 0 ? 0.3 : 1 }}><ArrowUp size={16} color="white" /></button>
+                    <button onClick={() => moveItem(sections, index, 'down', setSections)} disabled={index === sections.length - 1} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: 'none', cursor: index === sections.length - 1 ? 'not-allowed' : 'pointer', opacity: index === sections.length - 1 ? 0.3 : 1 }}><ArrowDown size={16} color="white" /></button>
+                    <button onClick={() => isEditing ? cancelEditing() : startEditing(sec)} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(212,175,55,0.1)', border: 'none', cursor: 'pointer' }} title="Editar nome e ícone"><Edit2 size={16} color="var(--accent-gold)" /></button>
+                    <button onClick={() => removeSection(sec)} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,68,68,0.1)', border: 'none', cursor: 'pointer' }} title="Ocultar categoria"><Trash2 size={16} color="#ff4444" /></button>
+                  </div>
+                </div>
+
+                {isEditing && (
+                  <div style={{ padding: '1.25rem', background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'grid', gap: '1rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: '#aaa', fontWeight: '700', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nome Personalizado</label>
+                      <input 
+                        type="text" 
+                        value={editName} 
+                        onChange={e => setEditName(e.target.value)} 
+                        style={{ width: '100%', padding: '0.8rem', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: 'white', fontSize: '0.9rem', outline: 'none' }}
+                        placeholder="Ex: Nossos Cortes"
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: '#aaa', fontWeight: '700', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ícone da Categoria</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: '8px' }}>
+                        {availableIcons.map(ic => {
+                          const isSelected = editIcon === ic;
+                          return (
+                            <button
+                              key={ic}
+                              type="button"
+                              onClick={() => setEditIcon(ic)}
+                              style={{
+                                aspectRatio: '1',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: isSelected ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.02)',
+                                border: isSelected ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.08)',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                padding: 0
+                              }}
+                            >
+                              <RenderSectionIcon name={ic} size={20} color={isSelected ? 'var(--accent-gold)' : '#666'} />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                      <button onClick={() => saveSectionChanges(sec)} style={{ flex: 2, padding: '0.75rem', background: 'var(--accent-gold)', color: '#000', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', fontSize: '0.85rem' }}>Confirmar Alterações</button>
+                      <button onClick={cancelEditing} style={{ flex: 1, padding: '0.75rem', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', fontSize: '0.85rem' }}>Cancelar</button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+
+        {availableToAdd.length > 0 && (
+          <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px dashed rgba(255,255,255,0.08)' }}>
+            <span style={{ fontSize: '0.75rem', color: '#888', fontWeight: '800', display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Categorias Disponíveis para Adicionar</span>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {availableToAdd.map(sec => {
+                const defaultName = getSectionDefaultName(sec);
+                const defaultIcon = getSectionDefaultIcon(sec);
+                const currentMeta = sectionsMetadata[sec] || { name: defaultName, icon: defaultIcon };
+                return (
+                  <button 
+                    key={sec}
+                    onClick={() => addSection(sec)}
+                    style={{
+                      padding: '0.6rem 1rem',
+                      background: 'rgba(212,175,55,0.02)',
+                      border: '1px dashed rgba(212,175,55,0.15)',
+                      borderRadius: '12px',
+                      color: 'white',
+                      fontSize: '0.85rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseOver={e => e.currentTarget.style.borderColor = 'var(--accent-gold)'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(212,175,55,0.15)'}
+                  >
+                    <PlusCircle size={16} color="var(--accent-gold)" />
+                    Adicionar {currentMeta.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {services.length > 0 && (

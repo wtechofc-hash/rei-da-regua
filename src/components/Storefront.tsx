@@ -18,7 +18,12 @@ import {
   Minus,
   Check,
   ArrowLeft,
-  Crown
+  Crown,
+  Sparkles,
+  ShoppingBag,
+  Smile,
+  Heart,
+  Flame
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
@@ -36,6 +41,24 @@ const useIsMobile = (breakpoint = 768) => {
     return () => window.removeEventListener('resize', handler);
   }, [breakpoint]);
   return isMobile;
+};
+
+const IconMap: { [key: string]: any } = {
+  Scissors,
+  Crown,
+  Package,
+  Sparkles,
+  ShoppingBag,
+  Star,
+  Calendar,
+  Heart,
+  Flame
+};
+
+const RenderSectionIcon = ({ name, color = 'var(--accent-gold)', size = 24 }: { name: string; color?: string; size?: number }) => {
+  const IconComp = IconMap[name];
+  if (!IconComp) return null;
+  return <IconComp size={size} color={color} />;
 };
 
 const Storefront: React.FC = () => {
@@ -581,11 +604,18 @@ const Storefront: React.FC = () => {
           <div style={{ width: '100%' }}>
             
               {sectionsOrder.map((sectionName: string) => {
+                const metadata = config?.layoutConfig?.sectionsMetadata?.[sectionName] || {
+                  name: sectionName === 'services' ? 'Serviços' : sectionName === 'vipplans' ? 'Planos VIP' : 'Produtos',
+                  icon: sectionName === 'services' ? 'Scissors' : sectionName === 'vipplans' ? 'Crown' : 'Package'
+                };
+
                 if (sectionName === 'services') return (
             <section key="services" style={{ marginBottom: '5rem' }}>
               {/* Services Section */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.02em' }}>Serviços</h2>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <RenderSectionIcon name={metadata.icon} size={24} /> {metadata.name}
+                </h2>
                 <div style={{ fontSize: '0.85rem', color: 'var(--accent-gold)', fontWeight: '700', cursor: 'pointer' }}>Ver todos</div>
               </div>
               
@@ -697,7 +727,9 @@ const Storefront: React.FC = () => {
               <section key="vipplans" style={{ marginBottom: '5rem' }}>
                 {/* VIP Plans Section */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                  <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}><Crown size={24} color="var(--accent-gold)" /> Planos VIP</h2>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <RenderSectionIcon name={metadata.icon} size={24} /> {metadata.name}
+                  </h2>
                 </div>
                 
                 <div className="netflix-row" style={{ 
@@ -780,7 +812,9 @@ const Storefront: React.FC = () => {
             <section key="products" style={{ marginBottom: '5rem' }}>
               {/* Products Section */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.02em' }}>Produtos</h2>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <RenderSectionIcon name={metadata.icon} size={24} /> {metadata.name}
+                </h2>
                 <div style={{ fontSize: '0.85rem', color: 'var(--accent-gold)', fontWeight: '700', cursor: 'pointer' }}>Ver todos</div>
               </div>
               
