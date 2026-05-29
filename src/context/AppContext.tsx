@@ -132,6 +132,11 @@ interface AppContextType {
     logoUrl: string;
     primaryColor: string;
     accentColor: string;
+    layoutConfig: {
+      sections: string[];
+      servicesOrder: string[];
+      productsOrder: string[];
+    };
   };
   updateConfig: (config: Partial<AppContextType['config']>) => void;
 }
@@ -150,11 +155,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [shopData, setShopData] = useState<any>(null);
-  const [config, setConfig] = useState({
+  const [config, setConfig] = useState<{
+    businessName: string;
+    logoUrl: string;
+    primaryColor: string;
+    accentColor: string;
+    layoutConfig: { sections: string[]; servicesOrder: string[]; productsOrder: string[] };
+  }>({
     businessName: 'Barbearia Premium',
     logoUrl: '/logo3.png',
     primaryColor: '#050505',
-    accentColor: '#d4af37'
+    accentColor: '#d4af37',
+    layoutConfig: { sections: ['services', 'vipplans', 'products'], servicesOrder: [], productsOrder: [] }
   });
   
   const [isReady, setIsReady] = useState(false);
@@ -267,7 +279,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           businessName: configData.business_name,
           logoUrl: configData.logo_url || '/logo3.png',
           primaryColor: '#050505',
-          accentColor: configData.theme_color || '#d4af37'
+          accentColor: configData.theme_color || '#d4af37',
+          layoutConfig: configData.layout_config || { sections: ['services', 'vipplans', 'products'], servicesOrder: [], productsOrder: [] }
         });
 
       } catch (error) {
@@ -664,7 +677,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const { data } = await supabase.from('business_config').select('id').single();
     if (data?.id) {
         await supabase.from('business_config').update({ 
-        business_name: newC.businessName, logo_url: newC.logoUrl, theme_color: newC.accentColor 
+          business_name: newC.businessName !== undefined ? newC.businessName : config.businessName, 
+          logo_url: newC.logoUrl !== undefined ? newC.logoUrl : config.logoUrl, 
+          theme_color: newC.accentColor !== undefined ? newC.accentColor : config.accentColor,
+          layout_config: newC.layoutConfig !== undefined ? newC.layoutConfig : config.layoutConfig
         }).eq('id', data.id);
     }
     setConfig(prev => ({ ...prev, ...newC }));

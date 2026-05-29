@@ -58,6 +58,20 @@ const Storefront: React.FC = () => {
     useSubscriptionCredit
   } = useApp();
 
+  const orderedServices = React.useMemo(() => {
+    if (!config?.layoutConfig?.servicesOrder || config.layoutConfig.servicesOrder.length === 0) return services;
+    const orderMap = new Map(config.layoutConfig.servicesOrder.map((id: string, index: number) => [id, index]));
+    return [...services].sort((a, b) => (orderMap.get(a.id) ?? 999) - (orderMap.get(b.id) ?? 999));
+  }, [services, config?.layoutConfig?.servicesOrder]);
+
+  const orderedProducts = React.useMemo(() => {
+    if (!config?.layoutConfig?.productsOrder || config.layoutConfig.productsOrder.length === 0) return products;
+    const orderMap = new Map(config.layoutConfig.productsOrder.map((id: string, index: number) => [id, index]));
+    return [...products].sort((a, b) => (orderMap.get(a.id) ?? 999) - (orderMap.get(b.id) ?? 999));
+  }, [products, config?.layoutConfig?.productsOrder]);
+  
+  const sectionsOrder = config?.layoutConfig?.sections || ['services', 'vipplans', 'products'];
+
   // Selected state for the active card click
   const [selectedService, setSelectedService] = useState<string | null>(null);
 
@@ -566,8 +580,10 @@ const Storefront: React.FC = () => {
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem 8rem' }}>
           <div style={{ width: '100%' }}>
             
-            {/* Services Section */}
-            <section style={{ marginBottom: '5rem' }}>
+              {sectionsOrder.map((sectionName: string) => {
+                if (sectionName === 'services') return (
+            <section key="services" style={{ marginBottom: '5rem' }}>
+              {/* Services Section */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                 <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.02em' }}>Serviços</h2>
                 <div style={{ fontSize: '0.85rem', color: 'var(--accent-gold)', fontWeight: '700', cursor: 'pointer' }}>Ver todos</div>
@@ -580,7 +596,7 @@ const Storefront: React.FC = () => {
                 padding: '2.5rem 1.5rem',
                 margin: '-2.5rem -1.5rem'
               }}>
-                {services.map(service => {
+                {orderedServices.map(service => {
                   const scheduledItem = cartServices.find(item => item.service.id === service.id);
                   const isScheduled = !!scheduledItem;
 
@@ -675,10 +691,11 @@ const Storefront: React.FC = () => {
                 })}
               </div>
             </section>
-
-            {/* VIP Plans Section */}
-            {subscriptionPlans.length > 0 && (
-              <section style={{ marginBottom: '5rem' }}>
+                );
+                
+                if (sectionName === 'vipplans' && subscriptionPlans.length > 0) return (
+              <section key="vipplans" style={{ marginBottom: '5rem' }}>
+                {/* VIP Plans Section */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                   <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px' }}><Crown size={24} color="var(--accent-gold)" /> Planos VIP</h2>
                 </div>
@@ -757,10 +774,11 @@ const Storefront: React.FC = () => {
                   })}
                 </div>
               </section>
-            )}
+            );
 
-            {/* Products Section */}
-            <section style={{ marginBottom: '5rem' }}>
+                if (sectionName === 'products') return (
+            <section key="products" style={{ marginBottom: '5rem' }}>
+              {/* Products Section */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                 <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '-0.02em' }}>Produtos</h2>
                 <div style={{ fontSize: '0.85rem', color: 'var(--accent-gold)', fontWeight: '700', cursor: 'pointer' }}>Ver todos</div>
@@ -773,7 +791,7 @@ const Storefront: React.FC = () => {
                 padding: '2.5rem 1.5rem',
                 margin: '-2.5rem -1.5rem'
               }}>
-                {products.map(product => {
+                {orderedProducts.map(product => {
                   const cartItem = cartProducts.find(item => item.product.id === product.id);
                   const isSelected = !!cartItem;
 
@@ -906,6 +924,10 @@ const Storefront: React.FC = () => {
                 })}
               </div>
             </section>
+                );
+
+                return null;
+              })}
           </div>
         </div>
       )}

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
-import { Banknote, Upload, CheckCircle, ShieldAlert, Power, Clock, Copy, Plus, FileText, X, CreditCard } from 'lucide-react';
+import { Banknote, Upload, CheckCircle, ShieldAlert, Power, Clock, Copy, Plus, FileText, X, CreditCard, ArrowUp, ArrowDown, LayoutTemplate, Settings as SettingsIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
 const Settings: React.FC = () => {
-  const { logout, shopData: contextShopData } = useApp();
+  const { logout, shopData: contextShopData, services, products, config, updateConfig } = useApp();
   const [shopData, setShopData] = useState<any>(contextShopData);
   const [globalConfig, setGlobalConfig] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -14,6 +14,7 @@ const Settings: React.FC = () => {
   const [qrError, setQrError] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<'assinatura' | 'layout'>('assinatura');
 
   // Mercado Pago Integration States
   const [mpPublicKey, setMpPublicKey] = useState('');
@@ -173,8 +174,26 @@ const Settings: React.FC = () => {
   return (
     <div className="animate-fade-in" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto' }}>
       <h1 style={{ fontSize: '1.75rem', fontWeight: '900', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <Banknote color="var(--accent-gold)" /> Assinatura e Configurações
+        <SettingsIcon color="var(--accent-gold)" /> Configurações
       </h1>
+
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <button 
+          onClick={() => setActiveTab('assinatura')}
+          style={{ flex: 1, padding: '1rem', background: activeTab === 'assinatura' ? 'var(--accent-gold)' : 'rgba(255,255,255,0.05)', color: activeTab === 'assinatura' ? '#000' : 'white', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+        >
+          <Banknote size={20} /> Assinatura
+        </button>
+        <button 
+          onClick={() => setActiveTab('layout')}
+          style={{ flex: 1, padding: '1rem', background: activeTab === 'layout' ? 'var(--accent-gold)' : 'rgba(255,255,255,0.05)', color: activeTab === 'layout' ? '#000' : 'white', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+        >
+          <LayoutTemplate size={20} /> Layout da Vitrine
+        </button>
+      </div>
+
+      {activeTab === 'assinatura' ? (
+        <>
 
       {/* Warning Banner */}
       {showWarning && (
@@ -469,6 +488,126 @@ const Settings: React.FC = () => {
           Sair da Conta
         </button>
       </div>
+      </>
+      ) : (
+        <LayoutTab services={services} products={products} config={config} updateConfig={updateConfig} />
+      )}
+    </div>
+  );
+};
+
+const LayoutTab = ({ services, products, config, updateConfig }: any) => {
+  const [sections, setSections] = useState<string[]>(config.layoutConfig?.sections || ['services', 'vipplans', 'products']);
+  const [servicesOrder, setServicesOrder] = useState<string[]>(config.layoutConfig?.servicesOrder || []);
+  const [productsOrder, setProductsOrder] = useState<string[]>(config.layoutConfig?.productsOrder || []);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (servicesOrder.length === 0 && services.length > 0) {
+      setServicesOrder(services.map((s: any) => s.id));
+    }
+    if (services.length > 0 && servicesOrder.length > 0) {
+      const missing = services.filter((s:any) => !servicesOrder.includes(s.id)).map((s:any) => s.id);
+      if (missing.length > 0) setServicesOrder([...servicesOrder, ...missing]);
+    }
+  }, [services, servicesOrder]);
+
+  useEffect(() => {
+    if (productsOrder.length === 0 && products.length > 0) {
+      setProductsOrder(products.map((p: any) => p.id));
+    }
+    if (products.length > 0 && productsOrder.length > 0) {
+      const missing = products.filter((p:any) => !productsOrder.includes(p.id)).map((p:any) => p.id);
+      if (missing.length > 0) setProductsOrder([...productsOrder, ...missing]);
+    }
+  }, [products, productsOrder]);
+
+  const moveItem = (array: any[], index: number, direction: 'up' | 'down', setter: any) => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === array.length - 1) return;
+    const newArray = [...array];
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    [newArray[index], newArray[swapIndex]] = [newArray[swapIndex], newArray[index]];
+    setter(newArray);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await updateConfig({ layoutConfig: { sections, servicesOrder, productsOrder } });
+    setIsSaving(false);
+    alert('Layout salvo com sucesso!');
+  };
+
+  const getSectionName = (key: string) => {
+    if (key === 'services') return 'Serviços';
+    if (key === 'vipplans') return 'Planos VIP';
+    if (key === 'products') return 'Produtos';
+    return key;
+  };
+
+  return (
+    <div className="animate-fade-in">
+      <div className="premium-card" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem', color: 'white' }}>Ordem das Seções da Vitrine</h2>
+        <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Altere a ordem em que as categorias principais aparecem na página inicial dos seus clientes.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {sections.map((sec: string, index: number) => (
+            <div key={sec} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <span style={{ fontWeight: '700', fontSize: '1rem', color: 'white' }}>{getSectionName(sec)}</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => moveItem(sections, index, 'up', setSections)} disabled={index === 0} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: index === 0 ? 'not-allowed' : 'pointer', opacity: index === 0 ? 0.3 : 1 }}><ArrowUp size={18} color="white" /></button>
+                <button onClick={() => moveItem(sections, index, 'down', setSections)} disabled={index === sections.length - 1} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: index === sections.length - 1 ? 'not-allowed' : 'pointer', opacity: index === sections.length - 1 ? 0.3 : 1 }}><ArrowDown size={18} color="white" /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {services.length > 0 && (
+        <div className="premium-card" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1rem', color: 'white' }}>Ordem dos Serviços</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {servicesOrder.map((id: string, index: number) => {
+              const service = services.find((s: any) => s.id === id);
+              if (!service) return null;
+              return (
+                <div key={id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <span style={{ fontWeight: '700', fontSize: '0.9rem', color: 'white' }}>{service.name}</span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => moveItem(servicesOrder, index, 'up', setServicesOrder)} disabled={index === 0} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: index === 0 ? 'not-allowed' : 'pointer', opacity: index === 0 ? 0.3 : 1 }}><ArrowUp size={16} color="white" /></button>
+                    <button onClick={() => moveItem(servicesOrder, index, 'down', setServicesOrder)} disabled={index === servicesOrder.length - 1} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: index === servicesOrder.length - 1 ? 'not-allowed' : 'pointer', opacity: index === servicesOrder.length - 1 ? 0.3 : 1 }}><ArrowDown size={16} color="white" /></button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {products.length > 0 && (
+        <div className="premium-card" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1rem', color: 'white' }}>Ordem dos Produtos</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {productsOrder.map((id: string, index: number) => {
+              const product = products.find((p: any) => p.id === id);
+              if (!product) return null;
+              return (
+                <div key={id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <span style={{ fontWeight: '700', fontSize: '0.9rem', color: 'white' }}>{product.name}</span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => moveItem(productsOrder, index, 'up', setProductsOrder)} disabled={index === 0} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: index === 0 ? 'not-allowed' : 'pointer', opacity: index === 0 ? 0.3 : 1 }}><ArrowUp size={16} color="white" /></button>
+                    <button onClick={() => moveItem(productsOrder, index, 'down', setProductsOrder)} disabled={index === productsOrder.length - 1} style={{ padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: index === productsOrder.length - 1 ? 'not-allowed' : 'pointer', opacity: index === productsOrder.length - 1 ? 0.3 : 1 }}><ArrowDown size={16} color="white" /></button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <button onClick={handleSave} disabled={isSaving} className="gold-button" style={{ width: '100%', padding: '1rem', borderRadius: '12px', fontWeight: '900', fontSize: '1.1rem', marginBottom: '2rem', border: 'none', cursor: 'pointer' }}>
+        {isSaving ? 'Salvando...' : 'Salvar Alterações de Layout'}
+      </button>
     </div>
   );
 };
