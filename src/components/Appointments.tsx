@@ -225,8 +225,9 @@ const Appointments: React.FC = () => {
       </div>
 
       {/* Filters & Search */}
-      <div className="premium-card" style={{ padding: '1.25rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {/* Row 1: Search + Filters */}
+      {role !== 'customer' && (
+        <div className="premium-card" style={{ padding: '1.25rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Row 1: Search + Filters */}
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
             <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
@@ -240,7 +241,7 @@ const Appointments: React.FC = () => {
           </div>
 
           {/* Professional filter dropdown (only for non-professionals and non-clients) */}
-          {role !== 'professional' && role !== 'customer' && (
+          {role !== 'professional' && (
             <div style={{ position: 'relative', minWidth: '180px' }}>
               <select
                 value={proFilter}
@@ -356,10 +357,12 @@ const Appointments: React.FC = () => {
           ))}
         </div>
       </div>
+      )}
 
       {/* Stats bar */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        {[
+      {role !== 'customer' && (
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          {[
           { label: 'Total filtrado', value: filteredAppointments.length, color: '#888' },
           { label: 'Pendentes', value: filteredAppointments.filter(a => a.status === 'pending').length, color: '#ffb300' },
           { label: 'Confirmados', value: filteredAppointments.filter(a => a.status === 'confirmed').length, color: '#00e676' },
@@ -370,7 +373,8 @@ const Appointments: React.FC = () => {
             <p style={{ margin: 0, fontSize: '0.7rem', color: '#666', marginTop: '2px' }}>{stat.label}</p>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* List */}
       <div style={{ display: 'grid', gap: '1rem' }}>
@@ -380,7 +384,7 @@ const Appointments: React.FC = () => {
             <p style={{ color: 'var(--text-secondary)' }}>Nenhum agendamento encontrado para este filtro.</p>
           </div>
         ) : (
-          filteredAppointments.map(appt => {
+          (role === 'customer' ? filteredAppointments.slice(0, 3) : filteredAppointments).map(appt => {
             const svc = services.find(s => s.id === appt.serviceId);
             const prof = profiles.find(p => p.id === appt.professionalId);
             const status = statusMap[appt.status] || statusMap.pending;
