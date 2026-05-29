@@ -274,7 +274,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         })));
 
         // Fetch Config
-        const { data: configData } = await query(supabase.from('business_config').select('*')).single();
+        let configData = null;
+        if (currentShopId) {
+          const { data } = await supabase
+            .from('business_config')
+            .select('*')
+            .eq('shop_id', currentShopId)
+            .maybeSingle();
+          configData = data;
+        }
+        if (!configData) {
+          const { data } = await supabase
+            .from('business_config')
+            .select('*')
+            .is('shop_id', null)
+            .maybeSingle();
+          configData = data;
+        }
         if (configData) setConfig({
           businessName: configData.business_name,
           logoUrl: configData.logo_url || '/logo3.png',
@@ -674,16 +690,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateConfig = async (newC: Partial<AppContextType['config']>) => {
-    const { data } = await supabase.from('business_config').select('id').single();
-    if (data?.id) {
-        await supabase.from('business_config').update({ 
-          business_name: newC.businessName !== undefined ? newC.businessName : config.businessName, 
-          logo_url: newC.logoUrl !== undefined ? newC.logoUrl : config.logoUrl, 
-          theme_color: newC.accentColor !== undefined ? newC.accentColor : config.accentColor,
-          layout_config: newC.layoutConfig !== undefined ? newC.layoutConfig : config.layoutConfig
-        }).eq('id', data.id);
+    try {
+      if (!shopId) {
+        // Fallback global sem shopId (não esperado em produção normal)
+        const { data } = await supabase.from('business_config').select('id').single();
+        if (data?.id) {
+          const { error } = await supabase.from('business_config').update({ 
+            business_name: newC.businessName !== undefined ? newC.businessName : config.businessName, 
+            logo_url: newC.logoUrl !== undefined ? newC.logoUrl : config.logoUrl, 
+            theme_color: newC.accentColor !== undefined ? newC.accentColor : config.accentColor,
+            layout_config: newC.layoutConfig !== undefined ? newC.layoutConfig : config.layoutConfig
+          }).eq('id', data.id);
+          if (error) throw error;
+        }
+        setConfig(prev => ({ ...prev, ...newC }));
+        return;
+      }
+
+      // Buscar configuração existente para esta barbearia específica
+      const { data: existingConfig, error: fetchError } = await supabase
+        .from('business_config')
+        .select('id')
+        .eq('shop_id', shopId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      const updatePayload = {
+        business_name: newC.businessName !== undefined ? newC.businessName : config.businessName, 
+        logo_url: newC.logoUrl !== undefined ? newC.logoUrl : config.logoUrl, 
+        theme_color: newC.accentColor !== undefined ? newC.accentColor : config.accentColor,
+        layout_config: newC.layoutConfig !== undefined ? newC.layoutConfig : config.layoutConfig,
+        shop_id: shopId
+      };
+
+      if (existingConfig?.id) {
+        const { error: updateError } = await supabase
+          .from('business_config')
+          .update(updatePayload)
+          .eq('id', existingConfig.id);
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('business_config')
+          .insert([updatePayload]);
+        if (insertError) throw insertError;
+      }
+
+      setConfig(prev => ({ ...prev, ...newC }));
+    } catch (error) {
+      console.error("Erro ao salvar configurações de negócio no Supabase:", error);
+      alert("Houve um erro ao persistir as configurações. Suas alterações podem não ter sido salvas no banco de dados.");
     }
-    setConfig(prev => ({ ...prev, ...newC }));
   };
 
   return (
