@@ -20,6 +20,7 @@ export interface Service {
   name: string;
   description: string;
   price: number;
+  promotionPrice?: number;
   commission: number;
   duration?: number;
 }
@@ -253,13 +254,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Fetch Services
         const { data: servicesData } = await query(supabase.from('services').select('*'));
         if (servicesData) setServices(servicesData.map((s: any) => ({
-          id: s.id, name: s.name, description: s.category || '', price: s.price, commission: s.commission_rate ?? 0, duration: s.duration || 30
+          id: s.id, name: s.name, description: s.category || '', price: s.price, promotionPrice: s.promotion_price ?? undefined, commission: s.commission_rate ?? 0, duration: s.duration || 30
         })));
 
         // Fetch Products
         const { data: productsData } = await query(supabase.from('products').select('*'));
         if (productsData) setProducts(productsData.map((p: any) => ({
-          id: p.id, name: p.name, description: p.category || '', price: p.price, stock: p.stock, image: p.image_url, commission: p.commission_rate ?? 0,
+          id: p.id, name: p.name, description: p.category || '', price: p.price, promotionPrice: p.promotion_price ?? undefined, stock: p.stock, image: p.image_url, commission: p.commission_rate ?? 0,
           barcode: p.barcode || '', itemCode: p.item_code || ''
         })));
 
@@ -464,7 +465,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addService = async (s: Omit<Service, 'id'>) => {
     const { data, error } = await supabase.from('services').insert([{ 
       name: s.name, price: s.price, duration: s.duration || 30, category: s.description,
-      commission_rate: s.commission, shop_id: shopId 
+      commission_rate: s.commission, shop_id: shopId,
+      promotion_price: s.promotionPrice ?? null
     }]).select();
     if (data) setServices(prev => [...prev, { ...s, id: data[0].id, duration: s.duration || 30 }]);
   };
@@ -472,6 +474,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updatePayload: any = { name: s.name, price: s.price };
     if (s.duration !== undefined) updatePayload.duration = s.duration;
     if (s.commission !== undefined) updatePayload.commission_rate = s.commission;
+    updatePayload.promotion_price = s.promotionPrice ?? null;
     await supabase.from('services').update(updatePayload).eq('id', id);
     setServices(prev => prev.map(i => i.id === id ? {...i, ...s} : i));
   };
@@ -483,7 +486,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addProduct = async (p: Omit<Product, 'id'>) => {
     const { data } = await supabase.from('products').insert([{ 
       name: p.name, price: p.price, stock: p.stock, category: p.description, image_url: p.image, shop_id: shopId,
-      barcode: p.barcode || null, item_code: p.itemCode || null, commission_rate: p.commission ?? 0
+      barcode: p.barcode || null, item_code: p.itemCode || null, commission_rate: p.commission ?? 0,
+      promotion_price: p.promotionPrice ?? null
     }]).select();
     if (data) setProducts(prev => [...prev, { ...p, id: data[0].id }]);
   };
@@ -495,6 +499,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (p.barcode !== undefined) updatePayload.barcode = p.barcode;
     if (p.itemCode !== undefined) updatePayload.item_code = p.itemCode;
     if (p.commission !== undefined) updatePayload.commission_rate = p.commission;
+    updatePayload.promotion_price = p.promotionPrice !== undefined ? (p.promotionPrice ?? null) : undefined;
+    if (updatePayload.promotion_price === undefined) delete updatePayload.promotion_price;
     await supabase.from('products').update(updatePayload).eq('id', id);
     setProducts(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
   };

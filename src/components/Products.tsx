@@ -7,7 +7,7 @@ const Products: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '', description: '', price: '', commission: '10', stock: '0',
+    name: '', description: '', price: '', promotionPrice: '', commission: '10', stock: '0',
     barcode: '', itemCode: ''
   });
 
@@ -17,6 +17,7 @@ const Products: React.FC = () => {
       name: formData.name, 
       description: formData.description,
       price: Number(formData.price), 
+      promotionPrice: formData.promotionPrice ? Number(formData.promotionPrice) : undefined,
       commission: Number(formData.commission), 
       stock: Number(formData.stock),
       barcode: formData.barcode || undefined, 
@@ -29,7 +30,7 @@ const Products: React.FC = () => {
       addProduct(data);
     }
 
-    setFormData({ name: '', description: '', price: '', commission: '10', stock: '0', barcode: '', itemCode: '' });
+    setFormData({ name: '', description: '', price: '', promotionPrice: '', commission: '10', stock: '0', barcode: '', itemCode: '' });
     setEditingId(null);
     setIsAdding(false);
   };
@@ -40,6 +41,7 @@ const Products: React.FC = () => {
       name: product.name,
       description: product.description || '',
       price: product.price.toString(),
+      promotionPrice: product.promotionPrice ? product.promotionPrice.toString() : '',
       commission: product.commission.toString(),
       stock: product.stock.toString(),
       barcode: product.barcode || '',
@@ -49,7 +51,7 @@ const Products: React.FC = () => {
   };
 
   const handleCancel = () => {
-    setFormData({ name: '', description: '', price: '', commission: '10', stock: '0', barcode: '', itemCode: '' });
+    setFormData({ name: '', description: '', price: '', promotionPrice: '', commission: '10', stock: '0', barcode: '', itemCode: '' });
     setEditingId(null);
     setIsAdding(false);
   };
@@ -103,6 +105,11 @@ const Products: React.FC = () => {
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Preço de Venda (R$)</label>
               <input required type="number" step="0.01" style={inputStyle}
                 value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Preço Promocional (R$)</label>
+              <input type="number" step="0.01" placeholder="Opcional" style={inputStyle}
+                value={formData.promotionPrice} onChange={e => setFormData({ ...formData, promotionPrice: e.target.value })} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Estoque Inicial</label>
@@ -162,9 +169,16 @@ const Products: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <span style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--accent-gold)' }}>
-                R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                {product.promotionPrice && (
+                  <span style={{ fontSize: '0.85rem', textDecoration: 'line-through', color: 'var(--text-secondary)' }}>
+                    R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                )}
+                <span style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--accent-gold)' }}>
+                  R$ {(product.promotionPrice || product.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.03)', padding: '3px 8px', borderRadius: '6px' }}>
                 {product.commission}% comissão
               </span>

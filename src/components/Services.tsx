@@ -6,7 +6,7 @@ const Services: React.FC = () => {
   const { services = [], addService, updateService, deleteService } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', commission: '', duration: '' });
+  const [formData, setFormData] = useState({ name: '', description: '', price: '', promotionPrice: '', commission: '', duration: '' });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,6 +14,7 @@ const Services: React.FC = () => {
       name: formData.name, 
       description: formData.description, 
       price: Number(formData.price), 
+      promotionPrice: formData.promotionPrice ? Number(formData.promotionPrice) : undefined,
       commission: Number(formData.commission),
       duration: Number(formData.duration) || 30
     };
@@ -24,7 +25,7 @@ const Services: React.FC = () => {
       addService(data);
     }
 
-    setFormData({ name: '', description: '', price: '', commission: '', duration: '' });
+    setFormData({ name: '', description: '', price: '', promotionPrice: '', commission: '', duration: '' });
     setEditingId(null);
     setIsAdding(false);
   };
@@ -35,6 +36,7 @@ const Services: React.FC = () => {
       name: service.name,
       description: service.description || '',
       price: service.price.toString(),
+      promotionPrice: service.promotionPrice ? service.promotionPrice.toString() : '',
       commission: service.commission.toString(),
       duration: service.duration ? service.duration.toString() : '30'
     });
@@ -42,7 +44,7 @@ const Services: React.FC = () => {
   };
 
   const handleCancel = () => {
-    setFormData({ name: '', description: '', price: '', commission: '', duration: '' });
+    setFormData({ name: '', description: '', price: '', promotionPrice: '', commission: '', duration: '' });
     setEditingId(null);
     setIsAdding(false);
   };
@@ -81,6 +83,11 @@ const Services: React.FC = () => {
                 value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Preço Promocional (R$)</label>
+              <input type="number" step="0.01" placeholder="Opcional" style={inputStyle}
+                value={formData.promotionPrice} onChange={e => setFormData({ ...formData, promotionPrice: e.target.value })} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Comissão (%)</label>
               <input required type="number" style={inputStyle}
                 value={formData.commission} onChange={e => setFormData({ ...formData, commission: e.target.value })} />
@@ -117,9 +124,16 @@ const Services: React.FC = () => {
                 <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{service.description}</p>
               )}
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <span style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--accent-gold)' }}>
-                  R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {service.promotionPrice && (
+                    <span style={{ fontSize: '0.75rem', textDecoration: 'line-through', color: 'var(--text-secondary)' }}>
+                      R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  )}
+                  <span style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--accent-gold)' }}>
+                    R$ {(service.promotionPrice || service.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                   <Percent size={11} /> {service.commission}% comissão
                 </span>

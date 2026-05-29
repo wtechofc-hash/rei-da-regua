@@ -454,12 +454,12 @@ const Storefront: React.FC = () => {
   let vipDiscount = 0;
   if (useVipCredits && maxCreditsToUse > 0) {
     for (let i = 0; i < maxCreditsToUse; i++) {
-      vipDiscount += sortedServices[i].service.price;
+      vipDiscount += (sortedServices[i].service.promotionPrice || sortedServices[i].service.price);
     }
   }
 
-  const totalServicesPrice = cartServices.reduce((sum, item) => sum + item.service.price, 0);
-  const totalProductsPrice = cartProducts.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const totalServicesPrice = cartServices.reduce((sum, item) => sum + (item.service.promotionPrice || item.service.price), 0);
+  const totalProductsPrice = cartProducts.reduce((sum, item) => sum + ((item.product.promotionPrice || item.product.price) * item.quantity), 0);
   const grandTotal = totalServicesPrice + totalProductsPrice - vipDiscount;
   const cartItemCount = cartServices.length + cartProducts.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -711,7 +711,16 @@ const Storefront: React.FC = () => {
                           )}
                           <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '4px', color: 'white' }}>{service.name}</h3>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)' }}>R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              {service.promotionPrice && (
+                                <span style={{ fontSize: '0.8rem', textDecoration: 'line-through', color: '#888' }}>
+                                  R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              )}
+                              <span style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)' }}>
+                                R$ {(service.promotionPrice || service.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
                             <span style={{ fontSize: '0.75rem', color: '#888' }}>• {service.duration || 30}m</span>
                           </div>
                         </div>
@@ -950,7 +959,16 @@ const Storefront: React.FC = () => {
                             </div>
                           )}
                           <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '4px', color: 'white' }}>{product.name}</h3>
-                          <p style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)', margin: 0 }}>R$ {product.price}</p>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            {product.promotionPrice && (
+                              <span style={{ fontSize: '0.8rem', textDecoration: 'line-through', color: '#888' }}>
+                                R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            )}
+                            <p style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)', margin: 0 }}>
+                              R$ {(product.promotionPrice || product.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1041,9 +1059,16 @@ const Storefront: React.FC = () => {
                           </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end', borderTop: isMobile ? '1px solid rgba(255,255,255,0.05)' : 'none', paddingTop: isMobile ? '1rem' : '0' }}>
-                          <span style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)' }}>
-                            R$ {item.service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            {item.service.promotionPrice && (
+                              <span style={{ fontSize: '0.85rem', textDecoration: 'line-through', color: 'var(--text-secondary)' }}>
+                                R$ {item.service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            )}
+                            <span style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)' }}>
+                              R$ {(item.service.promotionPrice || item.service.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
                           <button
                             type="button"
                             onClick={() => setCartServices(prev => prev.filter(i => i.id !== item.id))}
@@ -1099,7 +1124,7 @@ const Storefront: React.FC = () => {
                           <div>
                             <h4 style={{ fontSize: '1.05rem', fontWeight: '800', margin: '0 0 4px', color: 'white' }}>{item.product.name}</h4>
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                              Preço Unitário: R$ {item.product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              Preço Unitário: R$ {(item.product.promotionPrice || item.product.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
                           </div>
                         </div>
@@ -1131,7 +1156,7 @@ const Storefront: React.FC = () => {
                             </button>
                           </div>
                           <span style={{ fontSize: '1.1rem', fontWeight: '900', color: 'var(--accent-gold)', minWidth: '90px', textAlign: 'right' }}>
-                            R$ {(item.product.price * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            R$ {((item.product.promotionPrice || item.product.price) * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                           <button
                             type="button"
