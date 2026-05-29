@@ -92,6 +92,36 @@ const Storefront: React.FC = () => {
 
   const availableProfessionals = profiles.filter(p => p.role === 'professional' || p.role === 'owner');
 
+  const isPopStateOverlay = React.useRef(false);
+  const hasOverlayOpen = isCheckoutActive || isVipCheckoutActive || openBookingModal || isSuccessState || vipSuccess || onlineSuccess || !!selectedService;
+
+  useEffect(() => {
+    const handlePopState = () => {
+      isPopStateOverlay.current = true;
+      setIsCheckoutActive(false);
+      setIsVipCheckoutActive(false);
+      setOpenBookingModal(false);
+      setIsSuccessState(false);
+      setVipSuccess(false);
+      setOnlineSuccess(false);
+      setSelectedService(null);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (hasOverlayOpen) {
+      window.history.pushState({ overlayOpen: true, page: 'dashboard' }, '');
+      isPopStateOverlay.current = false;
+    } else if (!hasOverlayOpen && !isPopStateOverlay.current) {
+      if (window.history.state?.overlayOpen) {
+        window.history.back();
+      }
+    }
+    isPopStateOverlay.current = false;
+  }, [hasOverlayOpen]);
+
   useEffect(() => {
     if (availableProfessionals.length === 1 && !selectedProfessional) {
       setSelectedProfessional(availableProfessionals[0].id);
