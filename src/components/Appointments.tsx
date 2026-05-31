@@ -80,11 +80,28 @@ const Appointments: React.FC = () => {
     clientId: '',
     clientName: '',
     serviceId: '',
-    professionalId: '',
+    professionalId: role === 'professional' ? (userId || '') : '',
     date: today,
     time: '',
     price: 0
   });
+
+  React.useEffect(() => {
+    if (role === 'professional' && userId && newApptData.professionalId !== userId) {
+      setNewApptData(prev => ({ ...prev, professionalId: userId }));
+    }
+  }, [role, userId, newApptData.professionalId]);
+
+  React.useEffect(() => {
+    const handleOpen = () => {
+      setIsModalOpen(true);
+      if (role === 'professional' && userId) {
+        setNewApptData(prev => ({ ...prev, professionalId: userId }));
+      }
+    };
+    window.addEventListener('open-appointment-modal', handleOpen);
+    return () => window.removeEventListener('open-appointment-modal', handleOpen);
+  }, [role, userId]);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
   React.useEffect(() => {
@@ -135,7 +152,7 @@ const Appointments: React.FC = () => {
           clientId: '',
           clientName: '',
           serviceId: '',
-          professionalId: '',
+          professionalId: role === 'professional' ? (userId || '') : '',
           date: today,
           time: '',
           price: 0
@@ -526,7 +543,7 @@ const Appointments: React.FC = () => {
                     clientId: '',
                     clientName: '',
                     serviceId: '',
-                    professionalId: '',
+                    professionalId: role === 'professional' ? (userId || '') : '',
                     date: today,
                     time: '',
                     price: 0
@@ -626,20 +643,22 @@ const Appointments: React.FC = () => {
               </div>
 
               {/* Profissional */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Profissional</label>
-                <select
-                  required
-                  value={newApptData.professionalId}
-                  onChange={e => setNewApptData(prev => ({ ...prev, professionalId: e.target.value }))}
-                  style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
-                >
-                  <option value="" style={{ background: '#050505' }}>Selecione um profissional...</option>
-                  {profiles.map(p => (
-                    <option key={p.id} value={p.id} style={{ background: '#050505' }}>{p.name}</option>
-                  ))}
-                </select>
-              </div>
+              {role !== 'professional' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Profissional</label>
+                  <select
+                    required
+                    value={newApptData.professionalId}
+                    onChange={e => setNewApptData(prev => ({ ...prev, professionalId: e.target.value }))}
+                    style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                  >
+                    <option value="" style={{ background: '#050505' }}>Selecione um profissional...</option>
+                    {profiles.map(p => (
+                      <option key={p.id} value={p.id} style={{ background: '#050505' }}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Data e Hora */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

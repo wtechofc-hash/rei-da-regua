@@ -75,6 +75,7 @@ const BOTTOM_NAV = [
   { id: '__fab__',      label: '+',        icon: Plus,  isFab: true },
   { id: 'assinatura',   label: 'VIP',      icon: Crown },
   { id: 'clientes',     label: 'Clientes', icon: Users },
+  { id: 'vitrine',      label: 'Vitrine',  icon: Store },
   { id: '__more__',     label: 'Mais',     icon: Menu },
   { id: '__logout__',   label: 'Sair',     icon: LogOut },
 ];
@@ -378,11 +379,20 @@ const AppContent: React.FC = () => {
           if (role === 'customer') {
             return ['dashboard', 'agendamentos', 'assinatura', '__logout__'].includes(item.id);
           }
-          return item.id !== '__logout__';
+          if (role === 'professional') {
+            return ['dashboard', 'agendamentos', '__fab__', 'vitrine', '__logout__'].includes(item.id);
+          }
+          // Owner sees everything except vitrine and logout in bottom nav (they use Mais/menu instead)
+          return item.id !== 'vitrine' && item.id !== '__logout__';
         }).map(item => {
           const Icon = item.icon;
           if (item.isFab) return (
-            <button key={item.id} onClick={() => setPage('agendamentos')} style={{
+            <button key={item.id} onClick={() => {
+              setPage('agendamentos');
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('open-appointment-modal'));
+              }, 100);
+            }} style={{
               width: '56px', height: '56px', borderRadius: '18px', border: 'none',
               background: 'linear-gradient(135deg,#c5a059,#8e6d2d)', color: '#000',
               fontSize: '1.6rem', fontWeight: '900', marginBottom: '32px',

@@ -60,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
   const userNameLabel = getUserNameLabel();
 
   const menuItems = [
-    { id: 'dashboard',    label: role === 'customer' ? 'Inicio' : 'Dashboard', icon: LayoutDashboard, roles: ['owner', 'professional', 'customer'] },
+    { id: 'dashboard',    label: (role === 'customer' || role === 'professional') ? 'Início' : 'Dashboard', icon: LayoutDashboard, roles: ['owner', 'professional', 'customer'] },
     { id: 'agendamentos', label: role === 'customer' ? 'Meus Agendamentos' : 'Agenda', icon: Calendar, roles: ['owner', 'professional', 'customer'], badge: notificationCount },
     { id: 'assinatura',   label: 'Assinatura',    icon: Crown,           roles: ['customer'] },
     { id: 'vitrine',      label: 'Vitrine',        icon: Store,           roles: ['owner', 'professional'] },
