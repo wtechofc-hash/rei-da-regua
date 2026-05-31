@@ -598,8 +598,8 @@ const Storefront: React.FC = () => {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '30px' }}>
               <div style={{ height: '3px', width: '80px', background: 'var(--accent-gold)' }}></div>
-              <p style={{ fontSize: 'clamp(1.5rem, 4.5vw, 2.5rem)', color: 'var(--accent-gold)', fontWeight: '900', letterSpacing: '0.3em', textTransform: 'uppercase', margin: 0, textShadow: '0 0 10px rgba(212,175,55,0.3)' }}>
-                Barbearia Premium
+              <p style={{ fontSize: 'clamp(1.2rem, 4.5vw, 2.2rem)', color: 'var(--accent-gold)', fontWeight: '900', letterSpacing: '0.2em', textTransform: 'uppercase', margin: 0, textShadow: '0 0 10px rgba(212,175,55,0.3)' }}>
+                {clientName || 'Barbearia Premium'}
               </p>
               <div style={{ height: '3px', width: '80px', background: 'var(--accent-gold)' }}></div>
             </div>
