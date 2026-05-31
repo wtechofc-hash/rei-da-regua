@@ -355,12 +355,21 @@ const Storefront: React.FC = () => {
       }
 
       // 3. Complete payment redirection or local checkout success
-      if (paymentMethod === 'online' && shopData?.mp_enabled) {
-        // Prepare Mercado Pago checkout
-        const totalServicesPrice = cartServices.reduce((sum, item) => sum + item.service.price, 0);
-        const totalProductsPrice = cartProducts.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-        const grandTotal = totalServicesPrice + totalProductsPrice;
+      const checkoutTotalPrice = cartServices.reduce((sum, item) => sum + (item.service.promotionPrice || item.service.price), 0);
+      const checkoutProductsPrice = cartProducts.reduce((sum, item) => sum + ((item.product.promotionPrice || item.product.price) * item.quantity), 0);
+      
+      let checkoutVipDiscount = 0;
+      let tempCredits = useVipCredits ? maxCreditsToUse : 0;
+      if (tempCredits > 0) {
+        for (let i = 0; i < tempCredits; i++) {
+          checkoutVipDiscount += (sortedCartServices[i].service.promotionPrice || sortedCartServices[i].service.price);
+        }
+      }
+      
+      const checkoutTotal = checkoutTotalPrice + checkoutProductsPrice - checkoutVipDiscount;
 
+      if (paymentMethod === 'online' && shopData?.mp_enabled && checkoutTotal > 0) {
+        // Prepare Mercado Pago checkout
         // Save appointment IDs to localStorage
         const apptIds = createdAppts.map(a => a.id);
         localStorage.setItem('pending_mp_appointment_ids', JSON.stringify(apptIds));
@@ -377,7 +386,7 @@ const Storefront: React.FC = () => {
           body: JSON.stringify({
             shopId: shopId,
             title: `Barbearia Premium - ${cartServices.length} Serviço(s) e ${cartProducts.length} Produto(s)`,
-            price: grandTotal,
+            price: checkoutTotal,
             appointmentData: {
               ids: apptIds,
               id: apptIds.length > 0 ? apptIds[0] : null
@@ -470,7 +479,7 @@ const Storefront: React.FC = () => {
 
       {/* VIP Subscription Success Screen */}
       {vipSuccess && (
-        <div style={{ maxWidth: '600px', margin: isMobile ? '1.5rem auto' : '4rem auto', padding: isMobile ? '0.75rem' : '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
+        <div style={{ maxWidth: '600px', margin: isMobile ? '1.5rem auto' : '4rem auto', padding: isMobile ? '0.75rem 0.75rem 120px' : '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
           <div className="premium-card" style={{ padding: isMobile ? '2rem 1.25rem' : '3.5rem', border: '1px solid rgba(212,175,55,0.3)', textAlign: 'center', borderRadius: '24px' }}>
             <div style={{ background: 'rgba(212,175,55,0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', border: '1px solid rgba(212,175,55,0.3)' }}>
               <Crown size={40} color="var(--accent-gold)" />
@@ -489,7 +498,7 @@ const Storefront: React.FC = () => {
 
       {/* VIP Checkout Screen */}
       {isVipCheckoutActive && vipCheckoutPlan && !vipSuccess && (
-        <div style={{ maxWidth: '500px', margin: isMobile ? '1.5rem auto 5rem' : '4rem auto', padding: isMobile ? '0.75rem' : '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
+        <div style={{ maxWidth: '500px', margin: isMobile ? '1.5rem auto' : '4rem auto', padding: isMobile ? '0.75rem 0.75rem 120px' : '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
           <button onClick={() => setIsVipCheckoutActive(false)} style={{ background: 'transparent', border: 'none', color: '#888', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginBottom: isMobile ? '1rem' : '2rem', fontWeight: '700', fontSize: '1rem' }}>
             <ArrowLeft size={20} /> Voltar
           </button>
@@ -542,7 +551,7 @@ const Storefront: React.FC = () => {
       
       {/* Success View from online checkouts redirect */}
       {onlineSuccess && (
-        <div style={{ maxWidth: '600px', margin: isMobile ? '1.5rem auto' : '4rem auto', padding: isMobile ? '0 0.5rem' : '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
+        <div style={{ maxWidth: '600px', margin: isMobile ? '1.5rem auto' : '4rem auto', padding: isMobile ? '0 0.5rem 120px 0.5rem' : '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
           <div className="premium-card" style={{ padding: isMobile ? '2.5rem 1.25rem' : '3.5rem', border: '1px solid rgba(0, 204, 68, 0.2)', background: 'rgba(5,5,5,0.95)', boxShadow: '0 20px 50px rgba(0,0,0,0.8)', borderRadius: '24px', textAlign: 'center' }}>
             <div style={{ background: 'rgba(0, 204, 68, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', border: '1px solid rgba(0,204,68,0.2)' }}>
               <CheckCircle size={48} color="#00cc44" />
@@ -986,7 +995,7 @@ const Storefront: React.FC = () => {
 
       {/* Checkout Screen View */}
       {isCheckoutActive && !isSuccessState && (
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '0 1.5rem 120px 1.5rem' : '0 1.5rem 40px 1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
           {/* Checkout Header */}
           <div style={{ 
             display: 'flex', 
@@ -1299,22 +1308,22 @@ const Storefront: React.FC = () => {
 
                     <button 
                       type="submit" 
-                      disabled={isCheckingOut || grandTotal === 0}
-                      className={paymentMethod === 'online' && shopData?.mp_enabled ? '' : 'gold-button'}
+                      disabled={isCheckingOut || (cartServices.length === 0 && cartProducts.length === 0)}
+                      className={paymentMethod === 'online' && shopData?.mp_enabled && grandTotal > 0 ? '' : 'gold-button'}
                       style={{ 
                         padding: '1.25rem', width: '100%', marginTop: '1rem', fontSize: '1rem', 
-                        boxShadow: paymentMethod === 'online' && shopData?.mp_enabled ? '0 8px 25px rgba(0, 204, 68, 0.2)' : '0 8px 25px rgba(212,175,55,0.3)',
-                        background: paymentMethod === 'online' && shopData?.mp_enabled ? '#00cc44' : undefined,
+                        boxShadow: paymentMethod === 'online' && shopData?.mp_enabled && grandTotal > 0 ? '0 8px 25px rgba(0, 204, 68, 0.2)' : '0 8px 25px rgba(212,175,55,0.3)',
+                        background: paymentMethod === 'online' && shopData?.mp_enabled && grandTotal > 0 ? '#00cc44' : undefined,
                         border: 'none',
                         borderRadius: '12px',
                         color: 'white',
                         fontWeight: '800',
-                        cursor: (isCheckingOut || grandTotal === 0) ? 'not-allowed' : 'pointer',
+                        cursor: (isCheckingOut || (cartServices.length === 0 && cartProducts.length === 0)) ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '8px',
-                        opacity: grandTotal === 0 ? 0.5 : 1
+                        opacity: (cartServices.length === 0 && cartProducts.length === 0) ? 0.5 : 1
                       }}
                     >
                       {isCheckingOut ? (
@@ -1322,7 +1331,7 @@ const Storefront: React.FC = () => {
                           <div style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                           Finalizando...
                         </>
-                      ) : paymentMethod === 'online' && shopData?.mp_enabled ? (
+                      ) : paymentMethod === 'online' && shopData?.mp_enabled && grandTotal > 0 ? (
                         'Pagar Online'
                       ) : (
                         'Confirmar Agendamento'
@@ -1338,7 +1347,7 @@ const Storefront: React.FC = () => {
 
       {/* Checkout Success View (Offline checks) */}
       {isSuccessState && (
-        <div style={{ maxWidth: '600px', margin: isMobile ? '1.5rem auto' : '4rem auto', padding: isMobile ? '0 0.5rem' : '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
+        <div style={{ maxWidth: '600px', margin: isMobile ? '1.5rem auto' : '4rem auto', padding: isMobile ? '0 0.5rem 120px 0.5rem' : '1.5rem', animation: 'fadeIn 0.3s ease-out' }}>
           <div className="premium-card" style={{ padding: isMobile ? '2.5rem 1.25rem' : '3.5rem', border: '1px solid rgba(0, 204, 68, 0.2)', background: 'rgba(5,5,5,0.95)', boxShadow: '0 20px 50px rgba(0,0,0,0.8)', borderRadius: '24px', textAlign: 'center' }}>
             <div style={{ background: 'rgba(0, 204, 68, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem', border: '1px solid rgba(0,204,68,0.2)' }}>
               <CheckCircle size={48} color="#00cc44" />
