@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, DollarSign, Users, Clock, Percent } from 'lucide-react';
+import { Calendar, DollarSign, Users, Clock, Percent, ChevronDown } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell
@@ -25,10 +25,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'custom'>('today');
   const [customStart, setCustomStart] = useState<string>(todayStr);
   const [customEnd, setCustomEnd] = useState<string>(todayStr);
+  const [proFilter, setProFilter] = useState<string>('all');
 
   const userAppointments = role === 'professional'
     ? appointments.filter(a => a.professionalId === userId)
-    : appointments;
+    : (proFilter !== 'all'
+        ? appointments.filter(a => a.professionalId === proFilter)
+        : appointments);
 
   const getPeriodRange = () => {
     const now = new Date();
@@ -165,46 +168,70 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', alignSelf: 'center' }}>{dateLabel}</p>
       </header>
 
-      {/* Period Selector */}
+      {/* Period & Professional Selector */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
-        <div className="premium-card" style={{ padding: '4px', display: 'inline-flex', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', gap: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>
-          {[
-            { id: 'today', label: 'Hoje' },
-            { id: 'week', label: 'Esta Semana' },
-            { id: 'month', label: 'Este Mês' },
-            { id: 'custom', label: 'Personalizado' },
-          ].map(p => (
-            <button 
-              key={p.id}
-              onClick={() => setPeriod(p.id as any)}
-              style={{
-                padding: '0.5rem 1rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                background: period === p.id ? 'var(--accent-gold)' : 'transparent',
-                color: period === p.id ? '#000' : '#888',
-                fontSize: '0.75rem', fontWeight: '800', transition: 'all 0.2s'
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div className="premium-card" style={{ padding: '4px', display: 'inline-flex', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', gap: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            {[
+              { id: 'today', label: 'Hoje' },
+              { id: 'week', label: 'Esta Semana' },
+              { id: 'month', label: 'Este Mês' },
+              { id: 'custom', label: 'Personalizado' },
+            ].map(p => (
+              <button 
+                key={p.id}
+                onClick={() => setPeriod(p.id as any)}
+                style={{
+                  padding: '0.5rem 1rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                  background: period === p.id ? 'var(--accent-gold)' : 'transparent',
+                  color: period === p.id ? '#000' : '#888',
+                  fontSize: '0.75rem', fontWeight: '800', transition: 'all 0.2s'
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {period === 'custom' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.02)', padding: '6px 12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', animation: 'fadeIn 0.2s ease-out' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>De:</span>
+              <input 
+                type="date" 
+                value={customStart} 
+                onChange={e => setCustomStart(e.target.value)} 
+                style={{ background: '#111', border: '1px solid #333', color: 'white', fontSize: '0.75rem', borderRadius: '6px', padding: '4px 8px', outline: 'none' }} 
+              />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Até:</span>
+              <input 
+                type="date" 
+                value={customEnd} 
+                onChange={e => setCustomEnd(e.target.value)} 
+                style={{ background: '#111', border: '1px solid #333', color: 'white', fontSize: '0.75rem', borderRadius: '6px', padding: '4px 8px', outline: 'none' }} 
+              />
+            </div>
+          )}
         </div>
 
-        {period === 'custom' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.02)', padding: '6px 12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', animation: 'fadeIn 0.2s ease-out' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>De:</span>
-            <input 
-              type="date" 
-              value={customStart} 
-              onChange={e => setCustomStart(e.target.value)} 
-              style={{ background: '#111', border: '1px solid #333', color: 'white', fontSize: '0.75rem', borderRadius: '6px', padding: '4px 8px', outline: 'none' }} 
-            />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Até:</span>
-            <input 
-              type="date" 
-              value={customEnd} 
-              onChange={e => setCustomEnd(e.target.value)} 
-              style={{ background: '#111', border: '1px solid #333', color: 'white', fontSize: '0.75rem', borderRadius: '6px', padding: '4px 8px', outline: 'none' }} 
-            />
+        {/* Professional Filter for Shop Owner */}
+        {role === 'owner' && (
+          <div style={{ position: 'relative', minWidth: '200px' }}>
+            <select
+              value={proFilter}
+              onChange={e => setProFilter(e.target.value)}
+              style={{
+                width: '100%', padding: '0.55rem 2.2rem 0.55rem 1rem', background: 'rgba(255,255,255,0.02)',
+                border: proFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.05)',
+                borderRadius: '12px', color: proFilter !== 'all' ? 'var(--accent-gold)' : '#aaa',
+                outline: 'none', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', appearance: 'none'
+              }}
+            >
+              <option value="all" style={{ background: '#050505', color: '#fff' }}>Todos Profissionais</option>
+              {profiles.map(p => (
+                <option key={p.id} value={p.id} style={{ background: '#050505', color: '#fff' }}>{p.name}</option>
+              ))}
+            </select>
+            <ChevronDown size={14} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} />
           </div>
         )}
       </div>
