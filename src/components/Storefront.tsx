@@ -294,7 +294,7 @@ const Storefront: React.FC = () => {
 
         const appt = await addAppointment({
           clientId: userId || 'online-customer',
-          clientName,
+          clientName: clientName || clients.find(c => c.id === userId)?.name || 'Cliente',
           professionalId: item.professional.id,
           serviceId: item.service.id,
           date: item.date,
@@ -1223,18 +1223,7 @@ const Storefront: React.FC = () => {
                   </div>
 
                   <form onSubmit={handleCheckout} style={{ display: 'grid', gap: '1.5rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '10px' }}>Seu Nome</label>
-                      <input 
-                        required 
-                        disabled={isCheckingOut}
-                        type="text" 
-                        style={{ width: '100%', padding: '1.1rem 1rem', borderRadius: '14px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }} 
-                        value={clientName} 
-                        onChange={e => setClientName(e.target.value)} 
-                        placeholder="Como podemos te chamar?" 
-                      />
-                    </div>
+
 
                     {maxCreditsToUse > 0 && cartServices.length > 0 && (
                       <div style={{ padding: '1rem', background: 'rgba(212,175,55,0.05)', borderRadius: '14px', border: '1px solid rgba(212,175,55,0.3)', display: 'flex', alignItems: 'center', gap: '10px' }}>
