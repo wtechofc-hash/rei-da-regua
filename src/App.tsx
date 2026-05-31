@@ -133,6 +133,15 @@ const AppContent: React.FC = () => {
     window.scrollTo(0, 0);
   }, [page]);
 
+  // Dynamically update favicon to match the shop's logo
+  useEffect(() => {
+    const logoUrl = config?.logoUrl || '/logo_main.jpg';
+    const link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+    if (link) {
+      link.href = logoUrl;
+    }
+  }, [config?.logoUrl]);
+
   
   const currentProfile = role === 'customer' 
     ? null 
