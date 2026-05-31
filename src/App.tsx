@@ -17,8 +17,9 @@ import {
 } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import './index.css';
+import { Store } from 'lucide-react';
 
-export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais' | 'pdv' | 'vipplans' | 'assinatura' | '__more__';
+export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais' | 'pdv' | 'vipplans' | 'assinatura' | 'vitrine' | '__more__';
 
 const Sidebar      = React.lazy(() => import('./components/Sidebar'));
 const Dashboard    = React.lazy(() => import('./components/Dashboard'));
@@ -79,6 +80,7 @@ const BOTTOM_NAV = [
 ];
 
 const MORE_NAV = [
+  { id: 'vitrine',       label: 'Vitrine',        icon: Store },
   { id: 'pdv',           label: 'Ponto de Venda', icon: ShoppingCart },
   { id: 'servicos',      label: 'Serviços',      icon: Scissors },
   { id: 'vipplans',      label: 'Planos VIP',    icon: Crown },
@@ -216,6 +218,7 @@ const AppContent: React.FC = () => {
       case 'profissionais': return <Professionals />;
       case 'configuracoes': return <Settings />;
       case 'pdv':           return <PDV />;
+      case 'vitrine':       return <Storefront />;
       case 'assinatura':    return <CustomerSubscription />;
       default: 
         if (role === 'customer') return <Storefront />;

@@ -18,7 +18,7 @@ import { useApp } from '../context/AppContext';
 type Period = 'day' | 'week' | 'month' | 'custom';
 
 const Reports: React.FC = () => {
-  const { role, userId, appointments = [], services = [] } = useApp();
+  const { role, userId, appointments = [], services = [], sales = [] } = useApp();
   const [period, setPeriod] = useState<Period>('week');
 
   // Filtrar agendamentos do usuário logado (se for pro)
@@ -28,14 +28,26 @@ const Reports: React.FC = () => {
     return isProMatch && isCompleted;
   });
 
+  // Filtrar vendas por profissional
+  const userSales = sales.filter(s => {
+    if (role === 'professional') return s.professionalId === userId;
+    return true;
+  });
+
   // Cálculo de Métricas
-  const totalRevenue = userAppointments.reduce((s, a) => s + (a.priceAtTime || 0), 0);
-  const totalCommission = userAppointments.reduce((s, a) => {
+  const totalServiceRevenue = userAppointments.reduce((s, a) => s + (a.priceAtTime || 0), 0);
+  const totalProductRevenue = userSales.reduce((s, sale) => s + (sale.totalAmount || 0), 0);
+  const totalRevenue = totalServiceRevenue + totalProductRevenue;
+
+  const totalCommissionFromAppts = userAppointments.reduce((s, a) => {
     const svc = services.find(sv => sv.id === a.serviceId);
     const rate = svc?.commission ?? 0;
     return s + (a.priceAtTime || 0) * (rate / 100);
   }, 0);
-  const avgTicket = userAppointments.length > 0 ? totalRevenue / userAppointments.length : 0;
+  const totalCommissionFromProducts = userSales.reduce((s, sale) => s + (sale.commissionAmount || 0), 0);
+  const totalCommission = totalCommissionFromAppts + totalCommissionFromProducts;
+
+  const avgTicket = userAppointments.length > 0 ? totalServiceRevenue / userAppointments.length : 0;
 
   const stats = [
     { label: role === 'professional' ? 'Minha Produção' : 'Faturamento Total', value: `R$ ${totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: DollarSign, trend: '+12.5%' },

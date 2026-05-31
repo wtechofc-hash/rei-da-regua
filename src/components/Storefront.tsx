@@ -23,7 +23,10 @@ import {
   ShoppingBag,
   Smile,
   Heart,
-  Flame
+  Flame,
+  Copy,
+  Link,
+  AlertTriangle
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
@@ -72,12 +75,14 @@ const Storefront: React.FC = () => {
     shopData, 
     shopId, 
     userId, 
+    role,
     clients = [], 
     appointments = [],
     updateProduct,
     subscriptionPlans = [],
     subscriptions = [],
     addSubscription,
+    addSaleState,
     useSubscriptionCredit
   } = useApp();
 
@@ -109,6 +114,18 @@ const Storefront: React.FC = () => {
   const [selectedProfessional, setSelectedProfessional] = useState<string>('');
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [clientName, setClientName] = useState('');
+
+  // Referral / link de vitrine
+  const [referredProId, setReferredProId] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const refFromUrl = params.get('ref') || params.get('pro') || params.get('professional');
+    if (refFromUrl) {
+      localStorage.setItem('referred_professional_id', refFromUrl);
+      return refFromUrl;
+    }
+    return localStorage.getItem('referred_professional_id') || '';
+  });
+  const [copiedLink, setCopiedLink] = useState(false);
 
   // Checkout and Success screens
   const [isCheckoutActive, setIsCheckoutActive] = useState(false);
@@ -160,10 +177,12 @@ const Storefront: React.FC = () => {
   }, [hasOverlayOpen]);
 
   useEffect(() => {
-    if (availableProfessionals.length === 1 && !selectedProfessional) {
+    if (referredProId && availableProfessionals.some(p => p.id === referredProId) && !selectedProfessional) {
+      setSelectedProfessional(referredProId);
+    } else if (availableProfessionals.length === 1 && !selectedProfessional) {
       setSelectedProfessional(availableProfessionals[0].id);
     }
-  }, [availableProfessionals, selectedProfessional]);
+  }, [availableProfessionals, selectedProfessional, referredProId]);
 
   // Update available slots when relevant state changes
   useEffect(() => {
@@ -323,16 +342,40 @@ const Storefront: React.FC = () => {
           if (shopMatch) resolvedShopId = shopMatch.id;
         }
 
-        const cartTotal = cartProducts.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+        // Determine professional for commission: if services exist, use the professional from the first service;
+        // otherwise fall back to the referred professional from the link.
+        const saleProfessionalId = createdAppts.length > 0
+          ? createdAppts[0].professionalId
+          : (referredProId || null);
+
+        const cartTotal = cartProducts.reduce((sum, item) => sum + ((item.product.promotionPrice || item.product.price) * item.quantity), 0);
+        const commissionTotal = cartProducts.reduce((sum, item) => {
+          const price = (item.product.promotionPrice || item.product.price) * item.quantity;
+          return sum + price * ((item.product.commission || 0) / 100);
+        }, 0);
+
         const { data: saleData, error: saleError } = await supabase.from('sales').insert([{
           shop_id: resolvedShopId,
           total_amount: cartTotal,
           payment_method: paymentMethod,
+          professional_id: saleProfessionalId,
+          commission_amount: commissionTotal,
         }]).select();
 
         if (saleError || !saleData) {
           throw new Error('Erro ao registrar a venda de produtos: ' + (saleError?.message || 'Erro desconhecido'));
         }
+
+        // Update local sales state
+        addSaleState({
+          id: saleData[0].id,
+          shopId: resolvedShopId || '',
+          totalAmount: cartTotal,
+          paymentMethod,
+          soldAt: saleData[0].sold_at || new Date().toISOString(),
+          professionalId: saleProfessionalId || undefined,
+          commissionAmount: commissionTotal,
+        });
 
         const saleId = saleData[0].id;
         const saleItems = cartProducts.map(item => ({
@@ -340,8 +383,8 @@ const Storefront: React.FC = () => {
           product_id: item.product.id,
           product_name: item.product.name,
           quantity: item.quantity,
-          unit_price: item.product.price,
-          total_price: item.product.price * item.quantity,
+          unit_price: item.product.promotionPrice || item.product.price,
+          total_price: (item.product.promotionPrice || item.product.price) * item.quantity,
         }));
 
         const { error: itemsError } = await supabase.from('sale_items').insert(saleItems);
@@ -472,10 +515,60 @@ const Storefront: React.FC = () => {
   const grandTotal = totalServicesPrice + totalProductsPrice - vipDiscount;
   const cartItemCount = cartServices.length + cartProducts.reduce((sum, item) => sum + item.quantity, 0);
 
+  // Build the referral link for this professional/owner
+  const currentProId = userId || '';
+  const storefrontBaseUrl = (() => {
+    const { protocol, host, pathname } = window.location;
+    return `${protocol}//${host}${pathname}`;
+  })();
+  const referralLink = `${storefrontBaseUrl}?ref=${currentProId}`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(referralLink).then(() => {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    });
+  };
+
   return (
     <div style={{ background: '#050505', minHeight: '100vh', overflowX: 'hidden', width: '100%', position: 'relative' }}>
       {/* Principal content wrapper with animations and bottom padding to avoid floating card coverage */}
       <div className="animate-fade-in" style={{ width: '100%', minHeight: '100vh', paddingBottom: '0' }}>
+
+      {/* Referral Link Banner — shown only for professional/owner viewing the storefront */}
+      {(role === 'professional' || role === 'owner') && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.06))',
+          borderBottom: '1px solid rgba(212,175,55,0.25)',
+          padding: '0.75rem 1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <Link size={16} color="var(--accent-gold)" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: '0.8rem', color: 'var(--accent-gold)', fontWeight: '700' }}>Seu link de vitrine:</span>
+            <span style={{ fontSize: '0.75rem', color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '240px' }}>{referralLink}</span>
+          </div>
+          <button
+            onClick={handleCopyLink}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: copiedLink ? 'rgba(0,204,68,0.15)' : 'rgba(212,175,55,0.15)',
+              border: `1px solid ${copiedLink ? 'rgba(0,204,68,0.4)' : 'rgba(212,175,55,0.3)'}`,
+              borderRadius: '10px', padding: '0.45rem 1rem',
+              color: copiedLink ? '#00cc44' : 'var(--accent-gold)',
+              fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer',
+              transition: 'all 0.3s', whiteSpace: 'nowrap', flexShrink: 0
+            }}
+          >
+            <Copy size={14} />
+            {copiedLink ? 'Copiado!' : 'Copiar Link'}
+          </button>
+        </div>
+      )}
 
       {/* VIP Subscription Success Screen */}
       {vipSuccess && (
@@ -1468,7 +1561,9 @@ const Storefront: React.FC = () => {
                 <select 
                   required
                   value={selectedProfessional}
-                  onChange={e => setSelectedProfessional(e.target.value)}
+                  onChange={e => {
+                    setSelectedProfessional(e.target.value);
+                  }}
                   style={{ width: '100%', padding: '1.1rem 1rem', borderRadius: '14px', background: '#111', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }}
                 >
                   <option value="">Selecione o profissional...</option>
@@ -1476,6 +1571,24 @@ const Storefront: React.FC = () => {
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
+
+                {/* Warning: switching away from referred professional */}
+                {referredProId && selectedProfessional && selectedProfessional !== referredProId && availableProfessionals.some(p => p.id === referredProId) && (
+                  <div style={{
+                    marginTop: '10px',
+                    display: 'flex', alignItems: 'flex-start', gap: '8px',
+                    padding: '0.85rem 1rem',
+                    background: 'rgba(255,170,0,0.08)',
+                    border: '1px solid rgba(255,170,0,0.35)',
+                    borderRadius: '12px',
+                    animation: 'fadeIn 0.2s'
+                  }}>
+                    <AlertTriangle size={16} color="#ffaa00" style={{ flexShrink: 0, marginTop: '1px' }} />
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#ffaa00', lineHeight: '1.5' }}>
+                      <strong>Atenção:</strong> O profissional do link de indicação (<strong>{availableProfessionals.find(p => p.id === referredProId)?.name}</strong>) não receberá a comissão deste agendamento. A comissão irá para o profissional selecionado.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Date selector input */}

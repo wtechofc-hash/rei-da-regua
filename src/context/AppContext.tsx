@@ -90,6 +90,17 @@ export interface SubscriptionUsage {
   usedAt: string;
 }
 
+export interface Sale {
+  id: string;
+  shopId: string;
+  totalAmount: number;
+  paymentMethod: string;
+  soldAt: string;
+  notes?: string;
+  professionalId?: string;
+  commissionAmount: number;
+}
+
 interface AppContextType {
   role: UserRole | null;
   userId: string | null;
@@ -104,6 +115,8 @@ interface AppContextType {
   clients: Client[];
   subscriptionPlans: SubscriptionPlan[];
   subscriptions: Subscription[];
+  sales: Sale[];
+  addSaleState: (sale: Sale) => void;
   addService: (service: Omit<Service, 'id'>) => void;
   updateService: (id: string, service: Partial<Service>) => void;
   deleteService: (id: string) => void;
@@ -161,6 +174,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [clients, setClients] = useState<Client[]>([]);
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
   const [shopData, setShopData] = useState<any>(null);
   const [config, setConfig] = useState<{
     businessName: string;
@@ -297,6 +311,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           id: a.id, clientId: a.client_id, clientName: (a.clients as any)?.name || 'Cliente', 
           professionalId: a.professional_id, serviceId: a.service_id, date: a.date, time: a.time, endTime: a.end_time || a.time,
           status: a.status as any, priceAtTime: a.total_price || 0, commissionAtTime: 0
+        })));
+
+        // Fetch Sales
+        const { data: salesData } = await query(supabase.from('sales').select('*'));
+        if (salesData) setSales(salesData.map((s: any) => ({
+          id: s.id,
+          shopId: s.shop_id,
+          totalAmount: Number(s.total_amount) || 0,
+          paymentMethod: s.payment_method,
+          soldAt: s.sold_at,
+          notes: s.notes,
+          professionalId: s.professional_id,
+          commissionAmount: Number(s.commission_amount) || 0
         })));
 
         // Fetch Config
@@ -787,9 +814,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const addSaleState = (sale: Sale) => {
+    setSales(prev => [...prev, sale]);
+  };
+
   return (
     <AppContext.Provider value={{
-      role, userId, shopId, shopData, setAuth, logout, services, products, appointments, profiles, clients, subscriptionPlans, subscriptions,
+      role, userId, shopId, shopData, setAuth, logout, services, products, appointments, profiles, clients, subscriptionPlans, subscriptions, sales, addSaleState,
       addService, updateService, deleteService,
       addProduct, updateProduct, deleteProduct,
       addAppointment, updateAppointment, deleteAppointment, updateAppointmentStatus, updateAppointmentEndTime, clearProNotifications,

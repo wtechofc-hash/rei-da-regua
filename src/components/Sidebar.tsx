@@ -10,7 +10,8 @@ import {
   LogOut,
   User,
   ShoppingCart,
-  Crown
+  Crown,
+  Store
 } from 'lucide-react';
 import { useApp, UserRole } from '../context/AppContext';
 
@@ -62,6 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
     { id: 'dashboard',    label: role === 'customer' ? 'Inicio' : 'Dashboard', icon: LayoutDashboard, roles: ['owner', 'professional', 'customer'] },
     { id: 'agendamentos', label: role === 'customer' ? 'Meus Agendamentos' : 'Agenda', icon: Calendar, roles: ['owner', 'professional', 'customer'], badge: notificationCount },
     { id: 'assinatura',   label: 'Assinatura',    icon: Crown,           roles: ['customer'] },
+    { id: 'vitrine',      label: 'Vitrine',        icon: Store,           roles: ['owner', 'professional'] },
     { id: 'pdv',           label: 'Ponto de Venda', icon: ShoppingCart,    roles: ['owner'] },
     { id: 'servicos',      label: 'Serviços',      icon: Scissors,        roles: ['owner'] },
     { id: 'vipplans',      label: 'Planos VIP',    icon: Crown,           roles: ['owner'] },

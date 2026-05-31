@@ -13,7 +13,7 @@ interface DashboardProps {
 const PIE_COLORS = ['#d4af37', '#a68a2d', '#7d6822', '#f0d060'];
 
 const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
-  const { role, userId, appointments = [], clients = [], services = [], profiles = [] } = useApp();
+  const { role, userId, appointments = [], clients = [], services = [], profiles = [], sales = [] } = useApp();
 
   const todayStr = (() => {
     const d = new Date();
@@ -73,18 +73,36 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
 
   const periodAppointments = userAppointments.filter(a => a.date >= filterStart && a.date <= filterEnd);
 
+  // Filter sales by period and professional (for commissions on products)
+  const periodSales = sales.filter(s => {
+    const saleDate = s.soldAt ? s.soldAt.split('T')[0] : '';
+    const inPeriod = saleDate >= filterStart && saleDate <= filterEnd;
+    if (!inPeriod) return false;
+    if (role === 'professional') return s.professionalId === userId;
+    if (proFilter !== 'all') return s.professionalId === proFilter;
+    return true;
+  });
+
   const periodAppts = periodAppointments.length;
   const revenueInPeriod = periodAppointments
     .filter(a => a.status === 'confirmed' || a.status === 'completed')
     .reduce((s, a) => s + (a.priceAtTime || 0), 0);
 
-  const commissionInPeriod = periodAppointments
+  // Product sales revenue
+  const productRevenueInPeriod = periodSales.reduce((s, sale) => s + (sale.totalAmount || 0), 0);
+
+  const commissionFromAppointments = periodAppointments
     .filter(a => a.status === 'confirmed' || a.status === 'completed')
     .reduce((sum, a) => {
       const svc = services.find(s => s.id === a.serviceId);
       const rate = svc?.commission ?? 0;
       return sum + (a.priceAtTime || 0) * (rate / 100);
     }, 0);
+
+  // Product sales commission
+  const commissionFromProducts = periodSales.reduce((sum, s) => sum + (s.commissionAmount || 0), 0);
+
+  const commissionInPeriod = commissionFromAppointments + commissionFromProducts;
 
   const activeClientsInPeriod = new Set(periodAppointments.map(a => a.clientId)).size;
 
@@ -98,8 +116,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
     },
     { 
       label: period === 'today' ? 'Faturamento Hoje' : 'Faturamento no Período',  
-      value: `R$ ${revenueInPeriod.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
-      sub: 'Total faturado', 
+      value: `R$ ${(revenueInPeriod + productRevenueInPeriod).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
+      sub: 'Serviços + Produtos', 
       icon: DollarSign, 
       gold: true 
     },
