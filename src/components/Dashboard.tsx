@@ -413,33 +413,58 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                 </div>
 
                 {/* Mobile Cards */}
-                <div id="commission-list-mobile" style={{ display: 'none', flexDirection: 'column', gap: '0.75rem' }}>
+                <div id="commission-list-mobile" style={{ display: 'none', flexDirection: 'column', gap: '0.85rem' }}>
                   {commissionEntries.map((entry) => (
                     <div key={entry.id} style={{
-                      padding: '1rem', background: 'rgba(255,255,255,0.02)',
-                      borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                      padding: '1.2rem', background: 'rgba(255,255,255,0.02)',
+                      borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)',
+                      display: 'flex', flexDirection: 'column', gap: '10px',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
                     }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                          <span style={{ fontWeight: '800', color: '#d4af37', fontSize: '0.85rem' }}>
-                            {entry.date.split('-').reverse().join('/')} {entry.time.slice(0, 5)}
+                      {/* Header Row: Date/Time + Commission Amount */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ 
+                          fontWeight: '800', color: '#d4af37', fontSize: '0.82rem', 
+                          whiteSpace: 'nowrap', background: 'rgba(212,175,55,0.06)', 
+                          padding: '4px 10px', borderRadius: '8px', 
+                          border: '1px solid rgba(212,175,55,0.12)' 
+                        }}>
+                          {entry.date.split('-').reverse().join('/')} às {entry.time.slice(0, 5)}
+                        </span>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginRight: '6px' }}>Comissão:</span>
+                          <span style={{ fontWeight: '900', color: '#00e676', fontSize: '1rem' }}>
+                            R$ {entry.commissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
-                          <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>{entry.clientName}</span>
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                          {entry.svcName} · R$ {(entry.priceAtTime || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} · Taxa {entry.rate}%
                         </div>
                       </div>
-                      <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                        <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Comissão</p>
-                        <p style={{ margin: 0, fontWeight: '900', color: '#00e676', fontSize: '1rem' }}>
-                          R$ {entry.commissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
+
+                      {/* Client Name Row */}
+                      <div style={{ fontSize: '1.05rem', fontWeight: '800', color: 'white', marginTop: '2px' }}>
+                        {entry.clientName}
+                      </div>
+
+                      {/* Details Row: Service, Price & Rate */}
+                      <div style={{ 
+                        display: 'flex', flexWrap: 'wrap', alignItems: 'center', 
+                        gap: '8px 12px', fontSize: '0.78rem', color: 'var(--text-secondary)', 
+                        paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.03)' 
+                      }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                          <span style={{ color: '#eee', fontWeight: '600' }}>{entry.svcName}</span>
+                        </span>
+                        <span style={{ color: 'rgba(255,255,255,0.15)' }}>·</span>
+                        <span style={{ whiteSpace: 'nowrap' }}>
+                          Valor: <strong style={{ color: '#eee' }}>R$ {(entry.priceAtTime || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                        </span>
+                        <span style={{ color: 'rgba(255,255,255,0.15)' }}>·</span>
+                        <span style={{ whiteSpace: 'nowrap' }}>
+                          Taxa: <strong style={{ color: '#d4af37' }}>{entry.rate}%</strong>
+                        </span>
                       </div>
                     </div>
                   ))}
-                  <div style={{ padding: '0.75rem 1rem', background: 'rgba(212,175,55,0.05)', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ padding: '1rem', background: 'rgba(212,175,55,0.05)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: '800', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Total no Período</span>
                     <span style={{ fontWeight: '900', color: '#d4af37', fontSize: '1.1rem' }}>
                       R$ {commissionInPeriod.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -516,7 +541,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
             </div>
 
             {/* Mobile List View */}
-            <div id="mobile-list" style={{ display: 'none', flexDirection: 'column', gap: '0.75rem' }}>
+            <div id="mobile-list" style={{ display: 'none', flexDirection: 'column', gap: '0.85rem' }}>
               {upcoming.map(appt => {
                 const svc  = services.find(s => s.id === appt.serviceId);
                 const prof = profiles.find(p => p.id === appt.professionalId);
@@ -532,29 +557,55 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
 
                 return (
                   <div key={appt.id} style={{ 
-                    padding: '1rem', background: 'rgba(255,255,255,0.02)', 
-                    borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                    padding: '1.2rem', background: 'rgba(255,255,255,0.02)', 
+                    borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)',
+                    display: 'flex', flexDirection: 'column', gap: '10px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
                   }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{ fontWeight: '800', color: '#d4af37', fontSize: '0.9rem' }}>
-                          {formatDate(appt.date)} - {appt.time.slice(0, 5)}
-                        </span>
-                        <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{appt.clientName}</span>
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Clock size={11} /> {svc?.name} (R$ {(appt.priceAtTime || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
-                        </span>
-                        <span>·</span>
-                        <span>{prof?.name?.split(' ')[0]}</span>
-                      </div>
-                    </div>
-                    <div style={{ flexShrink: 0 }}>
-                      <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '0.65rem', fontWeight: '800', background: badge.bg, color: badge.color, textTransform: 'uppercase' }}>
+                    {/* Header Row: Date/Time + Status Badge */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ 
+                        fontWeight: '800', color: '#d4af37', fontSize: '0.82rem', 
+                        whiteSpace: 'nowrap', background: 'rgba(212,175,55,0.06)', 
+                        padding: '4px 10px', borderRadius: '8px', 
+                        border: '1px solid rgba(212,175,55,0.12)' 
+                      }}>
+                        {formatDate(appt.date)} às {appt.time.slice(0, 5)}
+                      </span>
+                      <span style={{ 
+                        padding: '4px 10px', borderRadius: '20px', fontSize: '0.65rem', 
+                        fontWeight: '800', background: badge.bg, color: badge.color, 
+                        textTransform: 'uppercase', border: `1px solid ${badge.color}22` 
+                      }}>
                         {badge.label}
                       </span>
+                    </div>
+
+                    {/* Client Name Row */}
+                    <div style={{ fontSize: '1.05rem', fontWeight: '800', color: 'white', marginTop: '2px' }}>
+                      {appt.clientName}
+                    </div>
+
+                    {/* Details Row: Service & Price + Professional */}
+                    <div style={{ 
+                      display: 'flex', flexWrap: 'wrap', alignItems: 'center', 
+                      gap: '8px 12px', fontSize: '0.78rem', color: 'var(--text-secondary)', 
+                      paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.03)' 
+                    }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                        <Clock size={12} style={{ color: '#d4af37' }} />
+                        <span style={{ color: '#eee', fontWeight: '600' }}>{svc?.name ?? '—'}</span>
+                        <span style={{ color: 'var(--accent-gold)', fontWeight: '700' }}>(R$ {(appt.priceAtTime || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})</span>
+                      </span>
+                      {prof && (
+                        <>
+                          <span style={{ color: 'rgba(255,255,255,0.15)' }}>·</span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#888' }} />
+                            <span>{prof.name}</span>
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
