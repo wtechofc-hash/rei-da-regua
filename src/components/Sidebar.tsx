@@ -21,13 +21,47 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificationCount = 0 }) => {
-  const { role, logout, profiles, userId, config } = useApp();
+  const { role, logout, profiles = [], userId, config, clients = [], shopData } = useApp();
 
   const currentProfile = profiles.find(p => p.id === userId) ?? profiles.find(p => p.role === role);
 
+  const getUserRoleLabel = () => {
+    switch (role) {
+      case 'customer':
+        return 'Cliente';
+      case 'professional':
+        return 'Profissional';
+      case 'owner':
+        return 'Lojista';
+      case 'superadmin':
+        return 'Super Admin';
+      default:
+        return 'Usuário';
+    }
+  };
+
+  const getUserNameLabel = () => {
+    switch (role) {
+      case 'customer':
+        return clients.find(c => c.id === userId)?.name || 'Cliente';
+      case 'professional':
+        return profiles.find(p => p.id === userId)?.name || 'Profissional';
+      case 'owner':
+        return profiles.find(p => p.id === userId)?.name || profiles.find(p => p.role === 'owner')?.name || shopData?.name || config?.businessName || 'Lojista';
+      case 'superadmin':
+        return 'Administrador';
+      default:
+        return currentProfile?.name || 'Usuário';
+    }
+  };
+
+  const userRoleLabel = getUserRoleLabel();
+  const userNameLabel = getUserNameLabel();
+
   const menuItems = [
-    { id: 'dashboard',    label: role === 'customer' ? 'Vitrine' : 'Dashboard', icon: LayoutDashboard, roles: ['owner', 'professional', 'customer'] },
+    { id: 'dashboard',    label: role === 'customer' ? 'Inicio' : 'Dashboard', icon: LayoutDashboard, roles: ['owner', 'professional', 'customer'] },
     { id: 'agendamentos', label: role === 'customer' ? 'Meus Agendamentos' : 'Agenda', icon: Calendar, roles: ['owner', 'professional', 'customer'], badge: notificationCount },
+    { id: 'assinatura',   label: 'Assinatura',    icon: Crown,           roles: ['customer'] },
     { id: 'pdv',           label: 'Ponto de Venda', icon: ShoppingCart,    roles: ['owner'] },
     { id: 'servicos',      label: 'Serviços',      icon: Scissors,        roles: ['owner'] },
     { id: 'vipplans',      label: 'Planos VIP',    icon: Crown,           roles: ['owner'] },
@@ -35,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
     { id: 'clientes',     label: 'Clientes',     icon: Users,           roles: ['owner'] },
     { id: 'profissionais', label: 'Equipe',         icon: User,            roles: ['owner'] },
     { id: 'relatorios',    label: 'Relatórios',     icon: BarChart3,       roles: ['owner'] },
-    { id: 'configuracoes', label: 'Configurações',  icon: Settings,        roles: ['owner', 'customer'] },
+    { id: 'configuracoes', label: 'Configurações',  icon: Settings,        roles: ['owner'] },
   ];
 
   const visibleItems = menuItems.filter(item => item.roles.includes(role as string));
@@ -65,13 +99,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
         display: 'flex', alignItems: 'center', gap: '12px'
       }}>
         <img 
-          src={currentProfile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${role}`} 
+          src={currentProfile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userNameLabel}`} 
           alt="Avatar" 
           style={{ width: '38px', height: '38px', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)' }} 
         />
-        <div style={{ overflow: 'hidden' }}>
-          <p style={{ fontSize: '0.85rem', fontWeight: '700', margin: 0, color: 'white', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{currentProfile?.name || 'Usuário'}</p>
-          <p style={{ fontSize: '0.65rem', color: 'var(--accent-gold)', margin: 0, textTransform: 'capitalize' }}>{role === 'owner' ? 'Administrador' : 'Profissional'}</p>
+        <div style={{ overflow: 'hidden', flex: 1 }}>
+          <p style={{ fontSize: '0.85rem', fontWeight: '700', margin: 0, color: 'white' }}>{userRoleLabel}</p>
+          <p style={{ fontSize: '0.65rem', color: 'var(--accent-gold)', margin: 0, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{userNameLabel}</p>
         </div>
       </div>
 

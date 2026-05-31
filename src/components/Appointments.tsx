@@ -118,7 +118,7 @@ const Appointments: React.FC = () => {
     try {
       const added = await addAppointment({
         clientId: role === 'customer' ? (userId || '') : (newClientToggle ? 'online-customer' : newApptData.clientId),
-        clientName: role === 'customer' ? (profiles.find(p => p.id === userId)?.name || 'Cliente') : newApptData.clientName,
+        clientName: role === 'customer' ? (clients.find(c => c.id === userId)?.name || 'Cliente') : newApptData.clientName,
         professionalId: newApptData.professionalId,
         serviceId: newApptData.serviceId,
         date: newApptData.date,

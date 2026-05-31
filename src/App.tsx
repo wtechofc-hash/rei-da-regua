@@ -18,7 +18,7 @@ import {
 import { AppProvider, useApp } from './context/AppContext';
 import './index.css';
 
-export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais' | 'pdv' | 'vipplans' | '__more__';
+export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais' | 'pdv' | 'vipplans' | 'assinatura' | '__more__';
 
 const Sidebar      = React.lazy(() => import('./components/Sidebar'));
 const Dashboard    = React.lazy(() => import('./components/Dashboard'));
@@ -34,6 +34,7 @@ const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 const Settings     = React.lazy(() => import('./components/Settings'));
 const PDV          = React.lazy(() => import('./components/PDV'));
 const VIPPlans     = React.lazy(() => import('./components/VIPPlans'));
+const CustomerSubscription = React.lazy(() => import('./components/CustomerSubscription'));
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: string | null }> {
   constructor(props: any) {
@@ -71,6 +72,7 @@ const BOTTOM_NAV = [
   { id: 'dashboard',    label: 'Início',   icon: LayoutDashboard },
   { id: 'agendamentos', label: 'Agenda',   icon: Calendar },
   { id: '__fab__',      label: '+',        icon: Plus,  isFab: true },
+  { id: 'assinatura',   label: 'VIP',      icon: Crown },
   { id: 'clientes',     label: 'Clientes', icon: Users },
   { id: '__more__',     label: 'Mais',     icon: Menu },
   { id: '__logout__',   label: 'Sair',     icon: LogOut },
@@ -87,7 +89,7 @@ const MORE_NAV = [
 ];
 
 const AppContent: React.FC = () => {
-  const { role, userId, shopData, setAuth, logout, profiles = [], appointments = [], clearProNotifications, config } = useApp();
+  const { role, userId, shopData, setAuth, logout, profiles = [], appointments = [], clearProNotifications, config, clients = [] } = useApp();
   const [page, setPage] = useState<Page>('dashboard');
   const isPopState = React.useRef(false);
   const mainRef = React.useRef<HTMLDivElement>(null);
@@ -129,7 +131,13 @@ const AppContent: React.FC = () => {
   }, [page]);
 
   
-  const currentProfile = profiles.find(p => p.id === userId) ?? profiles.find(p => p.role === role) ?? profiles[0];
+  const currentProfile = role === 'customer' 
+    ? null 
+    : (profiles.find(p => p.id === userId) ?? profiles.find(p => p.role === role) ?? profiles[0]);
+  const currentClient = role === 'customer' ? clients.find(c => c.id === userId) : null;
+  const userAvatar = role === 'customer'
+    ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentClient?.name || 'Cliente'}`
+    : (currentProfile?.avatar ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${role}`);
 
   // Contagem de notificações (Agendamentos novos pendentes para o profissional)
   const notificationCount = role === 'professional' 
@@ -208,6 +216,7 @@ const AppContent: React.FC = () => {
       case 'profissionais': return <Professionals />;
       case 'configuracoes': return <Settings />;
       case 'pdv':           return <PDV />;
+      case 'assinatura':    return <CustomerSubscription />;
       default: 
         if (role === 'customer') return <Storefront />;
         return <Dashboard onViewAll={() => setPage('agendamentos')} />;
@@ -280,7 +289,7 @@ const AppContent: React.FC = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img 
-              src={currentProfile?.avatar ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${role}`} 
+              src={userAvatar} 
               style={{ width: '30px', height: '30px', borderRadius: '8px', border: '1px solid rgba(212,175,55,0.3)' }} 
               alt="User"
               onClick={logout}
@@ -317,7 +326,7 @@ const AppContent: React.FC = () => {
       }}>
         {BOTTOM_NAV.filter(item => {
           if (role === 'customer') {
-            return ['dashboard', 'agendamentos', '__logout__'].includes(item.id);
+            return ['dashboard', 'agendamentos', 'assinatura', '__logout__'].includes(item.id);
           }
           return item.id !== '__logout__';
         }).map(item => {
