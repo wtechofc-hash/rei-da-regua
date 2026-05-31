@@ -65,9 +65,16 @@ select option {
   }
 }
 
+.page-container {
+  padding: 1.25rem 1.25rem 40px;
+}
+
 @media (max-width: 768px) {
+  .page-container {
+    padding: 0.5rem 0.5rem 20px;
+  }
   .main-content {
-    padding: 1rem;
+    padding: 0.5rem;
     padding-bottom: 5rem; /* Space for bottom nav or mobile menu */
   }
   

@@ -358,7 +358,12 @@ const AppContent: React.FC = () => {
             background: 'var(--bg-primary)'
           }}
         >
-          <div style={{ padding: (role === 'customer' && page === 'dashboard') ? '0' : '1.25rem 1.25rem 40px' }}>
+          <div 
+            className={(role === 'customer' && page === 'dashboard') ? "" : "page-container"}
+            style={{ 
+              padding: (role === 'customer' && page === 'dashboard') ? '0' : undefined 
+            }}
+          >
             <ErrorBoundary>
               <Suspense key={page} fallback={<Spinner />}>
                 {renderPage()}
