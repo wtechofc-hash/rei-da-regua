@@ -102,6 +102,18 @@ const Appointments: React.FC = () => {
     window.addEventListener('open-appointment-modal', handleOpen);
     return () => window.removeEventListener('open-appointment-modal', handleOpen);
   }, [role, userId]);
+
+  // On mount, check sessionStorage flag (set by FAB button before page change)
+  React.useEffect(() => {
+    if (sessionStorage.getItem('openApptModal') === '1') {
+      sessionStorage.removeItem('openApptModal');
+      setIsModalOpen(true);
+      if (role === 'professional' && userId) {
+        setNewApptData(prev => ({ ...prev, professionalId: userId }));
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
   React.useEffect(() => {
@@ -246,16 +258,18 @@ const Appointments: React.FC = () => {
         <div className="premium-card" style={{ padding: '1.25rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {/* Row 1: Search + Filters */}
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
-            <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
-            <input 
-              type="text" 
-              placeholder="Buscar por cliente..." 
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              style={{ width: '100%', padding: '0.7rem 1rem 0.7rem 2.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: 'white', outline: 'none', fontSize: '0.875rem' }}
-            />
-          </div>
+          {role !== 'professional' && (
+            <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
+              <input 
+                type="text" 
+                placeholder="Buscar por cliente..." 
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{ width: '100%', padding: '0.7rem 1rem 0.7rem 2.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', color: 'white', outline: 'none', fontSize: '0.875rem' }}
+              />
+            </div>
+          )}
 
           {/* Professional filter dropdown (only for non-professionals and non-clients) */}
           {role !== 'professional' && (
@@ -298,7 +312,7 @@ const Appointments: React.FC = () => {
 
             {showCustomPicker && (
               <div style={{
-                position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 1000,
+                position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 1000,
                 background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px',
                 padding: '1rem', minWidth: '240px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
               }}>

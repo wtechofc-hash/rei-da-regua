@@ -393,10 +393,14 @@ const AppContent: React.FC = () => {
           const Icon = item.icon;
           if (item.isFab) return (
             <button key={item.id} onClick={() => {
-              setPage('agendamentos');
-              setTimeout(() => {
+              if (page === 'agendamentos') {
+                // Already on appointments page — dispatch immediately
                 window.dispatchEvent(new CustomEvent('open-appointment-modal'));
-              }, 100);
+              } else {
+                // Set flag before navigating so Appointments.tsx reads it on mount
+                sessionStorage.setItem('openApptModal', '1');
+                setPage('agendamentos');
+              }
             }} style={{
               width: '56px', height: '56px', borderRadius: '18px', border: 'none',
               background: 'linear-gradient(135deg,#c5a059,#8e6d2d)', color: '#000',
