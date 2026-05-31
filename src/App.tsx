@@ -275,44 +275,72 @@ const AppContent: React.FC = () => {
         })()}
 
         <header id="header-mobile" style={{
-          display: 'none', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0.85rem 1.25rem', background: 'rgba(10, 10, 10, 0.95)',
-          borderRadius: '0 0 24px 24px',
-          borderBottom: '1px solid rgba(212,175,55,0.15)',
-          borderLeft: '1px solid rgba(212,175,55,0.05)',
-          borderRight: '1px solid rgba(212,175,55,0.05)',
-          backdropFilter: 'blur(15px)',
+          display: 'none', 
+          alignItems: 'flex-start', 
+          height: '48px', 
+          background: 'transparent',
           zIndex: 100,
-          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5)'
+          position: 'relative'
         }}>
-          {/* Left Side: User name */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+          {/* Left Wing */}
+          <div style={{
+            flex: 1,
+            height: '100%',
+            background: 'rgba(10, 10, 10, 0.95)',
+            borderBottom: '1px solid rgba(212,175,55,0.15)',
+            borderRadius: '0 0 0 16px',
+            display: 'flex',
+            alignItems: 'center',
+            paddingLeft: '1.25rem',
+            backdropFilter: 'blur(15px)'
+          }}>
             <div>
-              <p style={{ margin: 0, fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Olá,</p>
-              <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: '900', color: 'white' }}>
+              <p style={{ margin: 0, fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Olá,</p>
+              <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: '900', color: 'white' }}>
                 {role === 'customer' ? (clients.find(c => c.id === userId)?.name?.split(' ')[0] || 'Cliente') : (profiles.find(p => p.id === userId)?.name?.split(' ')[0] || 'Usuário')}
               </p>
             </div>
           </div>
 
-          {/* Center: Logo */}
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          {/* Center Notch */}
+          <div style={{
+            width: '80px',
+            height: '60px',
+            background: 'rgba(10, 10, 10, 0.95)',
+            borderRadius: '0 0 40px 40px',
+            borderBottom: '1px solid rgba(212,175,55,0.15)',
+            borderLeft: '1px solid rgba(212,175,55,0.15)',
+            borderRight: '1px solid rgba(212,175,55,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 8px 20px rgba(0,0,0,0.6)',
+            alignSelf: 'flex-start',
+            zIndex: 1,
+            backdropFilter: 'blur(15px)'
+          }}>
             <img 
               src={config?.logoUrl || "/logo_main.jpg"} 
               alt="Logo" 
-              style={{ height: '36px', width: 'auto', filter: 'drop-shadow(0 0 8px rgba(212,175,55,0.2))' }} 
+              style={{ height: '42px', width: 'auto', filter: 'drop-shadow(0 0 8px rgba(212,175,55,0.2))' }} 
               onError={e => (e.target as any).style.display = 'none'} 
             />
           </div>
 
-          {/* Right Side: Avatar */}
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-            <img 
-              src={userAvatar} 
-              style={{ width: '32px', height: '32px', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.3)', cursor: 'pointer' }} 
-              alt="User"
-              onClick={logout}
-            />
+          {/* Right Wing */}
+          <div style={{
+            flex: 1,
+            height: '100%',
+            background: 'rgba(10, 10, 10, 0.95)',
+            borderBottom: '1px solid rgba(212,175,55,0.15)',
+            borderRadius: '0 0 16px 0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            paddingRight: '1.25rem',
+            backdropFilter: 'blur(15px)'
+          }}>
+            {/* User avatar removed as requested */}
           </div>
         </header>
 
