@@ -431,9 +431,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                         }}>
                           {entry.date.split('-').reverse().join('/')} às {entry.time.slice(0, 5)}
                         </span>
-                        <div style={{ textAlign: 'right' }}>
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginRight: '6px' }}>Comissão:</span>
-                          <span style={{ fontWeight: '900', color: '#00e676', fontSize: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+                            Comissão
+                          </span>
+                          <span style={{ fontWeight: '900', color: '#00e676', fontSize: '1.05rem', whiteSpace: 'nowrap' }}>
                             R$ {entry.commissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
