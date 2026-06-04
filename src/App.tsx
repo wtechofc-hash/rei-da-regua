@@ -200,22 +200,41 @@ const AppContent: React.FC = () => {
           }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1.5rem' }}>Menu</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-              {MORE_NAV.map(item => {
-                const Icon = item.icon;
-                return (
-                  <button key={item.id} onClick={() => setPage(item.id as Page)} style={{
-                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-                    borderRadius: '20px', padding: '1.5rem 0.5rem', color: 'white',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
-                    cursor: 'pointer', transition: 'all 0.2s', width: '100%'
-                  }}>
-                    <div style={{ background: 'rgba(212,175,55,0.12)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d4af37' }}>
-                      <Icon size={22} />
-                    </div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>{item.label}</span>
-                  </button>
-                );
-              })}
+              {(() => {
+                const dynamicMoreNav = [
+                  ...MORE_NAV,
+                  ...(role === 'owner' ? [{ id: 'assinatura', label: 'Assinatura VIP', icon: Crown }] : []),
+                  { id: '__logout__', label: 'Sair da Conta', icon: LogOut }
+                ];
+                return dynamicMoreNav.map(item => {
+                  const Icon = item.icon;
+                  const isLogout = item.id === '__logout__';
+                  return (
+                    <button key={item.id} onClick={() => {
+                      if (isLogout) {
+                        logout();
+                      } else {
+                        setPage(item.id as Page);
+                      }
+                    }} style={{
+                      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                      borderRadius: '20px', padding: '1.5rem 0.5rem', color: 'white',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
+                      cursor: 'pointer', transition: 'all 0.2s', width: '100%'
+                    }}>
+                      <div style={{ 
+                        background: isLogout ? 'rgba(255,23,68,0.12)' : 'rgba(212,175,55,0.12)', 
+                        width: '48px', height: '48px', borderRadius: '14px', 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                        color: isLogout ? '#ff1744' : '#d4af37' 
+                      }}>
+                        <Icon size={22} />
+                      </div>
+                      <span style={{ fontSize: '0.8rem', fontWeight: '700', textAlign: 'center' }}>{item.label}</span>
+                    </button>
+                  );
+                });
+              })()}
             </div>
           </div>
         );
@@ -386,74 +405,74 @@ const AppContent: React.FC = () => {
       {role !== 'superadmin' && (
         <nav id="nav-mobile" style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, height: '72px',
-        background: '#0a0a0a',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-around', zIndex: 10000
-      }}>
-        {BOTTOM_NAV.filter(item => {
-          if (role === 'customer') {
-            return ['dashboard', 'agendamentos', 'assinatura', '__logout__'].includes(item.id);
-          }
-          if (role === 'professional') {
-            return ['dashboard', 'agendamentos', '__fab__', 'vitrine', '__logout__'].includes(item.id);
-          }
-          // Owner sees everything except vitrine and logout in bottom nav (they use Mais/menu instead)
-          return item.id !== 'vitrine' && item.id !== '__logout__';
-        }).map(item => {
-          const Icon = item.icon;
-          if (item.isFab) return (
-            <button key={item.id} onClick={() => {
-              if (page === 'agendamentos') {
-                // Already on appointments page — dispatch immediately
-                window.dispatchEvent(new CustomEvent('open-appointment-modal'));
-              } else {
-                // Set flag before navigating so Appointments.tsx reads it on mount
-                sessionStorage.setItem('openApptModal', '1');
-                setPage('agendamentos');
-              }
-            }} style={{
-              width: '56px', height: '56px', borderRadius: '18px', border: 'none',
-              background: 'linear-gradient(135deg,#c5a059,#8e6d2d)', color: '#000',
-              fontSize: '1.6rem', fontWeight: '900', marginBottom: '32px',
-              boxShadow: '0 8px 25px rgba(0,0,0,0.4), 0 0 15px rgba(197,160,89,0.3)', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-              <Plus size={28} strokeWidth={3} />
-            </button>
-          );
-          
-          const isMais  = item.id === '__more__';
-          const isActive = page === item.id;
-          const isAgenda = item.id === 'agendamentos';
+          background: '#0a0a0a',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-around', zIndex: 10000
+        }}>
+          {BOTTOM_NAV.filter(item => {
+            if (role === 'customer') {
+              return ['dashboard', 'agendamentos', 'assinatura', '__logout__'].includes(item.id);
+            }
+            if (role === 'professional') {
+              return ['dashboard', 'agendamentos', '__fab__', 'vitrine', '__logout__'].includes(item.id);
+            }
+            // Owner sees: Inicio, Agenda, +, Clientes, Mais
+            return ['dashboard', 'agendamentos', '__fab__', 'clientes', '__more__'].includes(item.id);
+          }).map(item => {
+            const Icon = item.icon;
+            if (item.isFab) return (
+              <button key={item.id} onClick={() => {
+                if (page === 'agendamentos') {
+                  // Already on appointments page — dispatch immediately
+                  window.dispatchEvent(new CustomEvent('open-appointment-modal'));
+                } else {
+                  // Set flag before navigating so Appointments.tsx reads it on mount
+                  sessionStorage.setItem('openApptModal', '1');
+                  setPage('agendamentos');
+                }
+              }} style={{
+                width: '56px', height: '56px', borderRadius: '18px', border: 'none',
+                background: 'linear-gradient(135deg,#c5a059,#8e6d2d)', color: '#000',
+                fontSize: '1.6rem', fontWeight: '900', marginBottom: '32px',
+                boxShadow: '0 8px 25px rgba(0,0,0,0.4), 0 0 15px rgba(197,160,89,0.3)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <Plus size={28} strokeWidth={3} />
+              </button>
+            );
+            
+            const isMais  = item.id === '__more__';
+            const isActive = page === item.id;
+            const isAgenda = item.id === 'agendamentos';
 
-          return (
-            <button key={item.id} onClick={() => {
-              if (item.id === '__logout__') return logout();
-              if (isMais) return setPage('__more__');
-              setPage(item.id as Page);
-            }} style={{
-              background: 'transparent', border: 'none', flex: 1, cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px',
-              color: (isActive || (isMais && page === '__more__')) ? '#d4af37' : '#555',
-              transition: 'all 0.2s', position: 'relative'
-            }}>
-              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-              <span style={{ fontSize: '0.65rem', fontWeight: '700', letterSpacing: '0.02em' }}>{item.label}</span>
-              
-              {isAgenda && notificationCount > 0 && (
-                <span style={{
-                  position: 'absolute', top: '-2px', right: '15px', background: '#ff4444', color: 'white',
-                  fontSize: '0.6rem', minWidth: '16px', height: '16px', borderRadius: '8px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900',
-                  boxShadow: '0 0 10px rgba(255,68,68,0.5)', border: '2px solid #0a0a0a'
-                }}>
-                  {notificationCount}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
+            return (
+              <button key={item.id} onClick={() => {
+                if (item.id === '__logout__') return logout();
+                if (isMais) return setPage('__more__');
+                setPage(item.id as Page);
+              }} style={{
+                background: 'transparent', border: 'none', flex: 1, cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px',
+                color: (isActive || (isMais && page === '__more__')) ? '#d4af37' : '#555',
+                transition: 'all 0.2s', position: 'relative'
+              }}>
+                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                <span style={{ fontSize: '0.65rem', fontWeight: '700', letterSpacing: '0.02em' }}>{item.label}</span>
+                
+                {isAgenda && notificationCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: '-2px', right: '15px', background: '#ff4444', color: 'white',
+                    fontSize: '0.6rem', minWidth: '16px', height: '16px', borderRadius: '8px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900',
+                    boxShadow: '0 0 10px rgba(255,68,68,0.5)', border: '2px solid #0a0a0a'
+                  }}>
+                    {notificationCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
       )}
 
 
