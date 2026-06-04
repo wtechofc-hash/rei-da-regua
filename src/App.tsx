@@ -295,7 +295,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100dvh', width: '100vw', background: 'var(--bg-primary)', color: 'white', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', minHeight: '100dvh', width: '100vw', background: '#050505', color: 'white', overflow: 'hidden' }}>
 
       {role !== 'superadmin' && (
         <div id="sb-desktop">
@@ -349,7 +349,7 @@ const AppContent: React.FC = () => {
           display: 'none', 
           alignItems: 'flex-start', 
           height: '48px', 
-          background: 'transparent',
+          background: '#0a0a0a',
           zIndex: 100,
           position: 'relative'
         }}>

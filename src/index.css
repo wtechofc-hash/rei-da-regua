@@ -65,6 +65,16 @@ select option {
   }
 }
 
+@media (max-width: 768px) {
+  .main-content {
+    transition: none !important;
+    position: static !important;
+    z-index: auto !important;
+    isolation: auto !important;
+    background: #050505 !important;
+  }
+}
+
 .page-container {
   padding: 1.25rem 1.25rem 40px;
 }
@@ -208,6 +218,15 @@ select option {
 
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
+}
+
+@media (max-width: 768px) {
+  .animate-fade-in {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+  }
 }
 
 /* Scrollbar */
