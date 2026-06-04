@@ -204,11 +204,29 @@ const AppContent: React.FC = () => {
               width: '100%'
             }}>
               {(() => {
+                const allMenuItems = [
+                  { id: 'vitrine',       label: 'Vitrine',        icon: Store,           roles: ['owner', 'professional'] },
+                  { id: 'pdv',           label: 'Ponto de Venda', icon: ShoppingCart,    roles: ['owner'] },
+                  { id: 'abates',        label: 'Abates',         icon: Percent,         roles: ['owner'] },
+                  { id: 'servicos',      label: 'Serviços',      icon: Scissors,        roles: ['owner'] },
+                  { id: 'vipplans',      label: 'Planos VIP',    icon: Crown,           roles: ['owner'] },
+                  { id: 'produtos',      label: 'Produtos',      icon: Package,         roles: ['owner'] },
+                  { id: 'profissionais', label: 'Equipe',         icon: User,            roles: ['owner'] },
+                  { id: 'relatorios',    label: 'Relatórios',     icon: BarChart3,       roles: ['owner'] },
+                  { id: 'configuracoes', label: 'Configurações',  icon: SettingsIcon,    roles: ['owner'] },
+                  { id: 'assinatura',    label: 'Assinatura VIP', icon: Crown,           roles: ['owner'] },
+                ];
+
+                const allowed = allMenuItems.filter(item => item.roles.includes(role as string));
+                const bottomNavIds = role === 'customer' 
+                  ? ['dashboard', 'agendamentos', 'assinatura'] 
+                  : (role === 'professional' ? ['dashboard', 'agendamentos', 'vitrine'] : ['dashboard', 'agendamentos', 'clientes']);
+
                 const dynamicMoreNav = [
-                  ...MORE_NAV,
-                  ...(role === 'owner' ? [{ id: 'assinatura', label: 'Assinatura VIP', icon: Crown }] : []),
+                  ...allowed.filter(item => !bottomNavIds.includes(item.id)),
                   { id: '__logout__', label: 'Sair da Conta', icon: LogOut }
                 ];
+
                 return dynamicMoreNav.map(item => {
                   const Icon = item.icon;
                   const isLogout = item.id === '__logout__';
@@ -232,7 +250,8 @@ const AppContent: React.FC = () => {
                       gap: '10px',
                       cursor: 'pointer', 
                       transition: 'all 0.2s', 
-                      width: '100%'
+                      width: '100%',
+                      minHeight: '100px'
                     }}>
                       <div style={{ 
                         background: isLogout ? 'rgba(255,23,68,0.12)' : 'rgba(212,175,55,0.12)', 
@@ -394,13 +413,14 @@ const AppContent: React.FC = () => {
         </header>
 
         <main 
+          key={page}
           ref={mainRef} 
           className={(role === 'customer' && page === 'dashboard') ? "" : "main-content"} 
           style={{ 
             flex: 1, 
             overflowY: 'auto', 
             paddingBottom: (role === 'customer' && page === 'dashboard') ? '0' : '88px',
-            background: 'var(--bg-primary)'
+            background: '#050505'
           }}
         >
           <div 
