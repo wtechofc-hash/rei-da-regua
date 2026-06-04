@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS public.abatements (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     store_id UUID,
-    created_by UUID,
+    created_by TEXT,
     type TEXT NOT NULL,
     description TEXT NOT NULL,
     total_amount NUMERIC NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.abatement_participants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     abatement_id UUID REFERENCES public.abatements(id) ON DELETE CASCADE,
     participant_type TEXT NOT NULL, -- 'professional' or 'owner'
-    participant_id UUID,            -- Can be professional_id or user_id/store_id
+    participant_id TEXT,            -- Can be professional_id or user_id/store_id
     participant_name TEXT NOT NULL,
     amount NUMERIC NOT NULL,
     status TEXT NOT NULL DEFAULT 'pendente', -- 'pendente', 'quitado', 'cancelado'
