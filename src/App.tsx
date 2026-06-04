@@ -191,15 +191,18 @@ const AppContent: React.FC = () => {
       case '__more__':
         return (
           <div style={{
-            padding: '2rem 1.25rem',
-            minHeight: 'calc(100vh - 72px)',
-            background: 'var(--bg-primary)',
-            position: 'relative',
-            zIndex: 50,
-            isolation: 'isolate'
+            padding: '1.5rem 1rem',
+            minHeight: '100%',
+            background: '#050505',
+            width: '100%'
           }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1.5rem' }}>Menu</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(2, 1fr)', 
+              gap: '0.75rem',
+              width: '100%'
+            }}>
               {(() => {
                 const dynamicMoreNav = [
                   ...MORE_NAV,
@@ -217,20 +220,33 @@ const AppContent: React.FC = () => {
                         setPage(item.id as Page);
                       }
                     }} style={{
-                      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-                      borderRadius: '20px', padding: '1.5rem 0.5rem', color: 'white',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
-                      cursor: 'pointer', transition: 'all 0.2s', width: '100%'
+                      background: '#111111', 
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      borderRadius: '16px', 
+                      padding: '1.25rem 0.5rem', 
+                      color: 'white',
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      gap: '10px',
+                      cursor: 'pointer', 
+                      transition: 'all 0.2s', 
+                      width: '100%'
                     }}>
                       <div style={{ 
                         background: isLogout ? 'rgba(255,23,68,0.12)' : 'rgba(212,175,55,0.12)', 
-                        width: '48px', height: '48px', borderRadius: '14px', 
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                        width: '44px', 
+                        height: '44px', 
+                        borderRadius: '12px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
                         color: isLogout ? '#ff1744' : '#d4af37' 
                       }}>
-                        <Icon size={22} />
+                        <Icon size={20} />
                       </div>
-                      <span style={{ fontSize: '0.8rem', fontWeight: '700', textAlign: 'center' }}>{item.label}</span>
+                      <span style={{ fontSize: '0.78rem', fontWeight: '800', textAlign: 'center' }}>{item.label}</span>
                     </button>
                   );
                 });
