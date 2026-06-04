@@ -14,7 +14,17 @@ interface DashboardProps {
 const PIE_COLORS = ['#d4af37', '#a68a2d', '#7d6822', '#f0d060'];
 
 const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
-  const { role, userId, appointments = [], clients = [], services = [], profiles = [], sales = [] } = useApp();
+  const { 
+    role, 
+    userId, 
+    appointments = [], 
+    clients = [], 
+    services = [], 
+    profiles = [], 
+    sales = [],
+    abatements = [],
+    abatementParticipants = []
+  } = useApp();
 
   const todayStr = (() => {
     const d = new Date();
@@ -142,6 +152,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
     return commissionInPeriod;
   })();
 
+  // Abates calculation inside period
+  const displayAbates = (() => {
+    return abatementParticipants.filter(p => {
+      const abt = abatements.find(a => a.id === p.abatementId);
+      if (!abt) return false;
+      const inPeriod = abt.date >= filterStart && abt.date <= filterEnd;
+      if (!inPeriod || p.status !== 'pendente') return false;
+      if (role === 'professional') return p.participantId === userId;
+      if (proFilter !== 'all') {
+        if (proFilter === 'owner') return p.participantType === 'owner';
+        return p.participantId === proFilter;
+      }
+      return p.participantType === 'professional';
+    }).reduce((sum, p) => sum + p.amount, 0);
+  })();
+
+  const displayCommissionNet = displayCommission - displayAbates;
+
   const stats = [
     { 
       label: originFilter === 'appointments'
@@ -163,10 +191,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
     },
     { 
       label: role === 'professional' 
-        ? 'Minha Comissão' 
-        : (period === 'today' ? 'Comissões Hoje' : 'Comissões no Período'),
-      value: `R$ ${displayCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      sub: role === 'professional' ? 'Sua comissão no período' : 'Total pago à equipe',
+        ? 'Minha Comissão Líquida' 
+        : (period === 'today' ? 'Comissão Líquida Hoje' : 'Comissão Líquida no Período'),
+      value: `R$ ${displayCommissionNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      sub: `Bruto: R$ ${displayCommission.toFixed(2)} | Abatido: R$ ${displayAbates.toFixed(2)}`,
       icon: Percent,
       gold: false
     },

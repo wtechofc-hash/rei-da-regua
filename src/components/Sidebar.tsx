@@ -11,7 +11,8 @@ import {
   User,
   ShoppingCart,
   Crown,
-  Store
+  Store,
+  Percent
 } from 'lucide-react';
 import { useApp, UserRole } from '../context/AppContext';
 
@@ -65,6 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
     { id: 'assinatura',   label: 'Assinatura',    icon: Crown,           roles: ['customer'] },
     { id: 'vitrine',      label: 'Vitrine',        icon: Store,           roles: ['owner', 'professional'] },
     { id: 'pdv',           label: 'Ponto de Venda', icon: ShoppingCart,    roles: ['owner'] },
+    { id: 'abates',        label: 'Ponto de Abate', icon: Percent,         roles: ['owner'] },
     { id: 'servicos',      label: 'Serviços',      icon: Scissors,        roles: ['owner'] },
     { id: 'vipplans',      label: 'Planos VIP',    icon: Crown,           roles: ['owner'] },
     { id: 'produtos',      label: 'Produtos',      icon: Package,         roles: ['owner'] },

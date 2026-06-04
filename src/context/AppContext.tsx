@@ -107,6 +107,32 @@ export interface Sale {
   commissionAmount: number;
 }
 
+export interface Abatement {
+  id: string;
+  storeId: string;
+  createdBy: string;
+  type: 'adiantamento' | 'material_loja' | 'desconto_manual' | 'vale' | 'outro';
+  description: string;
+  totalAmount: number;
+  distributionType: 'individual' | 'selecionados' | 'todos' | 'todos_owner';
+  status: 'pendente' | 'quitado' | 'cancelado';
+  date: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface AbatementParticipant {
+  id: string;
+  abatementId: string;
+  participantType: 'professional' | 'owner';
+  participantId: string;
+  participantName: string;
+  amount: number;
+  status: 'pendente' | 'quitado' | 'cancelado';
+  createdAt: string;
+}
+
+
 interface AppContextType {
   role: UserRole | null;
   userId: string | null;
@@ -165,6 +191,11 @@ interface AppContextType {
     };
   };
   updateConfig: (config: Partial<AppContextType['config']>) => void;
+  abatements: Abatement[];
+  abatementParticipants: AbatementParticipant[];
+  addAbatement: (abt: Omit<Abatement, 'id' | 'storeId' | 'createdBy' | 'createdAt'>, parts: Omit<AbatementParticipant, 'id' | 'abatementId' | 'createdAt'>[]) => Promise<void>;
+  updateAbatementStatus: (id: string, status: Abatement['status']) => Promise<void>;
+  updateParticipantStatus: (id: string, status: AbatementParticipant['status']) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -181,6 +212,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [abatements, setAbatements] = useState<Abatement[]>([]);
+  const [abatementParticipants, setAbatementParticipants] = useState<AbatementParticipant[]>([]);
   const [shopData, setShopData] = useState<any>(null);
   const [config, setConfig] = useState<{
     businessName: string;
@@ -338,6 +371,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           professionalId: s.professional_id,
           commissionAmount: Number(s.commission_amount) || 0
         })));
+
+        // Fetch Abatements
+        const { data: abtsData } = await query(supabase.from('abatements').select('*').order('created_at', { ascending: false }));
+        if (abtsData) setAbatements(abtsData.map((a: any) => ({
+          id: a.id, storeId: a.store_id, createdBy: a.created_by, type: a.type, description: a.description,
+          totalAmount: Number(a.total_amount) || 0, distributionType: a.distribution_type, status: a.status,
+          date: a.date, notes: a.notes || '', createdAt: a.created_at
+        })));
+
+        // Fetch Abatement Participants
+        const { data: abtsPartsData } = await supabase.from('abatement_participants').select('*, abatements!inner(store_id)');
+        if (abtsPartsData) {
+          const filteredParts = currentShopId
+            ? abtsPartsData.filter((ap: any) => ap.abatements?.store_id === currentShopId)
+            : abtsPartsData;
+          setAbatementParticipants(filteredParts.map((ap: any) => ({
+            id: ap.id, abatementId: ap.abatement_id, participantType: ap.participant_type,
+            participantId: ap.participant_id, participantName: ap.participant_name,
+            amount: Number(ap.amount) || 0, status: ap.status, createdAt: ap.created_at
+          })));
+        }
 
         // Fetch Config
         let configData = null;
@@ -859,6 +913,119 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSales(prev => [...prev, sale]);
   };
 
+  const addAbatement = async (
+    abt: Omit<Abatement, 'id' | 'storeId' | 'createdBy' | 'createdAt'>,
+    parts: Omit<AbatementParticipant, 'id' | 'abatementId' | 'createdAt'>[]
+  ) => {
+    const { data: abatementData, error: abatementError } = await supabase
+      .from('abatements')
+      .insert([{
+        store_id: shopId,
+        created_by: userId,
+        type: abt.type,
+        description: abt.description,
+        total_amount: abt.totalAmount,
+        distribution_type: abt.distributionType,
+        status: abt.status || 'pendente',
+        date: abt.date,
+        notes: abt.notes || null
+      }])
+      .select();
+
+    if (abatementError) {
+      console.error("Error creating abatement:", abatementError);
+      throw abatementError;
+    }
+
+    if (abatementData && abatementData.length > 0) {
+      const newAbtId = abatementData[0].id;
+      const newAbt: Abatement = {
+        id: newAbtId,
+        storeId: shopId || '',
+        createdBy: userId || '',
+        type: abt.type,
+        description: abt.description,
+        totalAmount: abt.totalAmount,
+        distributionType: abt.distributionType,
+        status: (abatementData[0].status || 'pendente') as any,
+        date: abatementData[0].date,
+        notes: abatementData[0].notes || '',
+        createdAt: abatementData[0].created_at
+      };
+
+      const participantsPayload = parts.map(p => ({
+        abatement_id: newAbtId,
+        participant_type: p.participantType,
+        participant_id: p.participantId || null,
+        participant_name: p.participantName,
+        amount: p.amount,
+        status: p.status || 'pendente'
+      }));
+
+      const { data: partsData, error: partsError } = await supabase
+        .from('abatement_participants')
+        .insert(participantsPayload)
+        .select();
+
+      if (partsError) {
+        console.error("Error creating abatement participants:", partsError);
+        throw partsError;
+      }
+
+      setAbatements(prev => [newAbt, ...prev]);
+
+      if (partsData) {
+        const newParts: AbatementParticipant[] = partsData.map((ap: any) => ({
+          id: ap.id,
+          abatementId: ap.abatement_id,
+          participantType: ap.participant_type as any,
+          participantId: ap.participant_id,
+          participantName: ap.participant_name,
+          amount: Number(ap.amount) || 0,
+          status: ap.status as any,
+          createdAt: ap.created_at
+        }));
+        setAbatementParticipants(prev => [...prev, ...newParts]);
+      }
+    }
+  };
+
+  const updateAbatementStatus = async (id: string, status: Abatement['status']) => {
+    const { error } = await supabase
+      .from('abatements')
+      .update({ status })
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error updating abatement status:", error);
+      throw error;
+    }
+
+    setAbatements(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+    
+    const { error: partsError } = await supabase
+      .from('abatement_participants')
+      .update({ status })
+      .eq('abatement_id', id);
+    if (!partsError) {
+      setAbatementParticipants(prev => prev.map(p => p.abatementId === id ? { ...p, status } : p));
+    }
+  };
+
+  const updateParticipantStatus = async (id: string, status: AbatementParticipant['status']) => {
+    const { error } = await supabase
+      .from('abatement_participants')
+      .update({ status })
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error updating participant status:", error);
+      throw error;
+    }
+
+    setAbatementParticipants(prev => prev.map(p => p.id === id ? { ...p, status } : p));
+  };
+
   return (
     <AppContext.Provider value={{
       role, userId, shopId, shopData, setAuth, logout, services, products, appointments, profiles, clients, subscriptionPlans, subscriptions, sales, addSaleState,
@@ -869,7 +1036,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addProfile, updateProfile, deleteProfile,
       addSubscriptionPlan, updateSubscriptionPlan, deleteSubscriptionPlan,
       addSubscription, updateSubscription, useSubscriptionCredit,
-      config, updateConfig
+      config, updateConfig,
+      abatements, abatementParticipants, addAbatement, updateAbatementStatus, updateParticipantStatus
     }}>
       {children}
     </AppContext.Provider>

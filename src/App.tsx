@@ -13,13 +13,14 @@ import {
   Plus,
   LogOut,
   ShoppingCart,
-  Crown
+  Crown,
+  Percent
 } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import './index.css';
 import { Store } from 'lucide-react';
 
-export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais' | 'pdv' | 'vipplans' | 'assinatura' | 'vitrine' | '__more__';
+export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais' | 'pdv' | 'vipplans' | 'assinatura' | 'vitrine' | 'abates' | '__more__';
 
 const Sidebar      = React.lazy(() => import('./components/Sidebar'));
 const Dashboard    = React.lazy(() => import('./components/Dashboard'));
@@ -36,6 +37,7 @@ const Settings     = React.lazy(() => import('./components/Settings'));
 const PDV          = React.lazy(() => import('./components/PDV'));
 const VIPPlans     = React.lazy(() => import('./components/VIPPlans'));
 const CustomerSubscription = React.lazy(() => import('./components/CustomerSubscription'));
+const Abatements   = React.lazy(() => import('./components/Abatements'));
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: string | null }> {
   constructor(props: any) {
@@ -89,6 +91,7 @@ const MORE_NAV = [
   { id: 'profissionais', label: 'Equipe',         icon: User },
   { id: 'relatorios',    label: 'Relatórios',     icon: BarChart3 },
   { id: 'configuracoes', label: 'Configurações',  icon: SettingsIcon },
+  { id: 'abates',        label: 'Abates',         icon: Percent },
 ];
 
 const AppContent: React.FC = () => {
@@ -228,6 +231,7 @@ const AppContent: React.FC = () => {
       case 'profissionais': return <Professionals />;
       case 'configuracoes': return <Settings />;
       case 'pdv':           return <PDV />;
+      case 'abates':        return <Abatements />;
       case 'vitrine':       return <Storefront />;
       case 'assinatura':    return <CustomerSubscription />;
       default: 
