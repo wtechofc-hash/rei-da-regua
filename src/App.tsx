@@ -220,7 +220,6 @@ const AppContent: React.FC = () => {
                   { id: 'profissionais', label: 'Equipe',         icon: User,            roles: ['owner'] },
                   { id: 'relatorios',    label: 'Relatórios',     icon: BarChart3,       roles: ['owner'] },
                   { id: 'configuracoes', label: 'Configurações',  icon: SettingsIcon,    roles: ['owner'] },
-                  { id: 'assinatura',    label: 'Assinatura VIP', icon: Crown,           roles: ['owner'] },
                 ];
 
                 const allowed = allMenuItems.filter(item => item.roles.includes(role as string));
