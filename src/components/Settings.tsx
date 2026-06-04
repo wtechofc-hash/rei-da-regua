@@ -18,7 +18,6 @@ const Settings: React.FC = () => {
   // Owner profile states
   const currentProfile = profiles.find(p => p.id === userId) || profiles.find(p => p.role === 'owner');
   const [profileName, setProfileName] = useState(currentProfile?.name || '');
-  const [profileEmail, setProfileEmail] = useState(currentProfile?.email || '');
   const [avatarPreview, setAvatarPreview] = useState(currentProfile?.avatar || '');
   const [profileFile, setProfileFile] = useState<File | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -27,7 +26,6 @@ const Settings: React.FC = () => {
   useEffect(() => {
     if (currentProfile) {
       setProfileName(currentProfile.name || '');
-      setProfileEmail(currentProfile.email || '');
       setAvatarPreview(currentProfile.avatar || '');
     }
   }, [currentProfile]);
@@ -52,7 +50,6 @@ const Settings: React.FC = () => {
       
       await updateProfile(userId, {
         name: profileName,
-        email: profileEmail,
         avatar: avatarUrl
       });
       
@@ -571,7 +568,7 @@ const Settings: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.25rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '0.8rem', color: '#ccc', fontWeight: '600' }}>Nome</label>
               <input
@@ -579,16 +576,6 @@ const Settings: React.FC = () => {
                 type="text"
                 value={profileName}
                 onChange={e => setProfileName(e.target.value)}
-                style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '0.85rem', borderRadius: '12px', color: 'white', fontSize: '0.9rem' }}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', color: '#ccc', fontWeight: '600' }}>E-mail</label>
-              <input
-                required
-                type="email"
-                value={profileEmail}
-                onChange={e => setProfileEmail(e.target.value)}
                 style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '0.85rem', borderRadius: '12px', color: 'white', fontSize: '0.9rem' }}
               />
             </div>

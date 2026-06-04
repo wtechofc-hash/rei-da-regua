@@ -33,7 +33,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
   // States for profile editing
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [profileName, setProfileName] = useState('');
-  const [profileEmail, setProfileEmail] = useState('');
   const [avatarPreview, setAvatarPreview] = useState('');
   const [profileFile, setProfileFile] = useState<File | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -75,7 +74,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
   const handleProfileClick = () => {
     if (role === 'customer' || role === 'superadmin') return;
     setProfileName(currentProfile?.name || '');
-    setProfileEmail(currentProfile?.email || '');
     setAvatarPreview(currentProfile?.avatar || '');
     setProfileFile(null);
     setShowEditProfile(true);
@@ -103,7 +101,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
       
       await updateProfile(userId, {
         name: profileName,
-        email: profileEmail,
         avatar: avatarUrl
       });
       
@@ -293,20 +290,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
                   type="text"
                   value={profileName}
                   onChange={e => setProfileName(e.target.value)}
-                  style={{
-                    padding: '0.8rem', borderRadius: '8px', background: '#151515',
-                    border: '1px solid rgba(255,255,255,0.08)', color: 'white', fontSize: '0.9rem'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.8rem', color: '#aaa', fontWeight: '600' }}>E-mail</label>
-                <input
-                  required
-                  type="email"
-                  value={profileEmail}
-                  onChange={e => setProfileEmail(e.target.value)}
                   style={{
                     padding: '0.8rem', borderRadius: '8px', background: '#151515',
                     border: '1px solid rgba(255,255,255,0.08)', color: 'white', fontSize: '0.9rem'

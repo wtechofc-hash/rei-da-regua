@@ -339,12 +339,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         // Fetch Professionals
         const { data: prosData } = await query(supabase.from('professionals').select('*'));
-        if (prosData) setProfiles(prosData.map((p: any) => ({
+        let mappedProfiles = prosData ? prosData.map((p: any) => ({
           id: p.id, name: p.name, role: (p.role?.toLowerCase() === 'owner' ? 'owner' : 'professional') as UserRole, 
           avatar: p.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`,
           email: p.email,
           commission: Number(p.commission_rate) || 0
-        })));
+        })) : [];
+
+        // Ensure Owner profile exists in the professionals table
+        if (savedRole === 'owner' && savedId && currentShopId) {
+          const ownerId = savedId;
+          let ownerProfile = mappedProfiles.find((p: any) => p.id === ownerId);
+          if (!ownerProfile) {
+            const { data: currentShop } = await supabase.from('shops').select('name, login_email, logo_url').eq('id', currentShopId).maybeSingle();
+            if (currentShop) {
+              const newOwnerProfile = {
+                id: ownerId,
+                name: currentShop.name || 'Lojista',
+                role: 'owner',
+                photo_url: currentShop.logo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentShop.name || 'owner'}`,
+                shop_id: currentShopId,
+                email: currentShop.login_email
+              };
+              
+              const { data: insertedData } = await supabase.from('professionals').insert([newOwnerProfile]).select();
+              if (insertedData) {
+                mappedProfiles.push({
+                  id: ownerId,
+                  name: newOwnerProfile.name,
+                  role: 'owner',
+                  avatar: newOwnerProfile.photo_url,
+                  email: newOwnerProfile.email,
+                  commission: 0
+                });
+              }
+            }
+          }
+        }
+        
+        setProfiles(mappedProfiles);
 
         // Fetch Appointments
         const { data: apptsData } = await query(supabase.from('appointments').select('*, clients(name)'));
