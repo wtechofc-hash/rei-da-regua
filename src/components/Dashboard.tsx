@@ -444,7 +444,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
       </div>
 
       {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '1.5rem', marginBottom: '2rem' }} className="charts-row">
+      <div className="charts-row">
         <div className="premium-card" style={{ padding: '1.5rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '1.5rem' }}>Faturamento Semanal</h3>
           <div style={{ height: '220px' }}>
@@ -461,7 +461,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                   <XAxis dataKey="name" stroke="#444" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis stroke="#444" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '8px', fontSize: '0.8rem' }} />
-                  <Area type="monotone" dataKey="value" stroke="#d4af37" fill="url(#goldGrad)" strokeWidth={2.5} dot={false} />
+                  <Area type="monotone" dataKey="value" stroke="#d4af37" fill="url(#goldGrad)" strokeWidth={2.5} dot={false} isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -474,7 +474,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
             {isMounted && (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={pieData} innerRadius="52%" outerRadius="72%" paddingAngle={3} dataKey="value" startAngle={90} endAngle={-270}>
+                  <Pie data={pieData} innerRadius="52%" outerRadius="72%" paddingAngle={3} dataKey="value" startAngle={90} endAngle={-270} isAnimationActive={false}>
                     {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" />)}
                   </Pie>
                   <Tooltip contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '8px', fontSize: '0.8rem' }} />
