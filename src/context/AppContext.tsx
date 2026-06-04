@@ -373,7 +373,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         })));
 
         // Fetch Abatements
-        const { data: abtsData } = await query(supabase.from('abatements').select('*').order('created_at', { ascending: false }));
+        const { data: abtsData } = await (currentShopId
+          ? supabase.from('abatements').select('*').eq('store_id', currentShopId)
+          : supabase.from('abatements').select('*')
+        ).order('created_at', { ascending: false });
         if (abtsData) setAbatements(abtsData.map((a: any) => ({
           id: a.id, storeId: a.store_id, createdBy: a.created_by, type: a.type, description: a.description,
           totalAmount: Number(a.total_amount) || 0, distributionType: a.distribution_type, status: a.status,
