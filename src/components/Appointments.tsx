@@ -325,7 +325,6 @@ const Appointments: React.FC = () => {
               <option value="dinheiro" style={{ background: '#050505', color: '#fff' }}>Dinheiro</option>
               <option value="pix" style={{ background: '#050505', color: '#fff' }}>Pix</option>
               <option value="cartao" style={{ background: '#050505', color: '#fff' }}>Cartão</option>
-              <option value="cartao_pix" style={{ background: '#050505', color: '#fff' }}>Cartão / Pix</option>
               <option value="não_informado" style={{ background: '#050505', color: '#fff' }}>Não informado</option>
             </select>
             <ChevronDown size={14} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} />
@@ -793,7 +792,8 @@ const Appointments: React.FC = () => {
                       style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
                     >
                       <option value="dinheiro" style={{ background: '#050505' }}>Dinheiro</option>
-                      <option value="cartao_pix" style={{ background: '#050505' }}>Cartão / Pix</option>
+                      <option value="pix" style={{ background: '#050505' }}>Pix</option>
+                      <option value="cartao" style={{ background: '#050505' }}>Cartão</option>
                     </select>
                   </div>
                 </>

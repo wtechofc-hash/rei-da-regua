@@ -13,6 +13,7 @@ import {
   CheckCircle,
   LogOut,
   CreditCard,
+  QrCode,
   Trash2,
   Plus,
   Minus,
@@ -131,7 +132,7 @@ const Storefront: React.FC = () => {
   const [isCheckoutActive, setIsCheckoutActive] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isSuccessState, setIsSuccessState] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'offline' | 'online'>('offline');
+  const [paymentMethod, setPaymentMethod] = useState<'offline' | 'pix' | 'cartao'>('offline');
   const [onlineSuccess, setOnlineSuccess] = useState(false);
   const [useVipCredits, setUseVipCredits] = useState(false);
 
@@ -223,13 +224,6 @@ const Storefront: React.FC = () => {
       const pendingId = localStorage.getItem('pending_mp_appointment_id');
       const pendingIdsStr = localStorage.getItem('pending_mp_appointment_ids');
 
-      let resolvedMethod = 'cartao_pix';
-      if (paymentType === 'bank_transfer' || paymentType === 'pix') {
-        resolvedMethod = 'pix';
-      } else if (paymentType === 'credit_card' || paymentType === 'debit_card') {
-        resolvedMethod = 'cartao';
-      }
-
       const confirmAppointments = async () => {
         try {
           const updatePayload: any = {
@@ -239,9 +233,6 @@ const Storefront: React.FC = () => {
             payment_provider: 'mercado_pago',
             paid_at: new Date().toISOString()
           };
-          if (resolvedMethod !== 'cartao_pix') {
-            updatePayload.payment_method = resolvedMethod;
-          }
 
           if (pendingIdsStr) {
             const pendingIds = JSON.parse(pendingIdsStr);
@@ -343,7 +334,7 @@ const Storefront: React.FC = () => {
           status: 'pending',
           priceAtTime: finalPrice,
           commissionAtTime: 0,
-          paymentMethod: paymentMethod === 'offline' ? 'dinheiro' : 'cartao_pix'
+          paymentMethod: paymentMethod === 'offline' ? 'dinheiro' : paymentMethod
         });
         if (!appt) {
           throw new Error(`Não foi possível salvar o agendamento para o serviço ${item.service.name}. Por favor, tente novamente ou entre em contato.`);
@@ -379,7 +370,7 @@ const Storefront: React.FC = () => {
         const { data: saleData, error: saleError } = await supabase.from('sales').insert([{
           shop_id: resolvedShopId,
           total_amount: cartTotal,
-          payment_method: paymentMethod,
+          payment_method: paymentMethod === 'offline' ? 'dinheiro' : paymentMethod,
           professional_id: saleProfessionalId,
           commission_amount: commissionTotal,
         }]).select();
@@ -393,7 +384,7 @@ const Storefront: React.FC = () => {
           id: saleData[0].id,
           shopId: resolvedShopId || '',
           totalAmount: cartTotal,
-          paymentMethod,
+          paymentMethod: paymentMethod === 'offline' ? 'dinheiro' : paymentMethod,
           soldAt: saleData[0].sold_at || new Date().toISOString(),
           professionalId: saleProfessionalId || undefined,
           commissionAmount: commissionTotal,
@@ -433,7 +424,7 @@ const Storefront: React.FC = () => {
       
       const checkoutTotal = checkoutTotalPrice + checkoutProductsPrice - checkoutVipDiscount;
 
-      if (paymentMethod === 'online' && shopData?.mp_enabled && checkoutTotal > 0) {
+      if ((paymentMethod === 'pix' || paymentMethod === 'cartao') && shopData?.mp_enabled && checkoutTotal > 0) {
         // Prepare Mercado Pago checkout
         // Save appointment IDs to localStorage
         const apptIds = createdAppts.map(a => a.id);
@@ -1370,19 +1361,19 @@ const Storefront: React.FC = () => {
                     {shopData?.mp_enabled && (
                       <div>
                         <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' }}>Forma de Pagamento</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                           <button
                             type="button"
                             disabled={isCheckingOut}
                             onClick={() => setPaymentMethod('offline')}
                             style={{
-                              padding: '0.8rem',
+                              padding: '0.8rem 0.4rem',
                               borderRadius: '12px',
                               background: paymentMethod === 'offline' ? 'rgba(212,175,55,0.1)' : '#111',
                               border: paymentMethod === 'offline' ? '1px solid var(--accent-gold)' : '1px solid var(--glass-border)',
                               color: paymentMethod === 'offline' ? 'var(--accent-gold)' : '#ccc',
                               fontWeight: '800',
-                              fontSize: '0.8rem',
+                              fontSize: '0.75rem',
                               cursor: 'pointer',
                               display: 'flex',
                               flexDirection: 'column',
@@ -1397,15 +1388,38 @@ const Storefront: React.FC = () => {
                           <button
                             type="button"
                             disabled={isCheckingOut}
-                            onClick={() => setPaymentMethod('online')}
+                            onClick={() => setPaymentMethod('pix')}
                             style={{
-                              padding: '0.8rem',
+                              padding: '0.8rem 0.4rem',
                               borderRadius: '12px',
-                              background: paymentMethod === 'online' ? 'rgba(0,204,68,0.1)' : '#111',
-                              border: paymentMethod === 'online' ? '1px solid #00cc44' : '1px solid var(--glass-border)',
-                              color: paymentMethod === 'online' ? '#00cc44' : '#ccc',
+                              background: paymentMethod === 'pix' ? 'rgba(0, 204, 102, 0.1)' : '#111',
+                              border: paymentMethod === 'pix' ? '1px solid #00cc66' : '1px solid var(--glass-border)',
+                              color: paymentMethod === 'pix' ? '#00cc66' : '#ccc',
                               fontWeight: '800',
-                              fontSize: '0.8rem',
+                              fontSize: '0.75rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <QrCode size={16} />
+                            Pix
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isCheckingOut}
+                            onClick={() => setPaymentMethod('cartao')}
+                            style={{
+                              padding: '0.8rem 0.4rem',
+                              borderRadius: '12px',
+                              background: paymentMethod === 'cartao' ? 'rgba(147, 51, 234, 0.1)' : '#111',
+                              border: paymentMethod === 'cartao' ? '1px solid #9333ea' : '1px solid var(--glass-border)',
+                              color: paymentMethod === 'cartao' ? '#9333ea' : '#ccc',
+                              fontWeight: '800',
+                              fontSize: '0.75rem',
                               cursor: 'pointer',
                               display: 'flex',
                               flexDirection: 'column',
@@ -1415,7 +1429,7 @@ const Storefront: React.FC = () => {
                             }}
                           >
                             <CreditCard size={16} />
-                            Cartão / Pix
+                            Cartão
                           </button>
                         </div>
                       </div>
@@ -1424,11 +1438,11 @@ const Storefront: React.FC = () => {
                     <button 
                       type="submit" 
                       disabled={isCheckingOut || (cartServices.length === 0 && cartProducts.length === 0)}
-                      className={paymentMethod === 'online' && shopData?.mp_enabled && grandTotal > 0 ? '' : 'gold-button'}
+                      className={(paymentMethod === 'pix' || paymentMethod === 'cartao') && shopData?.mp_enabled && grandTotal > 0 ? '' : 'gold-button'}
                       style={{ 
                         padding: '1.25rem', width: '100%', marginTop: '1rem', fontSize: '1rem', 
-                        boxShadow: paymentMethod === 'online' && shopData?.mp_enabled && grandTotal > 0 ? '0 8px 25px rgba(0, 204, 68, 0.2)' : '0 8px 25px rgba(212,175,55,0.3)',
-                        background: paymentMethod === 'online' && shopData?.mp_enabled && grandTotal > 0 ? '#00cc44' : undefined,
+                        boxShadow: (paymentMethod === 'pix' || paymentMethod === 'cartao') && shopData?.mp_enabled && grandTotal > 0 ? '0 8px 25px rgba(0, 204, 68, 0.2)' : '0 8px 25px rgba(212,175,55,0.3)',
+                        background: (paymentMethod === 'pix' || paymentMethod === 'cartao') && shopData?.mp_enabled && grandTotal > 0 ? '#00cc44' : undefined,
                         border: 'none',
                         borderRadius: '12px',
                         color: 'white',
@@ -1446,7 +1460,7 @@ const Storefront: React.FC = () => {
                           <div style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                           Finalizando...
                         </>
-                      ) : paymentMethod === 'online' && shopData?.mp_enabled && grandTotal > 0 ? (
+                      ) : (paymentMethod === 'pix' || paymentMethod === 'cartao') && shopData?.mp_enabled && grandTotal > 0 ? (
                         'Pagar Online'
                       ) : (
                         'Confirmar Agendamento'

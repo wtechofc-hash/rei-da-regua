@@ -71,26 +71,6 @@ export const PaymentMethodBadge: React.FC<PaymentMethodBadgeProps> = ({ method }
     );
   }
 
-  if (normalized === 'cartao_pix') {
-    return (
-      <span style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        padding: '4px 10px',
-        borderRadius: '12px',
-        background: 'rgba(33, 150, 243, 0.08)',
-        border: '1px solid rgba(33, 150, 243, 0.25)',
-        color: '#bbdefb',
-        fontSize: '0.75rem',
-        fontWeight: '700',
-        whiteSpace: 'nowrap'
-      }}>
-        <CreditCard size={13} style={{ color: '#2196f3' }} />
-        Cartão / Pix
-      </span>
-    );
-  }
 
   return (
     <span style={{

@@ -262,7 +262,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
               <option value="dinheiro" style={{ background: '#050505', color: '#fff' }}>Dinheiro</option>
               <option value="pix" style={{ background: '#050505', color: '#fff' }}>Pix</option>
               <option value="cartao" style={{ background: '#050505', color: '#fff' }}>Cartão</option>
-              <option value="cartao_pix" style={{ background: '#050505', color: '#fff' }}>Cartão / Pix</option>
               <option value="não_informado" style={{ background: '#050505', color: '#fff' }}>Não informado</option>
             </select>
             <ChevronDown size={14} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} />
