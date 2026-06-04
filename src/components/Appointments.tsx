@@ -475,15 +475,20 @@ const Appointments: React.FC = () => {
                   </div>
 
                   {/* Main Info */}
-                  <div style={{ minWidth: 0 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <h3 style={{ margin: '0 0 4px', fontSize: '1.05rem', fontWeight: '800', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</h3>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    
+                    {/* Metadata Row: Service • Professional • Value */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                       {svc && <span>{svc.name}</span>}
                       {svc && prof && <span style={{ opacity: 0.3 }}>•</span>}
                       {prof && <span>{prof.name}</span>}
                       {prof && appt.priceAtTime > 0 && <span style={{ opacity: 0.3 }}>•</span>}
                       {appt.priceAtTime > 0 && <span style={{ fontWeight: '700', color: 'var(--accent-gold)' }}>R$ {appt.priceAtTime.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
-                      {(svc || prof || appt.priceAtTime > 0) && <span style={{ opacity: 0.3 }}>•</span>}
+                    </div>
+
+                    {/* Payment Row */}
+                    <div style={{ marginTop: '8px', display: 'flex' }}>
                       <PaymentMethodBadge method={appt.paymentMethod} />
                     </div>
                   </div>
