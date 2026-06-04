@@ -294,7 +294,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
   const dateLabel = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
-    <div className="animate-fade-in" style={{ width: '100%' }}>
+    <div style={{ width: '100%' }}>
       {/* Header */}
       <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
@@ -306,10 +306,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', alignSelf: 'center' }}>{dateLabel}</p>
       </header>
 
-      {/* Period & Professional Selector */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flex: '1 1 auto' }}>
-          <div className="premium-card" style={{ padding: '4px', display: 'inline-flex', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', gap: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>
+      {/* Period & Filter Selector — vertical stack, no flex space-between */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '2rem' }}>
+
+        {/* Row 1: Period buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+          <div className="premium-card" style={{ padding: '4px', display: 'inline-flex', background: '#111', borderRadius: '12px', gap: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>
             {[
               { id: 'today', label: 'Hoje' },
               { id: 'week', label: 'Esta Semana' },
@@ -323,7 +325,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                   padding: '0.5rem 1rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
                   background: period === p.id ? 'var(--accent-gold)' : 'transparent',
                   color: period === p.id ? '#000' : '#888',
-                  fontSize: '0.75rem', fontWeight: '800', transition: 'all 0.2s'
+                  fontSize: '0.75rem', fontWeight: '800', transition: 'background 0.2s, color 0.2s'
                 }}
               >
                 {p.label}
@@ -332,7 +334,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
           </div>
 
           {period === 'custom' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.02)', padding: '6px 12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#111', padding: '6px 12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>De:</span>
               <input 
                 type="date" 
@@ -351,12 +353,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
           )}
         </div>
 
+        {/* Row 2: Filter selects — 2 columns (professional) or 3 columns (owner) */}
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: role === 'owner' ? 'repeat(auto-fit, minmax(120px, 1fr))' : '1fr 1fr', 
+          gridTemplateColumns: role === 'owner' ? 'repeat(3, 1fr)' : '1fr 1fr', 
           gap: '8px', 
-          flex: '1 1 300px',
-          maxWidth: '600px',
           width: '100%'
         }}>
           {/* Origin Filter */}
