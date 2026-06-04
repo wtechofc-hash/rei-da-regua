@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, DollarSign, Users, Clock, Percent, ChevronDown } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -25,6 +25,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
     abatements = [],
     abatementParticipants = []
   } = useApp();
+
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    // Dispara um resize com um pequeno delay após a montagem para forçar o recálculo do layout (reflow)
+    // dos componentes SVGs/Canvas do Recharts que dependem da largura do container pai.
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const todayStr = (() => {
     const d = new Date();
@@ -435,35 +447,39 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
         <div className="premium-card" style={{ padding: '1.5rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '1.5rem' }}>Faturamento Semanal</h3>
           <div style={{ height: '220px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={weeklyData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#d4af37" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#d4af37" stopOpacity={0}    />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                <XAxis dataKey="name" stroke="#444" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#444" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '8px', fontSize: '0.8rem' }} />
-                <Area type="monotone" dataKey="value" stroke="#d4af37" fill="url(#goldGrad)" strokeWidth={2.5} dot={false} />
-              </AreaChart>
-            </ResponsiveContainer>
+            {isMounted && (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={weeklyData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#d4af37" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#d4af37" stopOpacity={0}    />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                  <XAxis dataKey="name" stroke="#444" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#444" fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '8px', fontSize: '0.8rem' }} />
+                  <Area type="monotone" dataKey="value" stroke="#d4af37" fill="url(#goldGrad)" strokeWidth={2.5} dot={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
         <div className="premium-card" style={{ padding: '1.5rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '1rem' }}>Mix de Serviços</h3>
           <div style={{ height: '170px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={pieData} innerRadius="52%" outerRadius="72%" paddingAngle={3} dataKey="value" startAngle={90} endAngle={-270}>
-                  {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" />)}
-                </Pie>
-                <Tooltip contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '8px', fontSize: '0.8rem' }} />
-              </PieChart>
-            </ResponsiveContainer>
+            {isMounted && (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={pieData} innerRadius="52%" outerRadius="72%" paddingAngle={3} dataKey="value" startAngle={90} endAngle={-270}>
+                    {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: '#111', border: '1px solid #333', borderRadius: '8px', fontSize: '0.8rem' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {pieData.map((item, i) => (
