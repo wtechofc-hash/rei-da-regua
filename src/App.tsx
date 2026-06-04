@@ -191,16 +191,22 @@ const AppContent: React.FC = () => {
       case '__more__':
         return (
           <div style={{
-            padding: '1.5rem 1rem',
-            minHeight: '100%',
+            padding: '1rem',
             background: '#050505',
-            width: '100%'
+            minHeight: '100vh',
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
           }}>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1.5rem' }}>Menu</h2>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: '900', color: 'white', marginBottom: '1rem' }}>Menu</h2>
             <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(2, 1fr)', 
-              gap: '0.75rem',
+              display: 'flex', 
+              flexDirection: 'column', 
+              background: '#111111', 
+              borderRadius: '16px', 
+              border: '1px solid rgba(255,255,255,0.05)',
+              overflow: 'hidden',
               width: '100%'
             }}>
               {(() => {
@@ -222,55 +228,73 @@ const AppContent: React.FC = () => {
                   ? ['dashboard', 'agendamentos', 'assinatura'] 
                   : (role === 'professional' ? ['dashboard', 'agendamentos', 'vitrine'] : ['dashboard', 'agendamentos', 'clientes']);
 
-                const dynamicMoreNav = [
-                  ...allowed.filter(item => !bottomNavIds.includes(item.id)),
-                  { id: '__logout__', label: 'Sair da Conta', icon: LogOut }
-                ];
+                const dynamicMoreNav = allowed.filter(item => !bottomNavIds.includes(item.id));
 
-                return dynamicMoreNav.map(item => {
+                return dynamicMoreNav.map((item, index) => {
                   const Icon = item.icon;
-                  const isLogout = item.id === '__logout__';
                   return (
-                    <button key={item.id} onClick={() => {
-                      if (isLogout) {
-                        logout();
-                      } else {
-                        setPage(item.id as Page);
-                      }
-                    }} style={{
-                      background: '#111111', 
-                      border: '1px solid rgba(255,255,255,0.05)',
-                      borderRadius: '16px', 
-                      padding: '1.25rem 0.5rem', 
-                      color: 'white',
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      gap: '10px',
-                      cursor: 'pointer', 
-                      transition: 'all 0.2s', 
-                      width: '100%',
-                      minHeight: '100px'
-                    }}>
-                      <div style={{ 
-                        background: isLogout ? 'rgba(255,23,68,0.12)' : 'rgba(212,175,55,0.12)', 
-                        width: '44px', 
-                        height: '44px', 
-                        borderRadius: '12px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        color: isLogout ? '#ff1744' : '#d4af37' 
-                      }}>
-                        <Icon size={20} />
+                    <button 
+                      key={item.id} 
+                      onClick={() => setPage(item.id as Page)} 
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        borderBottom: index === dynamicMoreNav.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.03)',
+                        padding: '1rem 1.25rem',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        width: '100%',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <div style={{ 
+                          background: 'rgba(212,175,55,0.1)', 
+                          width: '36px', 
+                          height: '36px', 
+                          borderRadius: '10px', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          color: '#d4af37' 
+                        }}>
+                          <Icon size={18} />
+                        </div>
+                        <span style={{ fontSize: '0.9rem', fontWeight: '700' }}>{item.label}</span>
                       </div>
-                      <span style={{ fontSize: '0.78rem', fontWeight: '800', textAlign: 'center' }}>{item.label}</span>
+                      <span style={{ color: '#555', fontSize: '1.2rem', fontWeight: '300' }}>➔</span>
                     </button>
                   );
                 });
               })()}
             </div>
+
+            {/* Logout Button */}
+            <button 
+              onClick={logout} 
+              style={{
+                background: '#1a0d0d',
+                border: '1px solid rgba(255,23,68,0.15)',
+                borderRadius: '16px',
+                padding: '1rem 1.25rem',
+                color: '#ff4444',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                width: '100%',
+                fontWeight: '800',
+                fontSize: '0.9rem',
+                marginTop: '0.5rem'
+              }}
+            >
+              <LogOut size={18} />
+              Sair da Conta
+            </button>
           </div>
         );
       case 'dashboard':
