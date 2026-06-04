@@ -166,8 +166,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
 
   const statusBadge: Record<string, { label: string; bg: string; color: string }> = {
     pending:   { label: 'Pendente',   bg: 'rgba(255,179,0,0.12)',   color: '#ffb300' },
-    confirmed: { label: 'Confirmado', bg: 'rgba(0,230,118,0.12)',   color: '#00e676' },
-    completed: { label: 'Concluído',  bg: 'rgba(33,150,243,0.12)',  color: '#2196f3' },
+    confirmed: { label: 'Confirmado', bg: 'rgba(33,150,243,0.12)',  color: '#2196f3' },
+    completed: { label: 'Concluído',  bg: 'rgba(0,230,118,0.12)',   color: '#00e676' },
     cancelled: { label: 'Cancelado',  bg: 'rgba(255,23,68,0.12)',   color: '#ff1744' },
   };
 

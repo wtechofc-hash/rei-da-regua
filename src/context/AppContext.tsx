@@ -52,6 +52,7 @@ export interface Appointment {
   commissionAtTime: number;
   notes?: string;
   isNewForPro?: boolean; // Para o balão de notificação
+  paymentMethod?: string;
 }
 
 export interface Client {
@@ -310,7 +311,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (apptsData) setAppointments(apptsData.map((a: any) => ({
           id: a.id, clientId: a.client_id, clientName: (a.clients as any)?.name || 'Cliente', 
           professionalId: a.professional_id, serviceId: a.service_id, date: a.date, time: a.time, endTime: a.end_time || a.time,
-          status: a.status as any, priceAtTime: a.total_price || 0, commissionAtTime: 0
+          status: a.status as any, priceAtTime: a.total_price || 0, commissionAtTime: 0,
+          paymentMethod: a.payment_method || ''
         })));
 
         // Fetch Sales
@@ -410,7 +412,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               status: newRow.status as any,
               priceAtTime: newRow.total_price || 0,
               commissionAtTime: 0,
-              isNewForPro: true
+              isNewForPro: true,
+              paymentMethod: newRow.payment_method || ''
             };
 
             setAppointments(prev => {
@@ -429,7 +432,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   time: newRow.time,
                   endTime: newRow.end_time || newRow.time,
                   status: newRow.status as any,
-                  priceAtTime: newRow.total_price || 0
+                  priceAtTime: newRow.total_price || 0,
+                  paymentMethod: newRow.payment_method || ''
                 };
               }
               return a;
@@ -685,7 +689,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       end_time: computedEndTime,
       status: a.status, 
       total_price: a.priceAtTime, 
-      shop_id: resolvedShopId 
+      shop_id: resolvedShopId,
+      payment_method: a.paymentMethod || null
     }]).select();
 
     if (apptError) {
@@ -698,7 +703,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: data[0].id, 
         clientId: resolvedClientId || 'online-customer', 
         clientName: a.clientName || 'Cliente Online',
-        isNewForPro: true 
+        isNewForPro: true,
+        paymentMethod: data[0].payment_method || ''
       };
       setAppointments(prev => {
         if (prev.some(x => x.id === newAppt.id)) return prev;

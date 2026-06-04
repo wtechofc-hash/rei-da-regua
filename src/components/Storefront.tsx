@@ -321,7 +321,8 @@ const Storefront: React.FC = () => {
           endTime,
           status: 'pending',
           priceAtTime: finalPrice,
-          commissionAtTime: 0
+          commissionAtTime: 0,
+          paymentMethod: paymentMethod === 'offline' ? 'dinheiro' : 'cartao_pix'
         });
         if (!appt) {
           throw new Error(`Não foi possível salvar o agendamento para o serviço ${item.service.name}. Por favor, tente novamente ou entre em contato.`);

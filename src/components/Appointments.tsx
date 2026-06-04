@@ -73,6 +73,9 @@ const Appointments: React.FC = () => {
   // Professional filter
   const [proFilter, setProFilter] = useState<string>('all');
 
+  // Payment method filter
+  const [paymentFilter, setPaymentFilter] = useState<string>('all');
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newClientToggle, setNewClientToggle] = useState(false);
@@ -83,7 +86,8 @@ const Appointments: React.FC = () => {
     professionalId: role === 'professional' ? (userId || '') : '',
     date: today,
     time: '',
-    price: 0
+    price: 0,
+    paymentMethod: 'dinheiro'
   });
 
   React.useEffect(() => {
@@ -155,7 +159,8 @@ const Appointments: React.FC = () => {
         endTime,
         status: role === 'customer' ? 'pending' : 'confirmed',
         priceAtTime: newApptData.price,
-        commissionAtTime: 0
+        commissionAtTime: 0,
+        paymentMethod: newApptData.paymentMethod
       });
 
       if (added) {
@@ -167,7 +172,8 @@ const Appointments: React.FC = () => {
           professionalId: role === 'professional' ? (userId || '') : '',
           date: today,
           time: '',
-          price: 0
+          price: 0,
+          paymentMethod: 'dinheiro'
         });
         setNewClientToggle(false);
       } else {
@@ -213,6 +219,15 @@ const Appointments: React.FC = () => {
     const clientName = (appt.clientName || clients.find(c => c.id === appt.clientId)?.name || '').toLowerCase();
     if (searchTerm && !clientName.includes(searchTerm.toLowerCase())) return false;
 
+    // Payment method filter
+    if (paymentFilter !== 'all') {
+      if (paymentFilter === 'não_informado') {
+        if (appt.paymentMethod && appt.paymentMethod !== '') return false;
+      } else {
+        if (appt.paymentMethod !== paymentFilter) return false;
+      }
+    }
+
     return true;
   }).sort((a, b) => {
     const dateCompare = b.date.localeCompare(a.date);
@@ -222,8 +237,8 @@ const Appointments: React.FC = () => {
 
   const statusMap: Record<string, { label: string; color: string; bg: string }> = {
     pending:   { label: 'Pendente',   color: '#ffb300', bg: 'rgba(255,179,0,0.12)' },
-    confirmed: { label: 'Confirmado', color: '#00e676', bg: 'rgba(0,230,118,0.12)' },
-    completed: { label: 'Concluído',  color: '#2196f3', bg: 'rgba(33,150,243,0.12)' },
+    confirmed: { label: 'Confirmado', color: '#2196f3', bg: 'rgba(33,150,243,0.12)' },
+    completed: { label: 'Concluído',  color: '#00e676', bg: 'rgba(0,230,118,0.12)' },
     cancelled: { label: 'Cancelado',  color: '#ff1744', bg: 'rgba(255,23,68,0.12)' },
   };
 
@@ -292,6 +307,26 @@ const Appointments: React.FC = () => {
               <ChevronDown size={14} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} />
             </div>
           )}
+
+          {/* Payment filter dropdown */}
+          <div style={{ position: 'relative', minWidth: '180px' }}>
+            <select
+              value={paymentFilter}
+              onChange={e => setPaymentFilter(e.target.value)}
+              style={{
+                width: '100%', padding: '0.7rem 2.2rem 0.7rem 1rem', background: 'rgba(255,255,255,0.03)',
+                border: paymentFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '12px', color: paymentFilter !== 'all' ? 'var(--accent-gold)' : '#aaa',
+                outline: 'none', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', appearance: 'none'
+              }}
+            >
+              <option value="all" style={{ background: '#050505', color: '#fff' }}>Todas as Formas</option>
+              <option value="dinheiro" style={{ background: '#050505', color: '#fff' }}>Dinheiro</option>
+              <option value="cartao_pix" style={{ background: '#050505', color: '#fff' }}>Cartão / Pix</option>
+              <option value="não_informado" style={{ background: '#050505', color: '#fff' }}>Não informado</option>
+            </select>
+            <ChevronDown size={14} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} />
+          </div>
 
           {/* Date filter dropdown */}
           <div style={{ position: 'relative' }}>
@@ -396,8 +431,8 @@ const Appointments: React.FC = () => {
           {[
           { label: 'Total filtrado', value: filteredAppointments.length, color: '#888' },
           { label: 'Pendentes', value: filteredAppointments.filter(a => a.status === 'pending').length, color: '#ffb300' },
-          { label: 'Confirmados', value: filteredAppointments.filter(a => a.status === 'confirmed').length, color: '#00e676' },
-          { label: 'Concluídos', value: filteredAppointments.filter(a => a.status === 'completed').length, color: '#2196f3' },
+          { label: 'Confirmados', value: filteredAppointments.filter(a => a.status === 'confirmed').length, color: '#2196f3' },
+          { label: 'Concluídos', value: filteredAppointments.filter(a => a.status === 'completed').length, color: '#00e676' },
         ].map(stat => (
           <div key={stat.label} style={{ flex: 1, minWidth: '100px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', padding: '0.75rem 1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
             <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: '900', color: stat.color }}>{stat.value}</p>
@@ -445,6 +480,12 @@ const Appointments: React.FC = () => {
                       {svc && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Scissors size={13} /> {svc.name}</span>}
                       {prof && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><User size={13} /> {prof.name}</span>}
                       {appt.priceAtTime > 0 && <span style={{ fontWeight: '700', color: 'var(--accent-gold)' }}>R$ {appt.priceAtTime.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Pagamento:</span>
+                        <strong style={{ color: appt.paymentMethod === 'dinheiro' ? '#d4af37' : appt.paymentMethod === 'cartao_pix' ? '#00e676' : '#888' }}>
+                          {appt.paymentMethod === 'dinheiro' ? 'Dinheiro' : appt.paymentMethod === 'cartao_pix' ? 'Cartão / Pix' : 'Não informado'}
+                        </strong>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -560,7 +601,8 @@ const Appointments: React.FC = () => {
                     professionalId: role === 'professional' ? (userId || '') : '',
                     date: today,
                     time: '',
-                    price: 0
+                    price: 0,
+                    paymentMethod: 'dinheiro'
                   });
                   setNewClientToggle(false);
                 }}
@@ -724,17 +766,31 @@ const Appointments: React.FC = () => {
 
               {/* Valor (Oculto para Clientes, o preço é atrelado ao serviço) */}
               {role !== 'customer' && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Preço do Serviço (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={newApptData.price}
-                    onChange={e => setNewApptData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                    style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
-                  />
-                </div>
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Preço do Serviço (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={newApptData.price}
+                      onChange={e => setNewApptData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                      style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700' }}>Forma de Pagamento</label>
+                    <select
+                      required
+                      value={newApptData.paymentMethod}
+                      onChange={e => setNewApptData(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                      style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'white', outline: 'none' }}
+                    >
+                      <option value="dinheiro" style={{ background: '#050505' }}>Dinheiro</option>
+                      <option value="cartao_pix" style={{ background: '#050505' }}>Cartão / Pix</option>
+                    </select>
+                  </div>
+                </>
               )}
 
               <button
