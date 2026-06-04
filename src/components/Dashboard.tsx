@@ -742,37 +742,40 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                     display: 'flex', flexDirection: 'column', gap: '10px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
                   }}>
-                    {/* Header Row: Date/Time + Status Badge */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {/* Header Row: Date/Time + Origin + Status Badge */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                       <span style={{ 
-                        fontWeight: '800', color: '#d4af37', fontSize: '0.82rem', 
+                        fontWeight: '800', color: '#d4af37', fontSize: '0.78rem', 
                         whiteSpace: 'nowrap', background: 'rgba(212,175,55,0.06)', 
-                        padding: '4px 10px', borderRadius: '8px', 
-                        border: '1px solid rgba(212,175,55,0.12)' 
+                        padding: '4px 8px', borderRadius: '8px', 
+                        border: '1px solid rgba(212,175,55,0.12)',
+                        flexShrink: 0
                       }}>
                         {formatDate(item.date)} às {item.time.slice(0, 5)}
                       </span>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexShrink: 0, flexWrap: 'nowrap' }}>
                         <span style={{
-                          padding: '3px 8px',
+                          padding: '3px 7px',
                           borderRadius: '6px',
-                          fontSize: '0.6&em',
+                          fontSize: '0.6rem',
                           fontWeight: '800',
                           textTransform: 'uppercase',
                           background: isPdv ? 'rgba(212,175,55,0.1)' : 'rgba(33,150,243,0.1)',
                           color: isPdv ? '#d4af37' : '#2196f3',
+                          whiteSpace: 'nowrap'
                         }}>
                           {isPdv ? 'PDV' : 'Agenda'}
                         </span>
                         {isPdv ? (
-                          <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '0.65rem', fontWeight: '800', background: 'rgba(0,230,118,0.12)', color: '#00e676' }}>
+                          <span style={{ padding: '3px 8px', borderRadius: '20px', fontSize: '0.6rem', fontWeight: '800', background: 'rgba(0,230,118,0.12)', color: '#00e676', whiteSpace: 'nowrap' }}>
                             CONCLUÍDO
                           </span>
                         ) : (
                           <span style={{ 
-                            padding: '4px 10px', borderRadius: '20px', fontSize: '0.65rem', 
+                            padding: '3px 8px', borderRadius: '20px', fontSize: '0.6rem', 
                             fontWeight: '800', background: (statusBadge[item.status] || statusBadge.pending).bg, color: (statusBadge[item.status] || statusBadge.pending).color, 
-                            textTransform: 'uppercase', border: `1px solid ${(statusBadge[item.status] || statusBadge.pending).color}22` 
+                            textTransform: 'uppercase', border: `1px solid ${(statusBadge[item.status] || statusBadge.pending).color}22`,
+                            whiteSpace: 'nowrap'
                           }}>
                             {(statusBadge[item.status] || statusBadge.pending).label}
                           </span>
