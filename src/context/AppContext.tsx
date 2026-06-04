@@ -340,7 +340,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Fetch Professionals
         const { data: prosData } = await query(supabase.from('professionals').select('*'));
         let mappedProfiles = prosData ? prosData.map((p: any) => ({
-          id: p.id, name: p.name, role: (p.role?.toLowerCase() === 'owner' ? 'owner' : 'professional') as UserRole, 
+          id: p.role?.toLowerCase() === 'owner' ? 'owner-' + p.id : p.id,
+          name: p.name,
+          role: (p.role?.toLowerCase() === 'owner' ? 'owner' : 'professional') as UserRole, 
           avatar: p.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`,
           email: p.email,
           commission: Number(p.commission_rate) || 0
@@ -354,7 +356,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const { data: currentShop } = await supabase.from('shops').select('name, login_email, logo_url').eq('id', currentShopId).maybeSingle();
             if (currentShop) {
               const newOwnerProfile = {
-                id: ownerId,
+                id: currentShopId,
                 name: currentShop.name || 'Lojista',
                 role: 'owner',
                 photo_url: currentShop.logo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentShop.name || 'owner'}`,
@@ -362,7 +364,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 email: currentShop.login_email
               };
               
-              const { data: insertedData } = await supabase.from('professionals').insert([newOwnerProfile]).select();
+              const { data: insertedData, error } = await supabase.from('professionals').insert([newOwnerProfile]).select();
+              if (error) {
+                console.error("Error inserting owner profile:", error);
+              }
               if (insertedData) {
                 mappedProfiles.push({
                   id: ownerId,
@@ -749,12 +754,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (p.avatar !== undefined && oldProf && oldProf.avatar && oldProf.avatar !== p.avatar) {
       await deleteOldImage(oldProf.avatar);
     }
+    const dbId = id.startsWith('owner-') ? id.replace('owner-', '') : id;
     const payload: any = {};
     if (p.name !== undefined) payload.name = p.name;
     if (p.role !== undefined) payload.role = p.role;
     if (p.avatar !== undefined) payload.photo_url = p.avatar;
     if (p.email !== undefined) payload.email = p.email;
-    await supabase.from('professionals').update(payload).eq('id', id);
+    await supabase.from('professionals').update(payload).eq('id', dbId);
     setProfiles(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
   };
   const deleteProfile = async (id: string) => {

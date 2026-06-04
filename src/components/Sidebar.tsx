@@ -73,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, notificati
 
   const handleProfileClick = () => {
     if (role === 'customer' || role === 'superadmin') return;
-    setProfileName(currentProfile?.name || '');
+    setProfileName(currentProfile?.name || userNameLabel || '');
     setAvatarPreview(currentProfile?.avatar || '');
     setProfileFile(null);
     setShowEditProfile(true);
