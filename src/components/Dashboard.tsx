@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 import { useApp } from '../context/AppContext';
+import { PaymentMethodBadge } from './PaymentMethodBadge';
 
 interface DashboardProps {
   onViewAll?: () => void;
@@ -26,12 +27,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
   const [customStart, setCustomStart] = useState<string>(todayStr);
   const [customEnd, setCustomEnd] = useState<string>(todayStr);
   const [proFilter, setProFilter] = useState<string>('all');
+  const [paymentFilter, setPaymentFilter] = useState<string>('all');
 
-  const userAppointments = role === 'professional'
+  const baseAppointments = role === 'professional'
     ? appointments.filter(a => a.professionalId === userId)
     : (proFilter !== 'all'
         ? appointments.filter(a => a.professionalId === proFilter)
         : appointments);
+
+  const userAppointments = baseAppointments.filter(appt => {
+    if (paymentFilter === 'all') return true;
+    if (paymentFilter === 'não_informado') {
+      return !appt.paymentMethod || appt.paymentMethod === '';
+    }
+    return appt.paymentMethod === paymentFilter;
+  });
 
   const getPeriodRange = () => {
     const now = new Date();
@@ -89,7 +99,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
     .reduce((s, a) => s + (a.priceAtTime || 0), 0);
 
   // Product sales revenue
-  const productRevenueInPeriod = periodSales.reduce((s, sale) => s + (sale.totalAmount || 0), 0);
+  const productRevenueInPeriod = paymentFilter === 'all'
+    ? periodSales.reduce((s, sale) => s + (sale.totalAmount || 0), 0)
+    : 0;
 
   const commissionFromAppointments = periodAppointments
     .filter(a => a.status === 'confirmed' || a.status === 'completed')
@@ -100,7 +112,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
     }, 0);
 
   // Product sales commission
-  const commissionFromProducts = periodSales.reduce((sum, s) => sum + (s.commissionAmount || 0), 0);
+  const commissionFromProducts = paymentFilter === 'all'
+    ? periodSales.reduce((sum, s) => sum + (s.commissionAmount || 0), 0)
+    : 0;
 
   const commissionInPeriod = commissionFromAppointments + commissionFromProducts;
 
@@ -231,27 +245,49 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
           )}
         </div>
 
-        {/* Professional Filter for Shop Owner */}
-        {role === 'owner' && (
-          <div style={{ position: 'relative', minWidth: '200px' }}>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Payment Method Filter */}
+          <div style={{ position: 'relative', minWidth: '180px' }}>
             <select
-              value={proFilter}
-              onChange={e => setProFilter(e.target.value)}
+              value={paymentFilter}
+              onChange={e => setPaymentFilter(e.target.value)}
               style={{
                 width: '100%', padding: '0.55rem 2.2rem 0.55rem 1rem', background: 'rgba(255,255,255,0.02)',
-                border: proFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.05)',
-                borderRadius: '12px', color: proFilter !== 'all' ? 'var(--accent-gold)' : '#aaa',
+                border: paymentFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.05)',
+                borderRadius: '12px', color: paymentFilter !== 'all' ? 'var(--accent-gold)' : '#aaa',
                 outline: 'none', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', appearance: 'none'
               }}
             >
-              <option value="all" style={{ background: '#050505', color: '#fff' }}>Todos Profissionais</option>
-              {profiles.map(p => (
-                <option key={p.id} value={p.id} style={{ background: '#050505', color: '#fff' }}>{p.name}</option>
-              ))}
+              <option value="all" style={{ background: '#050505', color: '#fff' }}>Todas as Formas</option>
+              <option value="dinheiro" style={{ background: '#050505', color: '#fff' }}>Dinheiro</option>
+              <option value="cartao_pix" style={{ background: '#050505', color: '#fff' }}>Cartão / Pix</option>
+              <option value="não_informado" style={{ background: '#050505', color: '#fff' }}>Não informado</option>
             </select>
             <ChevronDown size={14} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} />
           </div>
-        )}
+
+          {/* Professional Filter for Shop Owner */}
+          {role === 'owner' && (
+            <div style={{ position: 'relative', minWidth: '200px' }}>
+              <select
+                value={proFilter}
+                onChange={e => setProFilter(e.target.value)}
+                style={{
+                  width: '100%', padding: '0.55rem 2.2rem 0.55rem 1rem', background: 'rgba(255,255,255,0.02)',
+                  border: proFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.05)',
+                  borderRadius: '12px', color: proFilter !== 'all' ? 'var(--accent-gold)' : '#aaa',
+                  outline: 'none', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', appearance: 'none'
+                }}
+              >
+                <option value="all" style={{ background: '#050505', color: '#fff' }}>Todos Profissionais</option>
+                {profiles.map(p => (
+                  <option key={p.id} value={p.id} style={{ background: '#050505', color: '#fff' }}>{p.name}</option>
+                ))}
+              </select>
+              <ChevronDown size={14} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
@@ -501,7 +537,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    {['Data', 'Horário', 'Cliente', 'Serviço', 'Valor', 'Profissional', 'Status'].map(h => (
+                    {['Data', 'Horário', 'Cliente', 'Serviço', 'Valor', 'Pagamento', 'Profissional', 'Status'].map(h => (
                       <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -528,6 +564,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                         <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{svc?.name ?? '—'}</td>
                         <td style={{ padding: '1rem', fontWeight: '700', color: 'white' }}>
                           R$ {(appt.priceAtTime || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td style={{ padding: '1rem' }}>
+                          <PaymentMethodBadge method={appt.paymentMethod} />
                         </td>
                         <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{prof?.name ?? '—'}</td>
                         <td style={{ padding: '1rem' }}>
@@ -608,6 +647,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                           </span>
                         </>
                       )}
+                    </div>
+                    <div style={{ marginTop: '8px', display: 'flex' }}>
+                      <PaymentMethodBadge method={appt.paymentMethod} />
                     </div>
                   </div>
                 );
