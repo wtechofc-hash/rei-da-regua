@@ -296,7 +296,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
 
       {/* Period & Professional Selector */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', flex: '1 1 auto' }}>
           <div className="premium-card" style={{ padding: '4px', display: 'inline-flex', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', gap: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>
             {[
               { id: 'today', label: 'Hoje' },
@@ -343,8 +343,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
           display: 'grid', 
           gridTemplateColumns: role === 'owner' ? 'repeat(auto-fit, minmax(120px, 1fr))' : '1fr 1fr', 
           gap: '8px', 
-          width: '100%', 
-          maxWidth: '600px' 
+          flex: '1 1 300px',
+          maxWidth: '600px',
+          width: '100%'
         }}>
           {/* Origin Filter */}
           <div style={{ position: 'relative' }}>
