@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useApp, Appointment } from '../context/AppContext';
 import { generateAvailableSlots, addMinutesToTime, resolveApptEndTime, getLocalDateString } from '../utils/timeSlots';
+import { PaymentMethodBadge } from './PaymentMethodBadge';
 
 // Date helpers
 const getWeekRange = (base: Date) => {
@@ -476,16 +477,14 @@ const Appointments: React.FC = () => {
                   {/* Main Info */}
                   <div style={{ minWidth: 0 }}>
                     <h3 style={{ margin: '0 0 4px', fontSize: '1.05rem', fontWeight: '800', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</h3>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      {svc && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Scissors size={13} /> {svc.name}</span>}
-                      {prof && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><User size={13} /> {prof.name}</span>}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      {svc && <span>{svc.name}</span>}
+                      {svc && prof && <span style={{ opacity: 0.3 }}>•</span>}
+                      {prof && <span>{prof.name}</span>}
+                      {prof && appt.priceAtTime > 0 && <span style={{ opacity: 0.3 }}>•</span>}
                       {appt.priceAtTime > 0 && <span style={{ fontWeight: '700', color: 'var(--accent-gold)' }}>R$ {appt.priceAtTime.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>Pagamento:</span>
-                        <strong style={{ color: appt.paymentMethod === 'dinheiro' ? '#d4af37' : appt.paymentMethod === 'cartao_pix' ? '#00e676' : '#888' }}>
-                          {appt.paymentMethod === 'dinheiro' ? 'Dinheiro' : appt.paymentMethod === 'cartao_pix' ? 'Cartão / Pix' : 'Não informado'}
-                        </strong>
-                      </span>
+                      {(svc || prof || appt.priceAtTime > 0) && <span style={{ opacity: 0.3 }}>•</span>}
+                      <PaymentMethodBadge method={appt.paymentMethod} />
                     </div>
                   </div>
                 </div>
