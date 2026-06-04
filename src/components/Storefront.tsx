@@ -215,23 +215,44 @@ const Storefront: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const mpStatus = params.get('status');
     const shopRef = params.get('shop');
+    const paymentId = params.get('payment_id') || params.get('collection_id') || '';
+    const preferenceId = params.get('preference_id') || '';
+    const paymentType = params.get('payment_type') || '';
 
     if ((mpStatus === 'success' || mpStatus === 'approved') && shopRef) {
       const pendingId = localStorage.getItem('pending_mp_appointment_id');
       const pendingIdsStr = localStorage.getItem('pending_mp_appointment_ids');
 
+      let resolvedMethod = 'cartao_pix';
+      if (paymentType === 'bank_transfer' || paymentType === 'pix') {
+        resolvedMethod = 'pix';
+      } else if (paymentType === 'credit_card' || paymentType === 'debit_card') {
+        resolvedMethod = 'cartao';
+      }
+
       const confirmAppointments = async () => {
         try {
+          const updatePayload: any = {
+            status: 'confirmed',
+            payment_status: 'approved',
+            mercado_pago_payment_id: paymentId,
+            payment_provider: 'mercado_pago',
+            paid_at: new Date().toISOString()
+          };
+          if (resolvedMethod !== 'cartao_pix') {
+            updatePayload.payment_method = resolvedMethod;
+          }
+
           if (pendingIdsStr) {
             const pendingIds = JSON.parse(pendingIdsStr);
             const { error } = await supabase.from('appointments')
-              .update({ status: 'confirmed' })
+              .update(updatePayload)
               .in('id', pendingIds);
             if (error) throw error;
             localStorage.removeItem('pending_mp_appointment_ids');
           } else if (pendingId) {
             const { error } = await supabase.from('appointments')
-              .update({ status: 'confirmed' })
+              .update(updatePayload)
               .eq('id', pendingId);
             if (error) throw error;
             localStorage.removeItem('pending_mp_appointment_id');
@@ -440,6 +461,17 @@ const Storefront: React.FC = () => {
 
         const resData = await response.json();
         if (!response.ok) throw new Error(resData.error || "Erro no checkout do Mercado Pago.");
+
+        // Save preference ID to appointments
+        if (resData.preferenceId) {
+          await supabase.from('appointments')
+            .update({ 
+              mercado_pago_preference_id: resData.preferenceId,
+              payment_provider: 'mercado_pago',
+              payment_status: 'pending'
+            })
+            .in('id', apptIds);
+        }
 
         // Redirect to Mercado Pago checkout
         window.location.href = resData.initPoint;

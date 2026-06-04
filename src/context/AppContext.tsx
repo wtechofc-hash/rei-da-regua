@@ -53,6 +53,11 @@ export interface Appointment {
   notes?: string;
   isNewForPro?: boolean; // Para o balão de notificação
   paymentMethod?: string;
+  mercadoPagoPaymentId?: string;
+  mercadoPagoPreferenceId?: string;
+  paymentStatus?: string;
+  paymentProvider?: string;
+  paidAt?: string;
 }
 
 export interface Client {
@@ -312,7 +317,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           id: a.id, clientId: a.client_id, clientName: (a.clients as any)?.name || 'Cliente', 
           professionalId: a.professional_id, serviceId: a.service_id, date: a.date, time: a.time, endTime: a.end_time || a.time,
           status: a.status as any, priceAtTime: a.total_price || 0, commissionAtTime: 0,
-          paymentMethod: a.payment_method || ''
+          paymentMethod: a.payment_method || '',
+          mercadoPagoPaymentId: a.mercado_pago_payment_id || '',
+          mercadoPagoPreferenceId: a.mercado_pago_preference_id || '',
+          paymentStatus: a.payment_status || '',
+          paymentProvider: a.payment_provider || '',
+          paidAt: a.paid_at || ''
         })));
 
         // Fetch Sales
@@ -413,7 +423,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               priceAtTime: newRow.total_price || 0,
               commissionAtTime: 0,
               isNewForPro: true,
-              paymentMethod: newRow.payment_method || ''
+              paymentMethod: newRow.payment_method || '',
+              mercadoPagoPaymentId: newRow.mercado_pago_payment_id || '',
+              mercadoPagoPreferenceId: newRow.mercado_pago_preference_id || '',
+              paymentStatus: newRow.payment_status || '',
+              paymentProvider: newRow.payment_provider || '',
+              paidAt: newRow.paid_at || ''
             };
 
             setAppointments(prev => {
@@ -433,7 +448,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   endTime: newRow.end_time || newRow.time,
                   status: newRow.status as any,
                   priceAtTime: newRow.total_price || 0,
-                  paymentMethod: newRow.payment_method || ''
+                  paymentMethod: newRow.payment_method || '',
+                  mercadoPagoPaymentId: newRow.mercado_pago_payment_id || a.mercadoPagoPaymentId,
+                  mercadoPagoPreferenceId: newRow.mercado_pago_preference_id || a.mercadoPagoPreferenceId,
+                  paymentStatus: newRow.payment_status || a.paymentStatus,
+                  paymentProvider: newRow.payment_provider || a.paymentProvider,
+                  paidAt: newRow.paid_at || a.paidAt
                 };
               }
               return a;
@@ -704,7 +724,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         clientId: resolvedClientId || 'online-customer', 
         clientName: a.clientName || 'Cliente Online',
         isNewForPro: true,
-        paymentMethod: data[0].payment_method || ''
+        paymentMethod: data[0].payment_method || '',
+        mercadoPagoPaymentId: data[0].mercado_pago_payment_id || '',
+        mercadoPagoPreferenceId: data[0].mercado_pago_preference_id || '',
+        paymentStatus: data[0].payment_status || '',
+        paymentProvider: data[0].payment_provider || '',
+        paidAt: data[0].paid_at || ''
       };
       setAppointments(prev => {
         if (prev.some(x => x.id === newAppt.id)) return prev;
@@ -715,7 +740,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return null;
   };
   const updateAppointment = async (id: string, a: Partial<Appointment>) => {
-    await supabase.from('appointments').update({ status: a.status }).eq('id', id);
+    const updatePayload: any = {};
+    if (a.status !== undefined) updatePayload.status = a.status;
+    if (a.paymentMethod !== undefined) updatePayload.payment_method = a.paymentMethod;
+    if (a.mercadoPagoPaymentId !== undefined) updatePayload.mercado_pago_payment_id = a.mercadoPagoPaymentId;
+    if (a.mercadoPagoPreferenceId !== undefined) updatePayload.mercado_pago_preference_id = a.mercadoPagoPreferenceId;
+    if (a.paymentStatus !== undefined) updatePayload.payment_status = a.paymentStatus;
+    if (a.paymentProvider !== undefined) updatePayload.payment_provider = a.paymentProvider;
+    if (a.paidAt !== undefined) updatePayload.paid_at = a.paidAt;
+
+    await supabase.from('appointments').update(updatePayload).eq('id', id);
     setAppointments(prev => prev.map(i => i.id === id ? {...i, ...a} : i));
   };
   const deleteAppointment = async (id: string) => {

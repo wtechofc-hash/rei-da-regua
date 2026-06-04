@@ -323,6 +323,8 @@ const Appointments: React.FC = () => {
             >
               <option value="all" style={{ background: '#050505', color: '#fff' }}>Todas as Formas</option>
               <option value="dinheiro" style={{ background: '#050505', color: '#fff' }}>Dinheiro</option>
+              <option value="pix" style={{ background: '#050505', color: '#fff' }}>Pix</option>
+              <option value="cartao" style={{ background: '#050505', color: '#fff' }}>Cartão</option>
               <option value="cartao_pix" style={{ background: '#050505', color: '#fff' }}>Cartão / Pix</option>
               <option value="não_informado" style={{ background: '#050505', color: '#fff' }}>Não informado</option>
             </select>
