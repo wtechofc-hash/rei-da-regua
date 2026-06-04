@@ -303,13 +303,12 @@ const AppContent: React.FC = () => {
           <div style={{
             flex: 1,
             height: '100%',
-            background: 'rgba(10, 10, 10, 0.95)',
+            background: '#0a0a0a',
             borderBottom: '1px solid rgba(212,175,55,0.15)',
             borderRadius: '0 0 0 16px',
             display: 'flex',
             alignItems: 'center',
-            paddingLeft: '1.25rem',
-            backdropFilter: 'blur(15px)'
+            paddingLeft: '1.25rem'
           }}>
             <div>
               <p style={{ margin: 0, fontSize: '0.55rem', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Olá,</p>
@@ -323,7 +322,7 @@ const AppContent: React.FC = () => {
           <div style={{
             width: '80px',
             height: '60px',
-            background: 'rgba(10, 10, 10, 0.95)',
+            background: '#0a0a0a',
             borderRadius: '0 0 40px 40px',
             borderBottom: '1px solid rgba(212,175,55,0.15)',
             borderLeft: '1px solid rgba(212,175,55,0.15)',
@@ -333,8 +332,7 @@ const AppContent: React.FC = () => {
             justifyContent: 'center',
             boxShadow: '0 8px 20px rgba(0,0,0,0.6)',
             alignSelf: 'flex-start',
-            zIndex: 1,
-            backdropFilter: 'blur(15px)'
+            zIndex: 1
           }}>
             <img 
               src={config?.logoUrl || "/logo_main.jpg"} 
@@ -348,14 +346,13 @@ const AppContent: React.FC = () => {
           <div style={{
             flex: 1,
             height: '100%',
-            background: 'rgba(10, 10, 10, 0.95)',
+            background: '#0a0a0a',
             borderBottom: '1px solid rgba(212,175,55,0.15)',
             borderRadius: '0 0 16px 0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
-            paddingRight: '1.25rem',
-            backdropFilter: 'blur(15px)'
+            paddingRight: '1.25rem'
           }}>
             {/* User avatar removed as requested */}
           </div>
@@ -389,7 +386,7 @@ const AppContent: React.FC = () => {
       {role !== 'superadmin' && (
         <nav id="nav-mobile" style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, height: '72px',
-        background: 'rgba(10, 10, 10, 0.95)', backdropFilter: 'blur(10px)',
+        background: '#0a0a0a',
         borderTop: '1px solid rgba(255,255,255,0.06)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-around', zIndex: 10000
       }}>
