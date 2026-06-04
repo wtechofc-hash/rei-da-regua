@@ -118,7 +118,7 @@ const Reports: React.FC = () => {
       const abt = abatements.find(a => a.id === p.abatementId);
       if (!abt) return false;
       const inPeriod = abt.date >= filterStart && abt.date <= filterEnd;
-      return inPeriod && p.status === 'pendente';
+      return inPeriod && p.status !== 'cancelado';
     });
   }, [abatementParticipants, abatements, filterStart, filterEnd]);
 

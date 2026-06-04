@@ -170,7 +170,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
       const abt = abatements.find(a => a.id === p.abatementId);
       if (!abt) return false;
       const inPeriod = abt.date >= filterStart && abt.date <= filterEnd;
-      if (!inPeriod || p.status !== 'pendente') return false;
+      if (!inPeriod || p.status === 'cancelado') return false;
       if (role === 'professional') return p.participantId === userId;
       if (proFilter !== 'all') {
         if (proFilter === 'owner') return p.participantType === 'owner';
@@ -239,6 +239,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
   const pieData = Object.entries(svcCounts).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, 4);
   if (pieData.length === 0) pieData.push({ name: 'Sem dados', value: 1 });
 
+  const getAbatementTypeLabel = (type: string) => {
+    switch (type) {
+      case 'adiantamento': return 'Adiantamento';
+      case 'material_loja': return 'Material da Loja';
+      case 'desconto_manual': return 'Desconto Manual';
+      case 'vale': return 'Vale';
+      default: return 'Outro';
+    }
+  };
+
   // Unified transactions for Dashboard
   const unifiedTransactions = (() => {
     const list: any[] = [];
@@ -281,14 +291,53 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
       });
     }
 
+    // Add abatements
+    abatementParticipants.forEach(p => {
+      const abt = abatements.find(a => a.id === p.abatementId);
+      if (!abt) return;
+      const abtDate = abt.date;
+      const inPeriod = abtDate >= filterStart && abtDate <= filterEnd;
+      if (!inPeriod || p.status === 'cancelado') return;
+
+      // Filter by role / participant
+      if (role === 'professional') {
+        if (p.participantId !== userId) return;
+      } else {
+        // Owner view
+        if (proFilter !== 'all') {
+          if (proFilter === 'owner') {
+            if (p.participantType !== 'owner') return;
+          } else {
+            if (p.participantId !== proFilter) return;
+          }
+        }
+      }
+
+      list.push({
+        id: p.id,
+        type: 'abatement',
+        date: abtDate,
+        time: abt.createdAt ? abt.createdAt.split('T')[1]?.slice(0, 5) : '00:00',
+        clientName: p.participantType === 'owner' ? 'Lojista' : p.participantName,
+        detailName: `${getAbatementTypeLabel(abt.type)}: ${abt.description || 'Abate'}`,
+        amount: p.amount,
+        paymentMethod: abt.type,
+        professionalId: p.participantId,
+        status: p.status
+      });
+    });
+
     return list.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
   })();
 
   const statusBadge: Record<string, { label: string; bg: string; color: string }> = {
     pending:   { label: 'Pendente',   bg: 'rgba(255,179,0,0.12)',   color: '#ffb300' },
+    pendente:  { label: 'Pendente',   bg: 'rgba(255,179,0,0.12)',   color: '#ffb300' },
     confirmed: { label: 'Confirmado', bg: 'rgba(33,150,243,0.12)',  color: '#2196f3' },
     completed: { label: 'Concluído',  bg: 'rgba(0,230,118,0.12)',   color: '#00e676' },
+    quitado:   { label: 'Quitado',    bg: 'rgba(0,230,118,0.12)',   color: '#00e676' },
     cancelled: { label: 'Cancelado',  bg: 'rgba(255,23,68,0.12)',   color: '#ff1744' },
+    cancelado: { label: 'Cancelado',  bg: 'rgba(255,23,68,0.12)',   color: '#ff1744' },
   };
 
   const dateLabel = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -738,6 +787,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                     };
 
                     const isPdv = item.type === 'pdv';
+                    const isAbatement = item.type === 'abatement';
+
+                    const badgeText = isPdv ? 'PDV' : isAbatement ? 'Abate' : 'Agenda';
+                    const badgeBg = isPdv 
+                      ? 'rgba(212,175,55,0.1)' 
+                      : isAbatement 
+                        ? 'rgba(255,23,68,0.1)' 
+                        : 'rgba(33,150,243,0.1)';
+                    const badgeColor = isPdv 
+                      ? '#d4af37' 
+                      : isAbatement 
+                        ? '#ff1744' 
+                        : '#2196f3';
+                    const badgeBorder = isPdv 
+                      ? '1px solid rgba(212,175,55,0.2)' 
+                      : isAbatement 
+                        ? '1px solid rgba(255,23,68,0.2)' 
+                        : '1px solid rgba(33,150,243,0.2)';
 
                     return (
                       <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
@@ -748,22 +815,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                             fontSize: '0.65rem',
                             fontWeight: '800',
                             textTransform: 'uppercase',
-                            background: isPdv ? 'rgba(212,175,55,0.1)' : 'rgba(33,150,243,0.1)',
-                            color: isPdv ? '#d4af37' : '#2196f3',
-                            border: isPdv ? '1px solid rgba(212,175,55,0.2)' : '1px solid rgba(33,150,243,0.2)'
+                            background: badgeBg,
+                            color: badgeColor,
+                            border: badgeBorder
                           }}>
-                            {isPdv ? 'PDV' : 'Agenda'}
+                            {badgeText}
                           </span>
                         </td>
                         <td style={{ padding: '1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{formatDate(item.date)}</td>
                         <td style={{ padding: '1rem', fontWeight: '700', color: '#d4af37', whiteSpace: 'nowrap' }}>{item.time.slice(0, 5)}</td>
                         <td style={{ padding: '1rem', fontWeight: '600' }}>{item.clientName}</td>
                         <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{item.detailName}</td>
-                        <td style={{ padding: '1rem', fontWeight: '700', color: 'white' }}>
-                          R$ {(item.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        <td style={{ padding: '1rem', fontWeight: '700', color: isAbatement ? '#ff1744' : 'white' }}>
+                          {isAbatement ? '-' : ''} R$ {Math.abs(item.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </td>
                         <td style={{ padding: '1rem' }}>
-                          <PaymentMethodBadge method={item.paymentMethod} />
+                          {isAbatement ? (
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>—</span>
+                          ) : (
+                            <PaymentMethodBadge method={item.paymentMethod} />
+                          )}
                         </td>
                         <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{prof?.name ?? '—'}</td>
                         <td style={{ padding: '1rem' }}>
@@ -789,6 +860,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
               {unifiedTransactions.slice(0, 15).map(item => {
                 const prof = profiles.find(p => p.id === item.professionalId);
                 const isPdv = item.type === 'pdv';
+                const isAbatement = item.type === 'abatement';
 
                 const formatDate = (dateStr: string) => {
                   if (!dateStr) return '—';
@@ -823,11 +895,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                           fontSize: '0.6rem',
                           fontWeight: '800',
                           textTransform: 'uppercase',
-                          background: isPdv ? 'rgba(212,175,55,0.1)' : 'rgba(33,150,243,0.1)',
-                          color: isPdv ? '#d4af37' : '#2196f3',
+                          background: isPdv ? 'rgba(212,175,55,0.1)' : isAbatement ? 'rgba(255,23,68,0.1)' : 'rgba(33,150,243,0.1)',
+                          color: isPdv ? '#d4af37' : isAbatement ? '#ff1744' : '#2196f3',
                           whiteSpace: 'nowrap'
                         }}>
-                          {isPdv ? 'PDV' : 'Agenda'}
+                          {isPdv ? 'PDV' : isAbatement ? 'Abate' : 'Agenda'}
                         </span>
                         {isPdv ? (
                           <span style={{ padding: '3px 8px', borderRadius: '20px', fontSize: '0.6rem', fontWeight: '800', background: 'rgba(0,230,118,0.12)', color: '#00e676', whiteSpace: 'nowrap' }}>
@@ -860,7 +932,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                         <Clock size={12} style={{ color: '#d4af37' }} />
                         <span style={{ color: '#eee', fontWeight: '600' }}>{item.detailName}</span>
-                        <span style={{ color: 'var(--accent-gold)', fontWeight: '700' }}>(R$ {(item.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})</span>
+                        <span style={{ color: isAbatement ? '#ff1744' : 'var(--accent-gold)', fontWeight: '700' }}>
+                          ({isAbatement ? '-' : ''}R$ {Math.abs(item.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                        </span>
                       </span>
                       {prof && (
                         <>
@@ -872,9 +946,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                         </>
                       )}
                     </div>
-                    <div style={{ marginTop: '8px', display: 'flex' }}>
-                      <PaymentMethodBadge method={item.paymentMethod} />
-                    </div>
+                    {!isAbatement && (
+                      <div style={{ marginTop: '8px', display: 'flex' }}>
+                        <PaymentMethodBadge method={item.paymentMethod} />
+                      </div>
+                    )}
                   </div>
                 );
               })}
