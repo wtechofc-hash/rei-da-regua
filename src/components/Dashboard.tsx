@@ -339,9 +339,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', width: '100%', maxWidth: '600px' }}>
           {/* Origin Filter */}
-          <div style={{ position: 'relative', minWidth: '150px' }}>
+          <div style={{ position: 'relative', flex: '1 1 130px', minWidth: '120px' }}>
             <select
               value={originFilter}
               onChange={e => setOriginFilter(e.target.value as any)}
@@ -360,7 +360,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
           </div>
 
           {/* Payment Method Filter */}
-          <div style={{ position: 'relative', minWidth: '180px' }}>
+          <div style={{ position: 'relative', flex: '1 1 130px', minWidth: '120px' }}>
             <select
               value={paymentFilter}
               onChange={e => setPaymentFilter(e.target.value)}
@@ -382,7 +382,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
 
           {/* Professional Filter for Shop Owner */}
           {role === 'owner' && (
-            <div style={{ position: 'relative', minWidth: '200px' }}>
+            <div style={{ position: 'relative', flex: '1 1 130px', minWidth: '120px' }}>
               <select
                 value={proFilter}
                 onChange={e => setProFilter(e.target.value)}
