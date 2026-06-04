@@ -447,7 +447,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
       <div className="charts-row">
         <div className="premium-card" style={{ padding: '1.5rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '1.5rem' }}>Faturamento Semanal</h3>
-          <div style={{ height: '220px' }}>
+          
+          {/* Desktop AreaChart */}
+          <div className="charts-desktop-view" style={{ height: '220px' }}>
             {isMounted && (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={weeklyData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
@@ -466,11 +468,34 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
               </ResponsiveContainer>
             )}
           </div>
+
+          {/* Mobile Pure HTML/CSS Bars (0% GPU rendering glitch) */}
+          <div className="charts-mobile-view">
+            {(() => {
+              const maxVal = Math.max(...weeklyData.map(d => d.value), 1);
+              return weeklyData.map((d, index) => {
+                const pct = (d.value / maxVal) * 100;
+                return (
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ width: '36px', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600' }}>{d.name}</span>
+                    <div style={{ flex: 1, height: '10px', background: '#111', borderRadius: '5px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #8e6d2d 0%, #d4af37 100%)', borderRadius: '5px' }} />
+                    </div>
+                    <span style={{ width: '60px', textAlign: 'right', fontSize: '0.75rem', fontWeight: '700', color: '#fff' }}>
+                      R$ {d.value.toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                );
+              });
+            })()}
+          </div>
         </div>
 
         <div className="premium-card" style={{ padding: '1.5rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '1rem' }}>Mix de Serviços</h3>
-          <div style={{ height: '170px' }}>
+          
+          {/* Desktop PieChart */}
+          <div className="charts-desktop-view" style={{ height: '170px' }}>
             {isMounted && (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -482,16 +507,30 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
               </ResponsiveContainer>
             )}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {pieData.map((item, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
-                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length], display: 'inline-block', flexShrink: 0 }} />
-                  {item.name}
-                </span>
-                <span style={{ fontWeight: '700', color: 'white' }}>{item.value}</span>
-              </div>
-            ))}
+
+          {/* List of Services with custom progress indicators */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '1rem' }}>
+            {(() => {
+              const totalVal = pieData.reduce((acc, curr) => acc + curr.value, 0) || 1;
+              return pieData.map((item, i) => {
+                const pct = ((item.value / totalVal) * 100).toFixed(0);
+                return (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
+                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length], display: 'inline-block', flexShrink: 0 }} />
+                        {item.name}
+                      </span>
+                      <span style={{ fontWeight: '700', color: 'white' }}>{item.value} ({pct}%)</span>
+                    </div>
+                    {/* Visual Progress Bar for mobile representation */}
+                    <div className="charts-mobile-view" style={{ height: '6px', background: '#111', borderRadius: '3px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', marginTop: '2px' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', background: PIE_COLORS[i % PIE_COLORS.length], borderRadius: '3px' }} />
+                    </div>
+                  </div>
+                );
+              });
+            })()}
           </div>
         </div>
       </div>

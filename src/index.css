@@ -148,10 +148,26 @@ select option {
   margin-bottom: 2rem;
 }
 
+.charts-desktop-view {
+  display: block;
+}
+
+.charts-mobile-view {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .charts-row {
     grid-template-columns: 1fr !important;
     gap: 1.25rem;
+  }
+  .charts-desktop-view {
+    display: none !important;
+  }
+  .charts-mobile-view {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
   }
 }
 
