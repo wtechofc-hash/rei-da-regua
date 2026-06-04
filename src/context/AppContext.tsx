@@ -308,7 +308,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (prosData) setProfiles(prosData.map((p: any) => ({
           id: p.id, name: p.name, role: (p.role?.toLowerCase() === 'owner' ? 'owner' : 'professional') as UserRole, 
           avatar: p.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`,
-          email: p.email
+          email: p.email,
+          commission: Number(p.commission_rate) || 0
         })));
 
         // Fetch Appointments

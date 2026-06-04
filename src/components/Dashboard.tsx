@@ -28,6 +28,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
   const [customEnd, setCustomEnd] = useState<string>(todayStr);
   const [proFilter, setProFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
+  const [originFilter, setOriginFilter] = useState<'all' | 'appointments' | 'pdv'>('all');
 
   const baseAppointments = role === 'professional'
     ? appointments.filter(a => a.professionalId === userId)
@@ -90,6 +91,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
     if (!inPeriod) return false;
     if (role === 'professional') return s.professionalId === userId;
     if (proFilter !== 'all') return s.professionalId === proFilter;
+    if (paymentFilter !== 'all') {
+      if (paymentFilter === 'não_informado') {
+        return !s.paymentMethod || s.paymentMethod === '';
+      }
+      return s.paymentMethod === paymentFilter;
+    }
     return true;
   });
 
@@ -99,9 +106,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
     .reduce((s, a) => s + (a.priceAtTime || 0), 0);
 
   // Product sales revenue
-  const productRevenueInPeriod = paymentFilter === 'all'
-    ? periodSales.reduce((s, sale) => s + (sale.totalAmount || 0), 0)
-    : 0;
+  const productRevenueInPeriod = periodSales.reduce((s, sale) => s + (sale.totalAmount || 0), 0);
 
   const commissionFromAppointments = periodAppointments
     .filter(a => a.status === 'confirmed' || a.status === 'completed')
@@ -112,26 +117,47 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
     }, 0);
 
   // Product sales commission
-  const commissionFromProducts = paymentFilter === 'all'
-    ? periodSales.reduce((sum, s) => sum + (s.commissionAmount || 0), 0)
-    : 0;
+  const commissionFromProducts = periodSales.reduce((sum, s) => sum + (s.commissionAmount || 0), 0);
 
   const commissionInPeriod = commissionFromAppointments + commissionFromProducts;
 
   const activeClientsInPeriod = new Set(periodAppointments.map(a => a.clientId)).size;
 
+  // Adjust calculations based on Origin Filter
+  const displayTransactionsCount = (() => {
+    if (originFilter === 'appointments') return periodAppts;
+    if (originFilter === 'pdv') return periodSales.length;
+    return periodAppts + periodSales.length;
+  })();
+
+  const displayRevenue = (() => {
+    if (originFilter === 'appointments') return revenueInPeriod;
+    if (originFilter === 'pdv') return productRevenueInPeriod;
+    return revenueInPeriod + productRevenueInPeriod;
+  })();
+
+  const displayCommission = (() => {
+    if (originFilter === 'appointments') return commissionFromAppointments;
+    if (originFilter === 'pdv') return commissionFromProducts;
+    return commissionInPeriod;
+  })();
+
   const stats = [
     { 
-      label: period === 'today' ? 'Agendamentos Hoje' : 'Agendamentos no Período', 
-      value: periodAppts, 
+      label: originFilter === 'appointments'
+        ? (period === 'today' ? 'Agendamentos Hoje' : 'Agendamentos no Período')
+        : originFilter === 'pdv'
+          ? (period === 'today' ? 'Vendas Hoje (PDV)' : 'Vendas no Período (PDV)')
+          : (period === 'today' ? 'Total Operações Hoje' : 'Total Operações no Período'), 
+      value: displayTransactionsCount, 
       sub: period === 'today' ? 'Hoje' : period === 'week' ? 'Esta semana' : period === 'month' ? 'Este mês' : 'Personalizado', 
       icon: Calendar, 
       gold: false 
     },
     { 
       label: period === 'today' ? 'Faturamento Hoje' : 'Faturamento no Período',  
-      value: `R$ ${(revenueInPeriod + productRevenueInPeriod).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
-      sub: 'Serviços + Produtos', 
+      value: `R$ ${displayRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
+      sub: originFilter === 'appointments' ? 'Apenas Serviços' : originFilter === 'pdv' ? 'Apenas Produtos' : 'Serviços + Produtos', 
       icon: DollarSign, 
       gold: true 
     },
@@ -139,14 +165,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
       label: role === 'professional' 
         ? 'Minha Comissão' 
         : (period === 'today' ? 'Comissões Hoje' : 'Comissões no Período'),
-      value: `R$ ${commissionInPeriod.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      value: `R$ ${displayCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       sub: role === 'professional' ? 'Sua comissão no período' : 'Total pago à equipe',
       icon: Percent,
       gold: false
     },
     { 
       label: 'Clientes Ativos',   
-      value: activeClientsInPeriod, 
+      value: originFilter === 'pdv' ? 0 : activeClientsInPeriod, 
       sub: 'No período selecionado', 
       icon: Users, 
       gold: false 
@@ -173,10 +199,50 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
   const pieData = Object.entries(svcCounts).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, 4);
   if (pieData.length === 0) pieData.push({ name: 'Sem dados', value: 1 });
 
-  const upcoming = [...periodAppointments]
-    .filter(a => a.status !== 'cancelled')
-    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
-    .slice(0, 15);
+  // Unified transactions for Dashboard
+  const unifiedTransactions = (() => {
+    const list: any[] = [];
+    
+    // Add appointments if originFilter is not 'pdv'
+    if (originFilter !== 'pdv') {
+      periodAppointments
+        .filter(a => a.status !== 'cancelled')
+        .forEach(a => {
+          list.push({
+            id: a.id,
+            type: 'appointment',
+            date: a.date,
+            time: a.time,
+            clientName: a.clientName,
+            detailName: services.find(s => s.id === a.serviceId)?.name || 'Serviço',
+            amount: a.priceAtTime || 0,
+            paymentMethod: a.paymentMethod,
+            professionalId: a.professionalId,
+            status: a.status
+          });
+        });
+    }
+
+    // Add sales if originFilter is not 'appointments'
+    if (originFilter !== 'appointments') {
+      periodSales.forEach(s => {
+        list.push({
+          id: s.id,
+          type: 'pdv',
+          date: s.soldAt ? s.soldAt.split('T')[0] : todayStr,
+          time: s.soldAt ? s.soldAt.split('T')[1]?.slice(0, 5) : '12:00',
+          clientName: 'Cliente Presencial',
+          detailName: s.notes || 'Venda de Produtos',
+          amount: s.totalAmount || 0,
+          paymentMethod: s.paymentMethod,
+          professionalId: s.professionalId,
+          status: 'completed'
+        });
+      });
+    }
+
+    return list.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  })();
 
   const statusBadge: Record<string, { label: string; bg: string; color: string }> = {
     pending:   { label: 'Pendente',   bg: 'rgba(255,179,0,0.12)',   color: '#ffb300' },
@@ -246,6 +312,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
         </div>
 
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Origin Filter */}
+          <div style={{ position: 'relative', minWidth: '150px' }}>
+            <select
+              value={originFilter}
+              onChange={e => setOriginFilter(e.target.value as any)}
+              style={{
+                width: '100%', padding: '0.55rem 2.2rem 0.55rem 1rem', background: 'rgba(255,255,255,0.02)',
+                border: originFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.05)',
+                borderRadius: '12px', color: originFilter !== 'all' ? 'var(--accent-gold)' : '#aaa',
+                outline: 'none', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', appearance: 'none'
+              }}
+            >
+              <option value="all" style={{ background: '#050505', color: '#fff' }}>Todos os Tipos</option>
+              <option value="appointments" style={{ background: '#050505', color: '#fff' }}>Apenas Agendamentos</option>
+              <option value="pdv" style={{ background: '#050505', color: '#fff' }}>Apenas PDV</option>
+            </select>
+            <ChevronDown size={14} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} />
+          </div>
+
           {/* Payment Method Filter */}
           <div style={{ position: 'relative', minWidth: '180px' }}>
             <select
@@ -516,20 +601,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
         </div>
       )}
 
-      {/* Upcoming Appointments */}
+      {/* Unified Transactions History */}
       <div className="premium-card" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0 }}>
-            {period === 'today' ? 'Agendamentos Hoje' : 'Agendamentos no Período'}
+            {originFilter === 'appointments'
+              ? (period === 'today' ? 'Agendamentos Hoje' : 'Agendamentos no Período')
+              : originFilter === 'pdv'
+                ? (period === 'today' ? 'Vendas Hoje (PDV)' : 'Vendas no Período (PDV)')
+                : (period === 'today' ? 'Histórico Geral Hoje' : 'Histórico Geral no Período')}
           </h3>
-          <button onClick={onViewAll} style={{ background: 'transparent', border: 'none', color: '#d4af37', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}>
-            Ver todos →
-          </button>
+          {onViewAll && originFilter !== 'pdv' && (
+            <button onClick={onViewAll} style={{ background: 'transparent', border: 'none', color: '#d4af37', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}>
+              Ver todos agendamentos →
+            </button>
+          )}
         </div>
 
-        {upcoming.length === 0 ? (
+        {unifiedTransactions.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
-            <p>Nenhum agendamento encontrado.</p>
+            <p>Nenhuma transação encontrada no período.</p>
           </div>
         ) : (
           <>
@@ -538,16 +629,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    {['Data', 'Horário', 'Cliente', 'Serviço', 'Valor', 'Pagamento', 'Profissional', 'Status'].map(h => (
+                    {['Origem', 'Data', 'Horário', 'Cliente', 'Serviço / Produtos', 'Valor', 'Pagamento', 'Profissional', 'Status'].map(h => (
                       <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {upcoming.map(appt => {
-                    const svc  = services.find(s => s.id === appt.serviceId);
-                    const prof = profiles.find(p => p.id === appt.professionalId);
-                    const badge = statusBadge[appt.status] ?? statusBadge.pending;
+                  {unifiedTransactions.slice(0, 15).map(item => {
+                    const prof = profiles.find(p => p.id === item.professionalId);
                     
                     const formatDate = (dateStr: string) => {
                       if (!dateStr) return '—';
@@ -557,23 +646,45 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                       return `${day}/${month}/${year}`;
                     };
 
+                    const isPdv = item.type === 'pdv';
+
                     return (
-                      <tr key={appt.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                        <td style={{ padding: '1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{formatDate(appt.date)}</td>
-                        <td style={{ padding: '1rem', fontWeight: '700', color: '#d4af37', whiteSpace: 'nowrap' }}>{appt.time.slice(0, 5)}</td>
-                        <td style={{ padding: '1rem', fontWeight: '600' }}>{appt.clientName}</td>
-                        <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{svc?.name ?? '—'}</td>
+                      <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        <td style={{ padding: '1rem', whiteSpace: 'nowrap' }}>
+                          <span style={{
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontSize: '0.65rem',
+                            fontWeight: '800',
+                            textTransform: 'uppercase',
+                            background: isPdv ? 'rgba(212,175,55,0.1)' : 'rgba(33,150,243,0.1)',
+                            color: isPdv ? '#d4af37' : '#2196f3',
+                            border: isPdv ? '1px solid rgba(212,175,55,0.2)' : '1px solid rgba(33,150,243,0.2)'
+                          }}>
+                            {isPdv ? 'PDV' : 'Agenda'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '1rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{formatDate(item.date)}</td>
+                        <td style={{ padding: '1rem', fontWeight: '700', color: '#d4af37', whiteSpace: 'nowrap' }}>{item.time.slice(0, 5)}</td>
+                        <td style={{ padding: '1rem', fontWeight: '600' }}>{item.clientName}</td>
+                        <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{item.detailName}</td>
                         <td style={{ padding: '1rem', fontWeight: '700', color: 'white' }}>
-                          R$ {(appt.priceAtTime || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          R$ {(item.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </td>
                         <td style={{ padding: '1rem' }}>
-                          <PaymentMethodBadge method={appt.paymentMethod} />
+                          <PaymentMethodBadge method={item.paymentMethod} />
                         </td>
                         <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{prof?.name ?? '—'}</td>
                         <td style={{ padding: '1rem' }}>
-                          <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: '700', background: badge.bg, color: badge.color }}>
-                            {badge.label}
-                          </span>
+                          {isPdv ? (
+                            <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: '700', background: 'rgba(0,230,118,0.12)', color: '#00e676' }}>
+                              Concluído
+                            </span>
+                          ) : (
+                            <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: '700', background: (statusBadge[item.status] || statusBadge.pending).bg, color: (statusBadge[item.status] || statusBadge.pending).color }}>
+                              {(statusBadge[item.status] || statusBadge.pending).label}
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -584,10 +695,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
 
             {/* Mobile List View */}
             <div id="mobile-list" style={{ display: 'none', flexDirection: 'column', gap: '0.85rem' }}>
-              {upcoming.map(appt => {
-                const svc  = services.find(s => s.id === appt.serviceId);
-                const prof = profiles.find(p => p.id === appt.professionalId);
-                const badge = statusBadge[appt.status] ?? statusBadge.pending;
+              {unifiedTransactions.slice(0, 15).map(item => {
+                const prof = profiles.find(p => p.id === item.professionalId);
+                const isPdv = item.type === 'pdv';
 
                 const formatDate = (dateStr: string) => {
                   if (!dateStr) return '—';
@@ -598,7 +708,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                 };
 
                 return (
-                  <div key={appt.id} style={{ 
+                  <div key={item.id} style={{ 
                     padding: '1.2rem', background: 'rgba(255,255,255,0.02)', 
                     borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)',
                     display: 'flex', flexDirection: 'column', gap: '10px',
@@ -612,20 +722,39 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                         padding: '4px 10px', borderRadius: '8px', 
                         border: '1px solid rgba(212,175,55,0.12)' 
                       }}>
-                        {formatDate(appt.date)} às {appt.time.slice(0, 5)}
+                        {formatDate(item.date)} às {item.time.slice(0, 5)}
                       </span>
-                      <span style={{ 
-                        padding: '4px 10px', borderRadius: '20px', fontSize: '0.65rem', 
-                        fontWeight: '800', background: badge.bg, color: badge.color, 
-                        textTransform: 'uppercase', border: `1px solid ${badge.color}22` 
-                      }}>
-                        {badge.label}
-                      </span>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <span style={{
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '0.6&em',
+                          fontWeight: '800',
+                          textTransform: 'uppercase',
+                          background: isPdv ? 'rgba(212,175,55,0.1)' : 'rgba(33,150,243,0.1)',
+                          color: isPdv ? '#d4af37' : '#2196f3',
+                        }}>
+                          {isPdv ? 'PDV' : 'Agenda'}
+                        </span>
+                        {isPdv ? (
+                          <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '0.65rem', fontWeight: '800', background: 'rgba(0,230,118,0.12)', color: '#00e676' }}>
+                            CONCLUÍDO
+                          </span>
+                        ) : (
+                          <span style={{ 
+                            padding: '4px 10px', borderRadius: '20px', fontSize: '0.65rem', 
+                            fontWeight: '800', background: (statusBadge[item.status] || statusBadge.pending).bg, color: (statusBadge[item.status] || statusBadge.pending).color, 
+                            textTransform: 'uppercase', border: `1px solid ${(statusBadge[item.status] || statusBadge.pending).color}22` 
+                          }}>
+                            {(statusBadge[item.status] || statusBadge.pending).label}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Client Name Row */}
                     <div style={{ fontSize: '1.05rem', fontWeight: '800', color: 'white', marginTop: '2px' }}>
-                      {appt.clientName}
+                      {item.clientName}
                     </div>
 
                     {/* Details Row: Service & Price + Professional */}
@@ -636,8 +765,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                     }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                         <Clock size={12} style={{ color: '#d4af37' }} />
-                        <span style={{ color: '#eee', fontWeight: '600' }}>{svc?.name ?? '—'}</span>
-                        <span style={{ color: 'var(--accent-gold)', fontWeight: '700' }}>(R$ {(appt.priceAtTime || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})</span>
+                        <span style={{ color: '#eee', fontWeight: '600' }}>{item.detailName}</span>
+                        <span style={{ color: 'var(--accent-gold)', fontWeight: '700' }}>(R$ {(item.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})</span>
                       </span>
                       {prof && (
                         <>
@@ -650,7 +779,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                       )}
                     </div>
                     <div style={{ marginTop: '8px', display: 'flex' }}>
-                      <PaymentMethodBadge method={appt.paymentMethod} />
+                      <PaymentMethodBadge method={item.paymentMethod} />
                     </div>
                   </div>
                 );

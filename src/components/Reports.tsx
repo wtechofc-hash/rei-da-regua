@@ -10,8 +10,8 @@ import {
   Filter
 } from 'lucide-react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, AreaChart, Area
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer
 } from 'recharts';
 import { useApp } from '../context/AppContext';
 
@@ -20,39 +20,106 @@ type Period = 'day' | 'week' | 'month' | 'custom';
 const Reports: React.FC = () => {
   const { role, userId, appointments = [], services = [], sales = [] } = useApp();
   const [period, setPeriod] = useState<Period>('week');
+  const [originFilter, setOriginFilter] = useState<'all' | 'appointments' | 'pdv'>('all');
 
-  // Filtrar agendamentos do usuário logado (se for pro)
+  const todayStr = (() => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  })();
+
+  const getPeriodRange = () => {
+    const now = new Date();
+    const toLocal = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+    let startStr = todayStr;
+    let endStr = todayStr;
+
+    if (period === 'day') {
+      startStr = todayStr;
+      endStr = todayStr;
+    } else if (period === 'week') {
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      const startOfWeek = new Date(now.getFullYear(), now.getMonth(), diff);
+      startStr = toLocal(startOfWeek);
+      
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endStr = toLocal(endOfWeek);
+    } else if (period === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      startStr = toLocal(startOfMonth);
+      
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      endStr = toLocal(endOfMonth);
+    }
+    return { start: startStr, end: endStr };
+  };
+
+  const { start: filterStart, end: filterEnd } = getPeriodRange();
+
+  // Filtrar agendamentos do usuário logado (se for pro) e período
   const userAppointments = appointments.filter(a => {
     const isProMatch = role === 'professional' ? a.professionalId === userId : true;
     const isCompleted = a.status === 'completed' || a.status === 'confirmed';
-    return isProMatch && isCompleted;
+    const inPeriod = a.date >= filterStart && a.date <= filterEnd;
+    return isProMatch && isCompleted && inPeriod;
   });
 
-  // Filtrar vendas por profissional
+  // Filtrar vendas por profissional e período
   const userSales = sales.filter(s => {
-    if (role === 'professional') return s.professionalId === userId;
-    return true;
+    const saleDate = s.soldAt ? s.soldAt.split('T')[0] : '';
+    const inPeriod = saleDate >= filterStart && saleDate <= filterEnd;
+    const isProMatch = role === 'professional' ? s.professionalId === userId : true;
+    return isProMatch && inPeriod;
   });
 
-  // Cálculo de Métricas
-  const totalServiceRevenue = userAppointments.reduce((s, a) => s + (a.priceAtTime || 0), 0);
-  const totalProductRevenue = userSales.reduce((s, sale) => s + (sale.totalAmount || 0), 0);
+  // Cálculo de Métricas baseado nos filtros de Origem
+  const totalServiceRevenue = originFilter === 'pdv' 
+    ? 0 
+    : userAppointments.reduce((s, a) => s + (a.priceAtTime || 0), 0);
+
+  const totalProductRevenue = originFilter === 'appointments' 
+    ? 0 
+    : userSales.reduce((s, sale) => s + (sale.totalAmount || 0), 0);
+
   const totalRevenue = totalServiceRevenue + totalProductRevenue;
 
-  const totalCommissionFromAppts = userAppointments.reduce((s, a) => {
-    const svc = services.find(sv => sv.id === a.serviceId);
-    const rate = svc?.commission ?? 0;
-    return s + (a.priceAtTime || 0) * (rate / 100);
-  }, 0);
-  const totalCommissionFromProducts = userSales.reduce((s, sale) => s + (sale.commissionAmount || 0), 0);
+  const totalCommissionFromAppts = originFilter === 'pdv'
+    ? 0
+    : userAppointments.reduce((s, a) => {
+        const svc = services.find(sv => sv.id === a.serviceId);
+        const rate = svc?.commission ?? 0;
+        return s + (a.priceAtTime || 0) * (rate / 100);
+      }, 0);
+
+  const totalCommissionFromProducts = originFilter === 'appointments'
+    ? 0
+    : userSales.reduce((s, sale) => s + (sale.commissionAmount || 0), 0);
+
   const totalCommission = totalCommissionFromAppts + totalCommissionFromProducts;
 
-  const avgTicket = userAppointments.length > 0 ? totalServiceRevenue / userAppointments.length : 0;
+  const avgTicket = originFilter === 'pdv'
+    ? (userSales.length > 0 ? totalProductRevenue / userSales.length : 0)
+    : (userAppointments.length > 0 ? totalServiceRevenue / userAppointments.length : 0);
+
+  const transactionsCount = originFilter === 'appointments'
+    ? userAppointments.length
+    : originFilter === 'pdv'
+      ? userSales.length
+      : userAppointments.length + userSales.length;
 
   const stats = [
     { label: role === 'professional' ? 'Minha Produção' : 'Faturamento Total', value: `R$ ${totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: DollarSign, trend: '+12.5%' },
     { label: role === 'professional' ? 'Minha Comissão' : 'Total Comissões', value: `R$ ${totalCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: TrendingUp, trend: '+8.2%' },
-    { label: 'Serviços Realizados', value: userAppointments.length, icon: Scissors, trend: '+5%' },
+    { label: originFilter === 'pdv' ? 'Vendas Realizadas' : 'Serviços Realizados', value: transactionsCount, icon: Scissors, trend: '+5%' },
     { label: 'Ticket Médio', value: `R$ ${avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: BarChart3, trend: '-2%' },
   ];
 
@@ -82,27 +149,48 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* Period Selector */}
-      <div className="premium-card" style={{ padding: '0.5rem', marginBottom: '2rem', display: 'inline-flex', background: 'rgba(255,255,255,0.02)', borderRadius: '14px' }}>
-        {[
-          { id: 'day', label: 'Hoje' },
-          { id: 'week', label: 'Semana' },
-          { id: 'month', label: 'Mês' },
-          { id: 'custom', label: 'Personalizado' },
-        ].map(p => (
-          <button 
-            key={p.id}
-            onClick={() => setPeriod(p.id as Period)}
+      {/* Filters Row */}
+      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '2rem' }}>
+        {/* Period Selector */}
+        <div className="premium-card" style={{ padding: '4px', display: 'inline-flex', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          {[
+            { id: 'day', label: 'Hoje' },
+            { id: 'week', label: 'Semana' },
+            { id: 'month', label: 'Mês' },
+          ].map(p => (
+            <button 
+              key={p.id}
+              onClick={() => setPeriod(p.id as Period)}
+              style={{
+                padding: '0.5rem 1rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                background: period === p.id ? 'var(--accent-gold)' : 'transparent',
+                color: period === p.id ? '#000' : '#888',
+                fontSize: '0.75rem', fontWeight: '800', transition: 'all 0.2s'
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Origin Filter Dropdown */}
+        <div style={{ position: 'relative', minWidth: '150px' }}>
+          <select
+            value={originFilter}
+            onChange={e => setOriginFilter(e.target.value as any)}
             style={{
-              padding: '0.6rem 1.25rem', borderRadius: '10px', border: 'none', cursor: 'pointer',
-              background: period === p.id ? 'var(--accent-gold)' : 'transparent',
-              color: period === p.id ? '#000' : '#888',
-              fontSize: '0.8rem', fontWeight: '800', transition: 'all 0.2s'
+              width: '100%', padding: '0.55rem 2.2rem 0.55rem 1rem', background: 'rgba(255,255,255,0.02)',
+              border: originFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.05)',
+              borderRadius: '12px', color: originFilter !== 'all' ? 'var(--accent-gold)' : '#aaa',
+              outline: 'none', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', appearance: 'none'
             }}
           >
-            {p.label}
-          </button>
-        ))}
+            <option value="all" style={{ background: '#050505', color: '#fff' }}>Todos os Tipos</option>
+            <option value="appointments" style={{ background: '#050505', color: '#fff' }}>Apenas Agendamentos</option>
+            <option value="pdv" style={{ background: '#050505', color: '#fff' }}>Apenas PDV</option>
+          </select>
+          <ChevronDown size={14} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} />
+        </div>
       </div>
 
       {/* Stats Grid */}
