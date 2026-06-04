@@ -309,27 +309,6 @@ const Appointments: React.FC = () => {
             </div>
           )}
 
-          {/* Payment filter dropdown */}
-          <div style={{ position: 'relative', minWidth: '180px' }}>
-            <select
-              value={paymentFilter}
-              onChange={e => setPaymentFilter(e.target.value)}
-              style={{
-                width: '100%', padding: '0.7rem 2.2rem 0.7rem 1rem', background: 'rgba(255,255,255,0.03)',
-                border: paymentFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '12px', color: paymentFilter !== 'all' ? 'var(--accent-gold)' : '#aaa',
-                outline: 'none', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer', appearance: 'none'
-              }}
-            >
-              <option value="all" style={{ background: '#050505', color: '#fff' }}>Todas as Formas</option>
-              <option value="dinheiro" style={{ background: '#050505', color: '#fff' }}>Dinheiro</option>
-              <option value="pix" style={{ background: '#050505', color: '#fff' }}>Pix</option>
-              <option value="cartao" style={{ background: '#050505', color: '#fff' }}>Cartão</option>
-              <option value="não_informado" style={{ background: '#050505', color: '#fff' }}>Não informado</option>
-            </select>
-            <ChevronDown size={14} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} />
-          </div>
-
           {/* Date filter dropdown */}
           <div style={{ position: 'relative' }}>
             <button
@@ -407,22 +386,46 @@ const Appointments: React.FC = () => {
           </div>
         </div>
 
-        {/* Row 2: Status filters */}
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {statusFilters.map(f => (
-            <button 
-              key={f}
-              onClick={() => setStatusFilter(f)}
+        {/* Row 2: Status filters + Payment filter side by side */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Status filter pills */}
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', flexShrink: 1, flexWrap: 'nowrap' }}>
+            {statusFilters.map(f => (
+              <button 
+                key={f}
+                onClick={() => setStatusFilter(f)}
+                style={{
+                  padding: '0.55rem 1rem', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                  background: statusFilter === f ? 'var(--accent-gold)' : 'rgba(255,255,255,0.03)',
+                  color: statusFilter === f ? '#000' : '#888',
+                  fontSize: '0.78rem', fontWeight: '700', transition: 'all 0.2s', whiteSpace: 'nowrap'
+                }}
+              >
+                {f === 'all' ? 'Todos' : statusMap[f].label}
+              </button>
+            ))}
+          </div>
+
+          {/* Payment filter — side by side with status on mobile */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <select
+              value={paymentFilter}
+              onChange={e => setPaymentFilter(e.target.value)}
               style={{
-                padding: '0.55rem 1rem', borderRadius: '10px', border: 'none', cursor: 'pointer',
-                background: statusFilter === f ? 'var(--accent-gold)' : 'rgba(255,255,255,0.03)',
-                color: statusFilter === f ? '#000' : '#888',
-                fontSize: '0.78rem', fontWeight: '700', transition: 'all 0.2s', whiteSpace: 'nowrap'
+                padding: '0.55rem 2rem 0.55rem 0.85rem', background: 'rgba(255,255,255,0.03)',
+                border: paymentFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '10px', color: paymentFilter !== 'all' ? 'var(--accent-gold)' : '#888',
+                outline: 'none', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', appearance: 'none', whiteSpace: 'nowrap'
               }}
             >
-              {f === 'all' ? 'Todos' : statusMap[f].label}
-            </button>
-          ))}
+              <option value="all" style={{ background: '#050505', color: '#fff' }}>Todas as Formas</option>
+              <option value="dinheiro" style={{ background: '#050505', color: '#fff' }}>Dinheiro</option>
+              <option value="pix" style={{ background: '#050505', color: '#fff' }}>Pix</option>
+              <option value="cartao" style={{ background: '#050505', color: '#fff' }}>Cartão</option>
+              <option value="não_informado" style={{ background: '#050505', color: '#fff' }}>Não informado</option>
+            </select>
+            <ChevronDown size={12} style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }} />
+          </div>
         </div>
       </div>
       )}
@@ -463,7 +466,7 @@ const Appointments: React.FC = () => {
             const resolvedEnd = resolveApptEndTime(appt, services);
 
             return (
-              <div key={appt.id} className="premium-card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem', flexWrap: 'wrap', opacity: appt.status === 'cancelled' ? 0.65 : 1, transition: 'opacity 0.2s' }}>
+              <div key={appt.id} className="premium-card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', opacity: appt.status === 'cancelled' ? 0.65 : 1, transition: 'opacity 0.2s', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flex: 1, minWidth: '260px' }}>
                   {/* Time + Date block */}
                   <div style={{ textAlign: 'center', minWidth: '80px', padding: '10px 12px', background: isToday ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.03)', borderRadius: '16px', border: isToday ? '1px solid rgba(212,175,55,0.25)' : '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
@@ -496,11 +499,11 @@ const Appointments: React.FC = () => {
                 </div>
 
                 {/* Status + Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '100%' }}>
                   <div style={{ 
-                    padding: '5px 12px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '800', 
+                    padding: '4px 10px', borderRadius: '20px', fontSize: '0.68rem', fontWeight: '800', 
                     textTransform: 'uppercase', background: status.bg, color: status.color, border: `1px solid ${status.color}33`,
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '110px'
                   }}>
                     {status.label}
                   </div>
