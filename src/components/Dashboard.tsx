@@ -210,6 +210,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
       icon: Percent,
       gold: false
     },
+    {
+      label: role === 'professional' ? 'Meus Abates' : 'Total de Abates',
+      value: `R$ ${displayAbates.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      sub: 'No período selecionado',
+      icon: Percent,
+      gold: false,
+      isRed: true
+    },
     { 
       label: 'Clientes Ativos',   
       value: originFilter === 'pdv' ? 0 : activeClientsInPeriod, 
@@ -481,12 +489,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
             <div key={i} className="premium-card" style={{ padding: '1.25rem 1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{s.label}</p>
-                <div style={{ background: 'rgba(212,175,55,0.08)', padding: '6px', borderRadius: '8px', color: '#d4af37' }}>
+                <div style={{ background: s.isRed ? 'rgba(255,23,68,0.08)' : 'rgba(212,175,55,0.08)', padding: '6px', borderRadius: '8px', color: s.isRed ? '#ff1744' : '#d4af37' }}>
                   <Icon size={15} />
                 </div>
               </div>
-              <h2 style={{ fontSize: '1.6rem', fontWeight: '900', margin: '0 0 4px', color: s.gold ? '#d4af37' : 'white' }}>{s.value}</h2>
-              <p style={{ fontSize: '0.72rem', color: '#00c853', margin: 0 }}>{s.sub}</p>
+              <h2 style={{ fontSize: '1.6rem', fontWeight: '900', margin: '0 0 4px', color: s.isRed ? '#ff1744' : (s.gold ? '#d4af37' : 'white') }}>{s.value}</h2>
+              <p style={{ fontSize: '0.72rem', color: s.isRed ? '#ff1744' : '#00c853', margin: 0 }}>{s.sub}</p>
             </div>
           );
         })}

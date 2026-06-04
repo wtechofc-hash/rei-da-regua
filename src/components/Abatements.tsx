@@ -23,6 +23,7 @@ import { useApp, Abatement, AbatementParticipant, Profile } from '../context/App
 export default function Abatements() {
   const { 
     role, 
+    userId,
     profiles = [], 
     shopData, 
     abatements = [], 
@@ -184,6 +185,13 @@ export default function Abatements() {
   // Filter logic
   const filteredAbatements = useMemo(() => {
     return abatements.filter(abt => {
+      // If professional, only show their own abatements
+      if (role === 'professional') {
+        const matchingParticipants = abatementParticipants.filter(p => p.abatementId === abt.id);
+        const isUserParticipant = matchingParticipants.some(p => p.participantId === userId);
+        if (!isUserParticipant) return false;
+      }
+
       if (filterType !== 'all' && abt.type !== filterType) return false;
       if (filterStatus !== 'all' && abt.status !== filterStatus) return false;
       if (filterDistribution !== 'all' && abt.distributionType !== filterDistribution) return false;
@@ -204,18 +212,36 @@ export default function Abatements() {
 
       return true;
     });
-  }, [abatements, abatementParticipants, filterType, filterStatus, filterDistribution, filterParticipant, dateStart, dateEnd]);
+  }, [abatements, abatementParticipants, role, userId, filterType, filterStatus, filterDistribution, filterParticipant, dateStart, dateEnd]);
 
   // Statistics calculation for the cards
   const stats = useMemo(() => {
     const activeAbts = filteredAbatements.filter(a => a.status !== 'cancelado');
+
+    if (role === 'professional') {
+      const getSumForType = (typeFilter?: string, statusFilter?: string) => {
+        return activeAbts.reduce((sum, a) => {
+          if (typeFilter && a.type !== typeFilter) return sum;
+          if (statusFilter && a.status !== statusFilter) return sum;
+          const p = abatementParticipants.find(p => p.abatementId === a.id && p.participantId === userId);
+          return sum + (p?.amount || 0);
+        }, 0);
+      };
+      return {
+        total: getSumForType(),
+        adiantamentos: getSumForType('adiantamento'),
+        materialDividido: getSumForType('material_loja'),
+        pendentes: getSumForType(undefined, 'pendente')
+      };
+    }
+
     const total = activeAbts.reduce((sum, a) => sum + a.totalAmount, 0);
     const adiantamentos = activeAbts.filter(a => a.type === 'adiantamento').reduce((sum, a) => sum + a.totalAmount, 0);
     const materialDividido = activeAbts.filter(a => a.type === 'material_loja').reduce((sum, a) => sum + a.totalAmount, 0);
     const pendentes = activeAbts.filter(a => a.status === 'pendente').reduce((sum, a) => sum + a.totalAmount, 0);
 
     return { total, adiantamentos, materialDividido, pendentes };
-  }, [filteredAbatements]);
+  }, [filteredAbatements, role, userId, abatementParticipants]);
 
   // Helpers
   const getTypeLabel = (type: string) => {
@@ -458,7 +484,18 @@ export default function Abatements() {
                     <td style={{ padding: '1rem 1.5rem', color: '#bbb', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={abt.description}>
                       {abt.description}
                     </td>
-                    <td style={{ padding: '1rem 1.5rem', fontWeight: '900', color: 'white' }}>R$ {abt.totalAmount.toFixed(2)}</td>
+                     <td style={{ padding: '1rem 1.5rem', fontWeight: '900', color: 'white' }}>
+                      {role === 'professional' ? (
+                        <>
+                          R$ {(abatementParticipants.find(p => p.abatementId === abt.id && p.participantId === userId)?.amount || 0).toFixed(2)}
+                          <span style={{ display: 'block', fontSize: '0.7rem', color: '#888', fontWeight: 'normal', marginTop: '2px' }}>
+                            (Total: R$ {abt.totalAmount.toFixed(2)})
+                          </span>
+                        </>
+                      ) : (
+                        `R$ ${abt.totalAmount.toFixed(2)}`
+                      )}
+                    </td>
                     <td style={{ padding: '1rem 1.5rem', color: '#aaa' }}>{getDistributionLabel(abt.distributionType)}</td>
                     <td style={{ padding: '1rem 1.5rem', color: '#999' }}>{getAbatementParticipantsString(abt.id)}</td>
                     <td style={{ padding: '1rem 1.5rem' }}>

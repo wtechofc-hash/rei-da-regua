@@ -213,7 +213,7 @@ const AppContent: React.FC = () => {
                 const allMenuItems = [
                   { id: 'vitrine',       label: 'Vitrine',        icon: Store,           roles: ['owner', 'professional'] },
                   { id: 'pdv',           label: 'Ponto de Venda', icon: ShoppingCart,    roles: ['owner'] },
-                  { id: 'abates',        label: 'Abates',         icon: Percent,         roles: ['owner'] },
+                  { id: 'abates',        label: 'Abates',         icon: Percent,         roles: ['owner', 'professional'] },
                   { id: 'servicos',      label: 'Serviços',      icon: Scissors,        roles: ['owner'] },
                   { id: 'vipplans',      label: 'Planos VIP',    icon: Crown,           roles: ['owner'] },
                   { id: 'produtos',      label: 'Produtos',      icon: Package,         roles: ['owner'] },
