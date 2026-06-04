@@ -353,7 +353,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
               value={originFilter}
               onChange={e => setOriginFilter(e.target.value as any)}
               style={{
-                width: '100%', padding: '0.55rem 2.2rem 0.55rem 1rem', background: 'rgba(255,255,255,0.02)',
+                width: '100%', padding: '0.55rem 2.2rem 0.55rem 1rem', background: '#111',
                 border: originFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.05)',
                 borderRadius: '12px', color: originFilter !== 'all' ? 'var(--accent-gold)' : '#aaa',
                 outline: 'none', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', appearance: 'none'
@@ -372,7 +372,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
               value={paymentFilter}
               onChange={e => setPaymentFilter(e.target.value)}
               style={{
-                width: '100%', padding: '0.55rem 2.2rem 0.55rem 1rem', background: 'rgba(255,255,255,0.02)',
+                width: '100%', padding: '0.55rem 2.2rem 0.55rem 1rem', background: '#111',
                 border: paymentFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.05)',
                 borderRadius: '12px', color: paymentFilter !== 'all' ? 'var(--accent-gold)' : '#aaa',
                 outline: 'none', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', appearance: 'none'
@@ -394,7 +394,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewAll }) => {
                 value={proFilter}
                 onChange={e => setProFilter(e.target.value)}
                 style={{
-                  width: '100%', padding: '0.55rem 2.2rem 0.55rem 1rem', background: 'rgba(255,255,255,0.02)',
+                  width: '100%', padding: '0.55rem 2.2rem 0.55rem 1rem', background: '#111',
                   border: proFilter !== 'all' ? '1px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.05)',
                   borderRadius: '12px', color: proFilter !== 'all' ? 'var(--accent-gold)' : '#aaa',
                   outline: 'none', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', appearance: 'none'
