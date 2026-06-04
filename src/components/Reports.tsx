@@ -100,17 +100,20 @@ const Reports: React.FC = () => {
     return appointments.filter(a => {
       const isCompleted = a.status === 'completed' || a.status === 'confirmed';
       const inPeriod = a.date >= filterStart && a.date <= filterEnd;
+      if (role === 'professional') return isCompleted && inPeriod && a.professionalId === userId;
       return isCompleted && inPeriod;
     });
-  }, [appointments, filterStart, filterEnd]);
+  }, [appointments, filterStart, filterEnd, role, userId]);
 
   // Filtered Sales
   const userSales = useMemo(() => {
     return sales.filter(s => {
       const saleDate = s.soldAt ? s.soldAt.split('T')[0] : '';
-      return saleDate >= filterStart && saleDate <= filterEnd;
+      const inPeriod = saleDate >= filterStart && saleDate <= filterEnd;
+      if (role === 'professional') return inPeriod && s.professionalId === userId;
+      return inPeriod;
     });
-  }, [sales, filterStart, filterEnd]);
+  }, [sales, filterStart, filterEnd, role, userId]);
 
   // Filtered Abatements / Participants
   const activeParticipants = useMemo(() => {
@@ -154,16 +157,19 @@ const Reports: React.FC = () => {
   const totalAbatesGlobal = useMemo(() => {
     // Only professionals abatements represent team cost reductions
     return activeParticipants
-      .filter(p => p.participantType === 'professional')
+      .filter(p => {
+        if (role === 'professional') return p.participantId === userId;
+        return p.participantType === 'professional';
+      })
       .reduce((sum, p) => sum + p.amount, 0);
-  }, [activeParticipants]);
+  }, [activeParticipants, role, userId]);
 
   const netTeamPayout = totalCommission - totalAbatesGlobal;
 
   const stats = [
     { label: role === 'professional' ? 'Minha Produção' : 'Faturamento Total', value: `R$ ${totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: DollarSign },
     { label: role === 'professional' ? 'Minha Comissão Bruta' : 'Comissões Brutas', value: `R$ ${totalCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: TrendingUp },
-    { label: role === 'professional' ? 'Meus Abates Pendentes' : 'Total de Abates', value: `R$ ${totalAbatesGlobal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: Percent },
+    { label: role === 'professional' ? 'Meus Abates' : 'Total de Abates', value: `R$ ${totalAbatesGlobal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: Percent },
     { label: role === 'professional' ? 'Comissão Líquida' : 'Líquido a Pagar', value: `R$ ${netTeamPayout.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: TrendingUp },
   ];
 
