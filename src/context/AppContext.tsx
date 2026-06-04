@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { deleteOldImage } from '../utils/imageUtils';
 
 // Types
 export type UserRole = 'owner' | 'professional' | 'customer' | 'superadmin';
@@ -601,6 +602,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (data) setProducts(prev => [...prev, { ...p, id: data[0].id }]);
   };
   const updateProduct = async (id: string, p: Partial<Product>) => {
+    const oldProd = products.find(i => i.id === id);
+    if (p.image !== undefined && oldProd && oldProd.image && oldProd.image !== p.image) {
+      await deleteOldImage(oldProd.image);
+    }
     const updatePayload: any = {};
     if (p.name !== undefined) updatePayload.name = p.name;
     if (p.price !== undefined) updatePayload.price = p.price;
@@ -608,12 +613,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (p.barcode !== undefined) updatePayload.barcode = p.barcode;
     if (p.itemCode !== undefined) updatePayload.item_code = p.itemCode;
     if (p.commission !== undefined) updatePayload.commission_rate = p.commission;
+    if (p.image !== undefined) updatePayload.image_url = p.image;
     updatePayload.promotion_price = p.promotionPrice !== undefined ? (p.promotionPrice ?? null) : undefined;
     if (updatePayload.promotion_price === undefined) delete updatePayload.promotion_price;
     await supabase.from('products').update(updatePayload).eq('id', id);
     setProducts(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
   };
   const deleteProduct = async (id: string) => {
+    const prod = products.find(p => p.id === id);
+    if (prod?.image) {
+      await deleteOldImage(prod.image);
+    }
     await supabase.from('products').delete().eq('id', id);
     setProducts(prev => prev.filter(p => p.id !== id));
   };
@@ -702,12 +712,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProfiles(prev => [...prev, p]);
   };
   const updateProfile = async (id: string, p: Partial<Profile>) => {
-    const payload: any = { name: p.name, role: p.role, photo_url: p.avatar };
+    const oldProf = profiles.find(i => i.id === id);
+    if (p.avatar !== undefined && oldProf && oldProf.avatar && oldProf.avatar !== p.avatar) {
+      await deleteOldImage(oldProf.avatar);
+    }
+    const payload: any = {};
+    if (p.name !== undefined) payload.name = p.name;
+    if (p.role !== undefined) payload.role = p.role;
+    if (p.avatar !== undefined) payload.photo_url = p.avatar;
     if (p.email !== undefined) payload.email = p.email;
     await supabase.from('professionals').update(payload).eq('id', id);
     setProfiles(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
   };
   const deleteProfile = async (id: string) => {
+    const prof = profiles.find(p => p.id === id);
+    if (prof?.avatar) {
+      await deleteOldImage(prof.avatar);
+    }
     const { data, error } = await supabase.from('professionals').delete().eq('id', id).select();
     if (error || !data || data.length === 0) {
       alert("Não foi possível excluir o profissional. O registro já pode ter sido excluído ou há vínculos pendentes.");

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
-import { Banknote, Upload, CheckCircle, ShieldAlert, Power, Clock, Copy, Plus, FileText, X, CreditCard, ArrowUp, ArrowDown, LayoutTemplate, Settings as SettingsIcon, Scissors, Crown, Package, Sparkles, ShoppingBag, Star, Calendar, Heart, Flame, Edit2, Trash2, PlusCircle } from 'lucide-react';
+import { Banknote, Upload, CheckCircle, ShieldAlert, Power, Clock, Copy, Plus, FileText, X, CreditCard, ArrowUp, ArrowDown, LayoutTemplate, Settings as SettingsIcon, Scissors, Crown, Package, Sparkles, ShoppingBag, Star, Calendar, Heart, Flame, Edit2, Trash2, PlusCircle, Camera } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { convertToWebP, uploadImage } from '../utils/imageUtils';
 
 const Settings: React.FC = () => {
-  const { logout, shopData: contextShopData, services, products, config, updateConfig } = useApp();
+  const { logout, shopData: contextShopData, services, products, config, updateConfig, userId, profiles, updateProfile } = useApp();
   const [shopData, setShopData] = useState<any>(contextShopData);
   const [globalConfig, setGlobalConfig] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -13,6 +14,56 @@ const Settings: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [qrError, setQrError] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // Owner profile states
+  const currentProfile = profiles.find(p => p.id === userId) || profiles.find(p => p.role === 'owner');
+  const [profileName, setProfileName] = useState(currentProfile?.name || '');
+  const [profileEmail, setProfileEmail] = useState(currentProfile?.email || '');
+  const [avatarPreview, setAvatarPreview] = useState(currentProfile?.avatar || '');
+  const [profileFile, setProfileFile] = useState<File | null>(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const profileFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (currentProfile) {
+      setProfileName(currentProfile.name || '');
+      setProfileEmail(currentProfile.email || '');
+      setAvatarPreview(currentProfile.avatar || '');
+    }
+  }, [currentProfile]);
+
+  const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProfileFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId || !updateProfile) return;
+    setIsSavingProfile(true);
+    try {
+      let avatarUrl = avatarPreview;
+      if (profileFile) {
+        const webpBlob = await convertToWebP(profileFile);
+        avatarUrl = await uploadImage('avatars', webpBlob, shopData?.id || 'common', `profile-${userId}`);
+      }
+      
+      await updateProfile(userId, {
+        name: profileName,
+        email: profileEmail,
+        avatar: avatarUrl
+      });
+      
+      alert('Perfil atualizado com sucesso!');
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao atualizar perfil: ' + (err.message || err));
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'assinatura' | 'layout'>('assinatura');
 
@@ -481,12 +532,83 @@ const Settings: React.FC = () => {
         </form>
       </div>
 
-      <div className="premium-card" style={{ padding: '2rem' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem' }}>Perfil</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>Ajustes de conta e saída do sistema.</p>
-        <button onClick={logout} style={{ marginTop: '2rem', width: '100%', padding: '1rem', background: '#ff4444', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '900', cursor: 'pointer' }}>
-          Sair da Conta
-        </button>
+      <div className="premium-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0, color: 'white' }}>Perfil do Lojista</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Gerencie seus dados e foto de exibição.</p>
+        
+        <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Profile photo section */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ position: 'relative', width: '70px', height: '70px' }}>
+              <img
+                src={avatarPreview || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profileName || 'owner'}`}
+                alt="Avatar"
+                style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-gold)' }}
+              />
+              <button
+                type="button"
+                onClick={() => profileFileInputRef.current?.click()}
+                style={{
+                  position: 'absolute', bottom: 0, right: 0, background: 'var(--accent-gold)',
+                  border: 'none', borderRadius: '50%', width: '24px', height: '24px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  color: 'black'
+                }}
+              >
+                <Camera size={12} />
+              </button>
+              <input
+                type="file"
+                ref={profileFileInputRef}
+                style={{ display: 'none' }}
+                accept="image/*"
+                onChange={handleProfilePhotoChange}
+              />
+            </div>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginBottom: '2px' }}>Foto de Perfil</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Formatos aceitos: JPG, PNG. Convertido automaticamente para WebP.</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.8rem', color: '#ccc', fontWeight: '600' }}>Nome</label>
+              <input
+                required
+                type="text"
+                value={profileName}
+                onChange={e => setProfileName(e.target.value)}
+                style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '0.85rem', borderRadius: '12px', color: 'white', fontSize: '0.9rem' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.8rem', color: '#ccc', fontWeight: '600' }}>E-mail</label>
+              <input
+                required
+                type="email"
+                value={profileEmail}
+                onChange={e => setProfileEmail(e.target.value)}
+                style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '0.85rem', borderRadius: '12px', color: 'white', fontSize: '0.9rem' }}
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSavingProfile}
+            className="gold-button"
+            style={{ width: '100%', padding: '0.85rem', borderRadius: '12px', fontWeight: '800' }}
+          >
+            {isSavingProfile ? 'Salvando...' : 'Salvar Alterações do Perfil'}
+          </button>
+        </form>
+
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
+          <button onClick={logout} style={{ width: '100%', padding: '1rem', background: '#ff4444', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '900', cursor: 'pointer' }}>
+            Sair da Conta
+          </button>
+        </div>
       </div>
       </>
       ) : (

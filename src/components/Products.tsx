@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Plus, Package, Trash2, Minus, Barcode, Hash, Edit2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Plus, Package, Trash2, Minus, Barcode, Hash, Edit2, Camera, X } from 'lucide-react';
 import { useApp, Product } from '../context/AppContext';
+import { convertToWebP, uploadImage } from '../utils/imageUtils';
 
 const Products: React.FC = () => {
-  const { products = [], addProduct, updateProduct, deleteProduct } = useApp();
+  const { products = [], addProduct, updateProduct, deleteProduct, shopId } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -11,28 +12,63 @@ const Products: React.FC = () => {
     barcode: '', itemCode: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const data = {
-      name: formData.name, 
-      description: formData.description,
-      price: Number(formData.price), 
-      promotionPrice: formData.promotionPrice ? Number(formData.promotionPrice) : undefined,
-      commission: Number(formData.commission), 
-      stock: Number(formData.stock),
-      barcode: formData.barcode || undefined, 
-      itemCode: formData.itemCode || undefined
-    };
+  // Image states
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-    if (editingId) {
-      updateProduct(editingId, data);
-    } else {
-      addProduct(data);
-    }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
 
+  const handleCancel = () => {
     setFormData({ name: '', description: '', price: '', promotionPrice: '', commission: '10', stock: '0', barcode: '', itemCode: '' });
+    setImagePreview('');
+    setSelectedFile(null);
     setEditingId(null);
     setIsAdding(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      let imageUrl = imagePreview;
+
+      if (selectedFile) {
+        const webpBlob = await convertToWebP(selectedFile);
+        imageUrl = await uploadImage('products', webpBlob, shopId || 'common', 'product');
+      }
+
+      const data = {
+        name: formData.name, 
+        description: formData.description,
+        price: Number(formData.price), 
+        promotionPrice: formData.promotionPrice ? Number(formData.promotionPrice) : undefined,
+        commission: Number(formData.commission), 
+        stock: Number(formData.stock),
+        barcode: formData.barcode || undefined, 
+        itemCode: formData.itemCode || undefined,
+        image: imageUrl
+      };
+
+      if (editingId) {
+        await updateProduct(editingId, data);
+      } else {
+        await addProduct(data);
+      }
+
+      handleCancel();
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao salvar produto: ' + (err.message || err));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleEditClick = (product: Product) => {
@@ -47,13 +83,9 @@ const Products: React.FC = () => {
       barcode: product.barcode || '',
       itemCode: product.itemCode || ''
     });
+    setImagePreview(product.image || '');
+    setSelectedFile(null);
     setIsAdding(true);
-  };
-
-  const handleCancel = () => {
-    setFormData({ name: '', description: '', price: '', promotionPrice: '', commission: '10', stock: '0', barcode: '', itemCode: '' });
-    setEditingId(null);
-    setIsAdding(false);
   };
 
   const inputStyle: React.CSSProperties = {
@@ -79,6 +111,45 @@ const Products: React.FC = () => {
             {editingId ? 'Editar Produto' : 'Cadastrar Novo Produto'}
           </h3>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+            
+            {/* Upload de Foto do Produto */}
+            <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ position: 'relative', width: '80px', height: '80px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Product Preview"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Package size={30} style={{ color: 'var(--accent-gold)', opacity: 0.3 }} />
+                )}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    position: 'absolute', bottom: '4px', right: '4px', background: 'var(--accent-gold)',
+                    border: 'none', borderRadius: '50%', width: '24px', height: '24px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                    color: 'black', boxShadow: '0 2px 5px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  <Camera size={12} />
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+              </div>
+              <div>
+                <span style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginBottom: '2px' }}>Foto do Produto</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Anexe uma foto para exibir na vitrine. Convertida automaticamente para WebP.</span>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Nome do Produto</label>
               <input required type="text" placeholder="Ex: Pomada Modeladora 150g" style={inputStyle}
@@ -127,8 +198,8 @@ const Products: React.FC = () => {
                 value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem' }}>
-              <button type="submit" className="gold-button" style={{ flex: 1 }}>
-                {editingId ? 'Salvar Alterações' : 'Salvar Produto'}
+              <button type="submit" disabled={isSaving} className="gold-button" style={{ flex: 1 }}>
+                {isSaving ? 'Salvando...' : editingId ? 'Salvar Alterações' : 'Salvar Produto'}
               </button>
               <button type="button" onClick={handleCancel} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
             </div>
@@ -140,8 +211,16 @@ const Products: React.FC = () => {
         {products.map(product => (
           <div key={product.id} className="premium-card" style={{ padding: '1.25rem' }}>
             {/* Product image area */}
-            <div style={{ height: '130px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', position: 'relative', border: '1px solid rgba(255,255,255,0.04)' }}>
-              <Package size={42} style={{ color: 'var(--accent-gold)', opacity: 0.25 }} />
+            <div style={{ height: '130px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', position: 'relative', border: '1px solid rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+              {product.image ? (
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <Package size={42} style={{ color: 'var(--accent-gold)', opacity: 0.25 }} />
+              )}
               {product.stock < 5 && (
                 <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,23,68,0.12)', color: '#ff5252', padding: '3px 10px', borderRadius: '20px', fontSize: '0.65rem', fontWeight: '800', border: '1px solid rgba(255,23,68,0.2)' }}>
                   ⚠ ESTOQUE BAIXO
@@ -232,4 +311,3 @@ const Products: React.FC = () => {
 };
 
 export default Products;
-
