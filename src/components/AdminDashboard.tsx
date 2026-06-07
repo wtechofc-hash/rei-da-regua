@@ -20,7 +20,8 @@ import {
   Phone,
   MessageSquare,
   Eye,
-  EyeOff
+  EyeOff,
+  Eraser
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useApp } from '../context/AppContext';
@@ -51,6 +52,20 @@ const AdminDashboard: React.FC = () => {
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const [newClient, setNewClient] = useState({ name: '', phone: '', email: '', password: '', shop_id: '' });
   const [editClient, setEditClient] = useState({ name: '', phone: '', email: '', password: '', shop_id: '' });
+
+  const [isClearingData, setIsClearingData] = useState(false);
+  const [clearingShop, setClearingShop] = useState<any | null>(null);
+  const [clearOptions, setClearOptions] = useState({
+    clients: false,
+    appointments: false,
+    sales: false,
+    services: false,
+    professionals: false,
+    products: false,
+    abatements: false,
+  });
+  const [isProcessingClear, setIsProcessingClear] = useState(false);
+  const [confirmShopName, setConfirmShopName] = useState('');
 
   useEffect(() => {
     loadData();
@@ -287,6 +302,125 @@ const AdminDashboard: React.FC = () => {
     loadData();
   };
 
+  const handleClearShopData = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clearingShop) return;
+
+    if (confirmShopName.trim().toLowerCase() !== clearingShop.name.trim().toLowerCase()) {
+      alert("O nome da barbearia digitado não confere. Por favor, digite exatamente o nome da barbearia para confirmar.");
+      return;
+    }
+
+    const selectedKeys = Object.entries(clearOptions)
+      .filter(([_, value]) => value)
+      .map(([key]) => key);
+
+    if (selectedKeys.length === 0) {
+      alert("Selecione pelo menos uma opção para limpar.");
+      return;
+    }
+
+    const friendlyOptions = selectedKeys.map(k => {
+      if (k === 'clients') return 'Clientes';
+      if (k === 'appointments') return 'Histórico de Agendamentos';
+      if (k === 'sales') return 'Faturamento / Vendas';
+      if (k === 'services') return 'Serviços';
+      if (k === 'professionals') return 'Profissionais';
+      if (k === 'products') return 'Produtos';
+      if (k === 'abatements') return 'Abatimentos / Adiantamentos';
+      return k;
+    });
+
+    if (!window.confirm(`ATENÇÃO: Você selecionou limpar os seguintes dados: (${friendlyOptions.join(', ')}) para a barbearia "${clearingShop.name}". Esta ação excluirá os dados permanentemente de forma irreversível. Deseja realmente continuar?`)) {
+      return;
+    }
+
+    setIsProcessingClear(true);
+
+    try {
+      // 1. Abatimentos
+      if (clearOptions.abatements) {
+        const { data: abts } = await supabase.from('abatements').select('id').eq('store_id', clearingShop.id);
+        if (abts && abts.length > 0) {
+          const abtIds = abts.map(a => a.id);
+          await supabase.from('abatement_participants').delete().in('abatement_id', abtIds);
+        }
+        await supabase.from('abatements').delete().eq('store_id', clearingShop.id);
+      }
+
+      // 2. Faturamento / Vendas
+      if (clearOptions.sales) {
+        const { data: salesList } = await supabase.from('sales').select('id').eq('shop_id', clearingShop.id);
+        if (salesList && salesList.length > 0) {
+          const saleIds = salesList.map(s => s.id);
+          await supabase.from('sale_items').delete().in('sale_id', saleIds);
+        }
+        await supabase.from('sales').delete().eq('shop_id', clearingShop.id);
+      }
+
+      // 3. Histórico / Agendamentos
+      if (clearOptions.appointments) {
+        const { data: subs } = await supabase.from('subscriptions').select('id').eq('shop_id', clearingShop.id);
+        if (subs && subs.length > 0) {
+          const subIds = subs.map(s => s.id);
+          await supabase.from('subscription_usage').delete().in('subscription_id', subIds);
+        }
+        await supabase.from('subscriptions').delete().eq('shop_id', clearingShop.id);
+        await supabase.from('appointments').delete().eq('shop_id', clearingShop.id);
+      }
+
+      // 4. Clientes
+      if (clearOptions.clients) {
+        // Since clients are referenced by appointments and subscriptions, we must clean their references
+        const { data: subs } = await supabase.from('subscriptions').select('id').eq('shop_id', clearingShop.id);
+        if (subs && subs.length > 0) {
+          const subIds = subs.map(s => s.id);
+          await supabase.from('subscription_usage').delete().in('subscription_id', subIds);
+        }
+        await supabase.from('subscriptions').delete().eq('shop_id', clearingShop.id);
+        await supabase.from('appointments').delete().eq('shop_id', clearingShop.id);
+        
+        await supabase.from('clients').delete().eq('shop_id', clearingShop.id);
+      }
+
+      // 5. Serviços
+      if (clearOptions.services) {
+        await supabase.from('services').delete().eq('shop_id', clearingShop.id);
+      }
+
+      // 6. Profissionais
+      if (clearOptions.professionals) {
+        // If owner is deleted, it might break login logic, so delete professional profiles but keep owner profile
+        await supabase.from('professionals').delete().eq('shop_id', clearingShop.id).neq('role', 'owner');
+      }
+
+      // 7. Produtos
+      if (clearOptions.products) {
+        await supabase.from('products').delete().eq('shop_id', clearingShop.id);
+      }
+
+      alert("Dados limpos com sucesso!");
+      setIsClearingData(false);
+      setClearingShop(null);
+      setConfirmShopName('');
+      setClearOptions({
+        clients: false,
+        appointments: false,
+        sales: false,
+        services: false,
+        professionals: false,
+        products: false,
+        abatements: false,
+      });
+      loadData();
+    } catch (err: any) {
+      console.error(err);
+      alert("Erro ao limpar dados: " + (err.message || err));
+    } finally {
+      setIsProcessingClear(false);
+    }
+  };
+
   const handleAddClient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newClient.shop_id) {
@@ -513,6 +647,17 @@ const AdminDashboard: React.FC = () => {
                       <button style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#00cc44', border: '1px solid #00cc44', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Phone size={16} /></button>
                       <button style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#3399ff', border: '1px solid #3399ff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><MessageSquare size={16} /></button>
                       <button onClick={() => openEditModal(shop)} style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#888', border: '1px solid #555', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Settings size={16} /></button>
+                      <button 
+                        title="Limpar Dados da Loja" 
+                        onClick={() => {
+                          setClearingShop(shop);
+                          setIsClearingData(true);
+                          setConfirmShopName('');
+                        }} 
+                        style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#ffaa00', border: '1px solid #ffaa00', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                      >
+                        <Eraser size={16} />
+                      </button>
                       <button onClick={() => handleDeleteShop(shop.id, shop.name, shop.login_email)} style={{ padding: '8px', borderRadius: '8px', background: 'transparent', color: '#ff4444', border: '1px solid #ff4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Trash2 size={16} /></button>
                       
                       <button onClick={() => enterShop(shop.id)} className="gold-button" style={{ padding: '8px 16px', borderRadius: '8px', fontWeight: '800', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
@@ -1011,6 +1156,133 @@ const AdminDashboard: React.FC = () => {
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button type="button" onClick={() => setIsEditingClient(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid #222', color: '#555', borderRadius: '12px', fontWeight: '700' }}>Cancelar</button>
                 <button type="submit" className="gold-button" style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: '800' }}>Salvar Alterações</button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Clear Shop Data Modal */}
+      {isClearingData && clearingShop && ReactDOM.createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '3rem 1rem 2rem', overflowY: 'auto' }}>
+          <div className="premium-card animate-fade-in" style={{ width: '100%', maxWidth: '450px', padding: '2.5rem', margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#ffaa00', marginBottom: '1.5rem' }}>
+              <Eraser size={24} />
+              <h2 style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>Limpar Dados da Loja</h2>
+            </div>
+            
+            <p style={{ color: '#aaa', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.4' }}>
+              Selecione quais dados você deseja excluir permanentemente da barbearia <strong style={{ color: 'white' }}>{clearingShop.name}</strong>.
+            </p>
+
+            <form onSubmit={handleClearShopData} style={{ display: 'grid', gap: '1.25rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.95rem' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={clearOptions.clients} 
+                    onChange={e => setClearOptions({ ...clearOptions, clients: e.target.checked })}
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }}
+                  />
+                  <span>Lista de Clientes</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.95rem' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={clearOptions.appointments} 
+                    onChange={e => setClearOptions({ ...clearOptions, appointments: e.target.checked })}
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }}
+                  />
+                  <span>Histórico de Agendamentos</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.95rem' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={clearOptions.sales} 
+                    onChange={e => setClearOptions({ ...clearOptions, sales: e.target.checked })}
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }}
+                  />
+                  <span>Faturamento / Vendas (PDV)</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.95rem' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={clearOptions.services} 
+                    onChange={e => setClearOptions({ ...clearOptions, services: e.target.checked })}
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }}
+                  />
+                  <span>Lista de Serviços</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.95rem' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={clearOptions.professionals} 
+                    onChange={e => setClearOptions({ ...clearOptions, professionals: e.target.checked })}
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }}
+                  />
+                  <span>Lista de Profissionais (exceto Dono)</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.95rem' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={clearOptions.products} 
+                    onChange={e => setClearOptions({ ...clearOptions, products: e.target.checked })}
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }}
+                  />
+                  <span>Lista de Produtos</span>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.95rem' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={clearOptions.abatements} 
+                    onChange={e => setClearOptions({ ...clearOptions, abatements: e.target.checked })}
+                    style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }}
+                  />
+                  <span>Vales / Adiantamentos (Abatimentos)</span>
+                </label>
+              </div>
+
+              <div style={{ marginTop: '0.5rem' }}>
+                <label style={{ fontSize: '0.75rem', color: '#ffaa00', display: 'block', marginBottom: '8px', fontWeight: '800' }}>
+                  CONFIRME O NOME DA BARBEARIA PARA CONTINUAR:
+                </label>
+                <input 
+                  required 
+                  type="text" 
+                  value={confirmShopName} 
+                  onChange={e => setConfirmShopName(e.target.value)}
+                  placeholder={`Digite "${clearingShop.name}"`}
+                  style={{ width: '100%', padding: '1rem', borderRadius: '12px', background: '#111', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '0.95rem' }} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsClearingData(false);
+                    setClearingShop(null);
+                    setConfirmShopName('');
+                  }} 
+                  style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid #222', color: '#888', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isProcessingClear}
+                  className="gold-button" 
+                  style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: '800', background: 'linear-gradient(135deg, #ffaa00 0%, #d4af37 100%)', color: 'black', border: 'none', cursor: 'pointer', opacity: isProcessingClear ? 0.6 : 1 }}
+                >
+                  {isProcessingClear ? 'Limpando...' : 'Limpar Dados'}
+                </button>
               </div>
             </form>
           </div>
