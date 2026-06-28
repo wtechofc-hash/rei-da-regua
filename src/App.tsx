@@ -22,22 +22,41 @@ import { Store } from 'lucide-react';
 
 export type Page = 'dashboard' | 'agendamentos' | 'servicos' | 'produtos' | 'clientes' | 'relatorios' | 'configuracoes' | 'profissionais' | 'pdv' | 'vipplans' | 'assinatura' | 'vitrine' | 'abates' | '__more__';
 
-const Sidebar      = React.lazy(() => import('./components/Sidebar'));
-const Dashboard    = React.lazy(() => import('./components/Dashboard'));
-const Appointments = React.lazy(() => import('./components/Appointments'));
-const Services     = React.lazy(() => import('./components/Services'));
-const Products     = React.lazy(() => import('./components/Products'));
-const Clients      = React.lazy(() => import('./components/Clients'));
-const Reports      = React.lazy(() => import('./components/Reports'));
-const Professionals = React.lazy(() => import('./components/Professionals'));
-const Storefront   = React.lazy(() => import('./components/Storefront'));
-const Login        = React.lazy(() => import('./components/Login'));
-const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
-const Settings     = React.lazy(() => import('./components/Settings'));
-const PDV          = React.lazy(() => import('./components/PDV'));
-const VIPPlans     = React.lazy(() => import('./components/VIPPlans'));
-const CustomerSubscription = React.lazy(() => import('./components/CustomerSubscription'));
-const Abatements   = React.lazy(() => import('./components/Abatements'));
+const lazyLoad = (importFn: () => Promise<any>) => {
+  return React.lazy(async () => {
+    try {
+      return await importFn();
+    } catch (error) {
+      if (
+        String(error).includes('Failed to fetch dynamically imported module') ||
+        String(error).includes('Importing a module script failed')
+      ) {
+        if (!sessionStorage.getItem('chunk_failed_reload')) {
+          sessionStorage.setItem('chunk_failed_reload', 'true');
+          window.location.reload();
+        }
+      }
+      throw error;
+    }
+  });
+};
+
+const Sidebar      = lazyLoad(() => import('./components/Sidebar'));
+const Dashboard    = lazyLoad(() => import('./components/Dashboard'));
+const Appointments = lazyLoad(() => import('./components/Appointments'));
+const Services     = lazyLoad(() => import('./components/Services'));
+const Products     = lazyLoad(() => import('./components/Products'));
+const Clients      = lazyLoad(() => import('./components/Clients'));
+const Reports      = lazyLoad(() => import('./components/Reports'));
+const Professionals = lazyLoad(() => import('./components/Professionals'));
+const Storefront   = lazyLoad(() => import('./components/Storefront'));
+const Login        = lazyLoad(() => import('./components/Login'));
+const AdminDashboard = lazyLoad(() => import('./components/AdminDashboard'));
+const Settings     = lazyLoad(() => import('./components/Settings'));
+const PDV          = lazyLoad(() => import('./components/PDV'));
+const VIPPlans     = lazyLoad(() => import('./components/VIPPlans'));
+const CustomerSubscription = lazyLoad(() => import('./components/CustomerSubscription'));
+const Abatements   = lazyLoad(() => import('./components/Abatements'));
 
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { error: string | null }> {
   constructor(props: any) {
