@@ -12,7 +12,10 @@ const CustomerSubscription: React.FC = () => {
       'Créditos (Tickets) mensais acumulados na sua conta',
       'Prioridade na marcação de horários concorridos',
       'Pagamento mensal recorrente simplificado'
-    ]
+    ],
+    showFooter: true,
+    footerTitle: 'Ficou interessado?',
+    footerText: 'Para contratar ou tirar dúvidas sobre as assinaturas, por favor converse com nosso profissional no seu próximo atendimento ou entre em contato diretamente conosco. Ativamos na hora para você!'
   };
 
   // Find active subscription for current customer
@@ -215,7 +218,7 @@ const CustomerSubscription: React.FC = () => {
                           {!hasActiveSub && (
                             <button
                               onClick={() => {
-                                window.dispatchEvent(new Event('navigate-to-storefront'));
+                                window.dispatchEvent(new CustomEvent('open-vip-checkout', { detail: plan.id }));
                               }}
                               className="gold-button"
                               style={{ padding: '0.6rem 1rem', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '0.75rem', width: '100%' }}
@@ -238,12 +241,14 @@ const CustomerSubscription: React.FC = () => {
           </div>
 
           {/* Call to action / support info */}
-          <div style={{ textAlign: 'center', padding: '1.5rem', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px' }}>
-            <h4 style={{ margin: '0 0 6px', fontSize: '0.9rem', fontWeight: '700' }}>Ficou interessado?</h4>
-            <p style={{ margin: 0, fontSize: '0.8rem', color: '#888', lineHeight: '1.4' }}>
-              Para contratar ou tirar dúvidas sobre as assinaturas, por favor converse com nosso profissional no seu próximo atendimento ou entre em contato diretamente conosco. Ativamos na hora para você!
-            </p>
-          </div>
+          {(vipSettings.showFooter ?? true) && (
+            <div style={{ textAlign: 'center', padding: '1.5rem', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px' }}>
+              <h4 style={{ margin: '0 0 6px', fontSize: '0.9rem', fontWeight: '700' }}>{vipSettings.footerTitle || 'Ficou interessado?'}</h4>
+              <p style={{ margin: 0, fontSize: '0.8rem', color: '#888', lineHeight: '1.4' }}>
+                {vipSettings.footerText || 'Para contratar ou tirar dúvidas sobre as assinaturas, por favor converse com nosso profissional no seu próximo atendimento ou entre em contato diretamente conosco. Ativamos na hora para você!'}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

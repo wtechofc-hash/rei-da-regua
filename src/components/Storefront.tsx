@@ -162,8 +162,29 @@ const Storefront: React.FC = () => {
       setSelectedService(null);
     };
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+    
+    const handleOpenVipCheckout = ((e: CustomEvent) => {
+      const planId = e.detail;
+      const plan = subscriptionPlans.find(p => p.id === planId);
+      if (plan) {
+        if (!userId) {
+          alert("Você precisa estar logado para assinar um plano.");
+          return;
+        }
+        setVipCheckoutPlan(plan);
+        setIsVipCheckoutActive(true);
+        window.scrollTo({ top: 0 });
+        const mainEl = document.querySelector('main');
+        if (mainEl) mainEl.scrollTop = 0;
+      }
+    }) as EventListener;
+    window.addEventListener('trigger-vip-checkout', handleOpenVipCheckout);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('trigger-vip-checkout', handleOpenVipCheckout);
+    };
+  }, [subscriptionPlans, userId]);
 
   useEffect(() => {
     if (hasOverlayOpen) {

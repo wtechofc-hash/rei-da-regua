@@ -195,6 +195,9 @@ interface AppContextType {
         title: string;
         description: string;
         benefits: string[];
+        showFooter?: boolean;
+        footerTitle?: string;
+        footerText?: string;
       };
     };
   };
@@ -242,6 +245,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         title: string;
         description: string;
         benefits: string[];
+        showFooter?: boolean;
+        footerTitle?: string;
+        footerText?: string;
       };
     };
   }>({
@@ -266,7 +272,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           'Créditos (Tickets) mensais acumulados na sua conta',
           'Prioridade na marcação de horários concorridos',
           'Pagamento mensal recorrente simplificado'
-        ]
+        ],
+        showFooter: true,
+        footerTitle: 'Ficou interessado?',
+        footerText: 'Para contratar ou tirar dúvidas sobre as assinaturas, por favor converse com nosso profissional no seu próximo atendimento ou entre em contato diretamente conosco. Ativamos na hora para você!'
       }
     }
   });
@@ -499,7 +508,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   'Créditos (Tickets) mensais acumulados na sua conta',
                   'Prioridade na marcação de horários concorridos',
                   'Pagamento mensal recorrente simplificado'
-                ]
+                ],
+                showFooter: true,
+                footerTitle: 'Ficou interessado?',
+                footerText: 'Para contratar ou tirar dúvidas sobre as assinaturas, por favor converse com nosso profissional no seu próximo atendimento ou entre em contato diretamente conosco. Ativamos na hora para você!'
               }
             }
           });

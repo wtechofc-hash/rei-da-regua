@@ -19,7 +19,10 @@ const VIPPlans: React.FC = () => {
       'Créditos (Tickets) mensais acumulados na sua conta',
       'Prioridade na marcação de horários concorridos',
       'Pagamento mensal recorrente simplificado'
-    ]
+    ],
+    showFooter: true,
+    footerTitle: 'Ficou interessado?',
+    footerText: 'Para contratar ou tirar dúvidas sobre as assinaturas, por favor converse com nosso profissional no seu próximo atendimento ou entre em contato diretamente conosco. Ativamos na hora para você!'
   };
   const [settingsForm, setSettingsForm] = useState(config?.layoutConfig?.vipSettings || defaultVipSettings);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -214,6 +217,34 @@ const VIPPlans: React.FC = () => {
                   <p style={{ fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>Nenhum tópico adicionado.</p>
                 )}
               </div>
+            </div>
+
+            <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
+              <h4 style={{ fontSize: '1rem', color: 'white', marginBottom: '1rem' }}>Rodapé (Chamada para Ação)</h4>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
+                <input 
+                  type="checkbox" 
+                  id="showFooter" 
+                  checked={settingsForm.showFooter ?? true} 
+                  onChange={e => setSettingsForm({ ...settingsForm, showFooter: e.target.checked })} 
+                  style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }} 
+                />
+                <label htmlFor="showFooter" style={{ fontSize: '0.9rem', color: 'white' }}>Mostrar rodapé "Ficou interessado?"</label>
+              </div>
+
+              {(settingsForm.showFooter ?? true) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Título do Rodapé</label>
+                    <input type="text" style={inputStyle} value={settingsForm.footerTitle || 'Ficou interessado?'} onChange={e => setSettingsForm({ ...settingsForm, footerTitle: e.target.value })} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Texto do Rodapé</label>
+                    <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} value={settingsForm.footerText || ''} onChange={e => setSettingsForm({ ...settingsForm, footerText: e.target.value })} />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>

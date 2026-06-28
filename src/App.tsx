@@ -192,11 +192,19 @@ const AppContent: React.FC = () => {
     const handleNavigateToStorefront = () => {
       setPage('vitrine');
     };
+    const handleOpenVipCheckout = ((e: CustomEvent) => {
+      setPage('vitrine');
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('trigger-vip-checkout', { detail: e.detail }));
+      }, 200); // give storefront time to mount
+    }) as EventListener;
     window.addEventListener('navigate-to-dashboard', handleNavigateToDashboard);
     window.addEventListener('navigate-to-storefront', handleNavigateToStorefront);
+    window.addEventListener('open-vip-checkout', handleOpenVipCheckout);
     return () => {
       window.removeEventListener('navigate-to-dashboard', handleNavigateToDashboard);
       window.removeEventListener('navigate-to-storefront', handleNavigateToStorefront);
+      window.removeEventListener('open-vip-checkout', handleOpenVipCheckout);
     };
   }, []);
 
