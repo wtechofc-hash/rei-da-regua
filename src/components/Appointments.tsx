@@ -802,13 +802,47 @@ const Appointments: React.FC = () => {
                 </>
               )}
 
-              <button
-                type="submit"
-                className="gold-button"
-                style={{ width: '100%', padding: '0.85rem', marginTop: '1rem', fontWeight: '800' }}
-              >
-                Agendar Horário
-              </button>
+              {role === 'customer' ? (
+                <button
+                  type="button"
+                  disabled={!newApptData.serviceId || !newApptData.professionalId || !newApptData.date || !newApptData.time}
+                  onClick={() => {
+                    if (!newApptData.serviceId || !newApptData.professionalId || !newApptData.date || !newApptData.time) {
+                      alert('Por favor, selecione o serviço, profissional, data e horário.');
+                      return;
+                    }
+                    // Salva o item de agendamento para o checkout do Storefront
+                    sessionStorage.setItem('agendaCheckoutItem', JSON.stringify({
+                      serviceId: newApptData.serviceId,
+                      professionalId: newApptData.professionalId,
+                      date: newApptData.date,
+                      time: newApptData.time
+                    }));
+                    setIsModalOpen(false);
+                    // Navega de volta para o Storefront (dashboard do cliente) para finalizar com pagamento
+                    window.dispatchEvent(new CustomEvent('navigate-to-dashboard'));
+                  }}
+                  className="gold-button"
+                  style={{
+                    width: '100%',
+                    padding: '0.85rem',
+                    marginTop: '1rem',
+                    fontWeight: '800',
+                    opacity: (!newApptData.serviceId || !newApptData.professionalId || !newApptData.date || !newApptData.time) ? 0.5 : 1,
+                    cursor: (!newApptData.serviceId || !newApptData.professionalId || !newApptData.date || !newApptData.time) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  💳 Ir para Pagamento
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  className="gold-button"
+                  style={{ width: '100%', padding: '0.85rem', marginTop: '1rem', fontWeight: '800' }}
+                >
+                  Agendar Horário
+                </button>
+              )}
             </form>
           </div>
         </div>,

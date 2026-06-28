@@ -211,6 +211,45 @@ const Storefront: React.FC = () => {
     }
   }, [userId, clients]);
 
+  // Detecta agendamento vindo da aba Agenda (cliente clicou em "Ir para Pagamento")
+  const processAgendaCheckoutItem = React.useCallback(() => {
+    const raw = sessionStorage.getItem('agendaCheckoutItem');
+    if (!raw) return;
+    try {
+      const item = JSON.parse(raw);
+      const service = services.find(s => s.id === item.serviceId);
+      const professional = profiles.find(p => p.id === item.professionalId);
+      if (service && professional && item.date && item.time) {
+        sessionStorage.removeItem('agendaCheckoutItem');
+        setCartServices([{
+          id: Math.random().toString(36).substring(2, 9),
+          service,
+          professional,
+          date: item.date,
+          time: item.time
+        }]);
+        setCartProducts([]);
+        setIsCheckoutActive(true);
+      }
+    } catch (e) {
+      console.error('Erro ao processar agendaCheckoutItem:', e);
+      sessionStorage.removeItem('agendaCheckoutItem');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [services, profiles]);
+
+  // Verifica ao carregar/atualizar services e profiles (caso Storefront seja montado após o evento)
+  useEffect(() => {
+    processAgendaCheckoutItem();
+  }, [processAgendaCheckoutItem]);
+
+  // Verifica também ao receber o evento (caso Storefront já esteja montado)
+  useEffect(() => {
+    const handleNavigate = () => processAgendaCheckoutItem();
+    window.addEventListener('navigate-to-dashboard', handleNavigate);
+    return () => window.removeEventListener('navigate-to-dashboard', handleNavigate);
+  }, [processAgendaCheckoutItem]);
+
   // Handle Mercado Pago redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

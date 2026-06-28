@@ -165,6 +165,15 @@ const AppContent: React.FC = () => {
     }
   }, [page, role, userId, clearProNotifications]);
 
+  // Escuta evento do modal de agendamento (aba Agenda) para redirecionar ao checkout do Storefront
+  useEffect(() => {
+    const handleNavigateToDashboard = () => {
+      setPage('dashboard');
+    };
+    window.addEventListener('navigate-to-dashboard', handleNavigateToDashboard);
+    return () => window.removeEventListener('navigate-to-dashboard', handleNavigateToDashboard);
+  }, []);
+
   if (!role) {
     return (
       <ErrorBoundary>
