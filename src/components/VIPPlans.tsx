@@ -1,31 +1,59 @@
-import React, { useState } from 'react';
-import { Plus, Crown, Trash2, Edit2, Check } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Plus, Crown, Trash2, Edit2, Check, Camera, X } from 'lucide-react';
 import { useApp, SubscriptionPlan } from '../context/AppContext';
+import { convertToWebP, uploadImage } from '../utils/imageUtils';
 
 const VIPPlans: React.FC = () => {
-  const { subscriptionPlans = [], addSubscriptionPlan, updateSubscriptionPlan, deleteSubscriptionPlan } = useApp();
+  const { subscriptionPlans = [], addSubscriptionPlan, updateSubscriptionPlan, deleteSubscriptionPlan, shopId } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', servicesCount: '', price: '', active: true });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Image states
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data = { 
-      name: formData.name, 
-      servicesCount: Number(formData.servicesCount) || 1, 
-      price: Number(formData.price) || 0,
-      active: formData.active
-    };
+    setIsSaving(true);
+    try {
+      let imageUrl = imagePreview;
 
-    if (editingId) {
-      updateSubscriptionPlan(editingId, data);
-    } else {
-      addSubscriptionPlan(data);
+      if (selectedFile) {
+        const webpBlob = await convertToWebP(selectedFile);
+        imageUrl = await uploadImage('subscriptions', webpBlob, shopId || 'common', 'plan');
+      }
+
+      const data = { 
+        name: formData.name, 
+        servicesCount: Number(formData.servicesCount) || 1, 
+        price: Number(formData.price) || 0,
+        active: formData.active,
+        image: imageUrl || undefined
+      };
+
+      if (editingId) {
+        await updateSubscriptionPlan(editingId, data);
+      } else {
+        await addSubscriptionPlan(data);
+      }
+
+      handleCancel();
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao salvar plano VIP: ' + (err.message || err));
+    } finally {
+      setIsSaving(false);
     }
-
-    setFormData({ name: '', servicesCount: '', price: '', active: true });
-    setEditingId(null);
-    setIsAdding(false);
   };
 
   const handleEditClick = (plan: SubscriptionPlan) => {
@@ -36,11 +64,15 @@ const VIPPlans: React.FC = () => {
       price: plan.price.toString(),
       active: plan.active
     });
+    setImagePreview(plan.image || '');
+    setSelectedFile(null);
     setIsAdding(true);
   };
 
   const handleCancel = () => {
     setFormData({ name: '', servicesCount: '', price: '', active: true });
+    setImagePreview('');
+    setSelectedFile(null);
     setEditingId(null);
     setIsAdding(false);
   };
@@ -68,6 +100,45 @@ const VIPPlans: React.FC = () => {
             {editingId ? 'Editar Plano VIP' : 'Adicionar Plano VIP'}
           </h3>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+            
+            {/* Upload de Foto do Plano VIP */}
+            <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ position: 'relative', width: '80px', height: '80px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Plan Preview"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Crown size={30} style={{ color: 'var(--accent-gold)', opacity: 0.3 }} />
+                )}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    position: 'absolute', bottom: '4px', right: '4px', background: 'var(--accent-gold)',
+                    border: 'none', borderRadius: '50%', width: '24px', height: '24px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                    color: 'black', boxShadow: '0 2px 5px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  <Camera size={12} />
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+              </div>
+              <div>
+                <span style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginBottom: '2px' }}>Foto do Plano VIP</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Anexe uma foto para exibir na vitrine. Convertida automaticamente para WebP.</span>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Nome do Plano</label>
               <input required type="text" placeholder="Ex: VIP 4 Cortes" style={inputStyle}
@@ -88,10 +159,10 @@ const VIPPlans: React.FC = () => {
               <label htmlFor="activePlan" style={{ fontSize: '0.9rem', color: 'white' }}>Plano Ativo (Disponível para clientes)</label>
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-              <button type="submit" className="gold-button" style={{ flex: 1 }}>
-                {editingId ? 'Salvar Alterações' : 'Salvar Plano'}
+              <button type="submit" className="gold-button" style={{ flex: 1 }} disabled={isSaving}>
+                {isSaving ? 'Salvando...' : (editingId ? 'Salvar Alterações' : 'Salvar Plano')}
               </button>
-              <button type="button" onClick={handleCancel} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
+              <button type="button" onClick={handleCancel} disabled={isSaving} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
             </div>
           </form>
         </div>
@@ -104,8 +175,28 @@ const VIPPlans: React.FC = () => {
               <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.7rem', color: '#888', fontWeight: 'bold' }}>INATIVO</div>
             )}
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ background: plan.active ? 'var(--accent-gold-soft)' : 'rgba(255,255,255,0.05)', padding: '14px', borderRadius: '14px', color: plan.active ? 'var(--accent-gold)' : '#888', flexShrink: 0 }}>
-                <Crown size={28} />
+              <div style={{ 
+                width: '56px', 
+                height: '56px', 
+                borderRadius: '14px', 
+                overflow: 'hidden',
+                flexShrink: 0,
+                background: plan.active ? 'var(--accent-gold-soft)' : 'rgba(255,255,255,0.05)', 
+                color: plan.active ? 'var(--accent-gold)' : '#888',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: plan.active ? '1px solid rgba(212,175,55,0.15)' : 'none'
+              }}>
+                {plan.image ? (
+                  <img
+                    src={plan.image}
+                    alt={plan.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Crown size={28} />
+                )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h4 style={{ fontWeight: '800', fontSize: '1.1rem', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: plan.active ? 'white' : '#888' }}>{plan.name}</h4>

@@ -1,33 +1,61 @@
-import React, { useState } from 'react';
-import { Plus, Scissors, Trash2, Percent, Edit2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Plus, Scissors, Trash2, Percent, Edit2, Camera, X } from 'lucide-react';
 import { useApp, Service } from '../context/AppContext';
+import { convertToWebP, uploadImage } from '../utils/imageUtils';
 
 const Services: React.FC = () => {
-  const { services = [], addService, updateService, deleteService } = useApp();
+  const { services = [], addService, updateService, deleteService, shopId } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '', price: '', promotionPrice: '', commission: '', duration: '' });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Image states
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data = { 
-      name: formData.name, 
-      description: formData.description, 
-      price: Number(formData.price), 
-      promotionPrice: formData.promotionPrice ? Number(formData.promotionPrice) : undefined,
-      commission: Number(formData.commission),
-      duration: Number(formData.duration) || 30
-    };
+    setIsSaving(true);
+    try {
+      let imageUrl = imagePreview;
 
-    if (editingId) {
-      updateService(editingId, data);
-    } else {
-      addService(data);
+      if (selectedFile) {
+        const webpBlob = await convertToWebP(selectedFile);
+        imageUrl = await uploadImage('services', webpBlob, shopId || 'common', 'service');
+      }
+
+      const data = { 
+        name: formData.name, 
+        description: formData.description, 
+        price: Number(formData.price), 
+        promotionPrice: formData.promotionPrice ? Number(formData.promotionPrice) : undefined,
+        commission: Number(formData.commission),
+        duration: Number(formData.duration) || 30,
+        image: imageUrl || undefined
+      };
+
+      if (editingId) {
+        await updateService(editingId, data);
+      } else {
+        await addService(data);
+      }
+
+      handleCancel();
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao salvar serviço: ' + (err.message || err));
+    } finally {
+      setIsSaving(false);
     }
-
-    setFormData({ name: '', description: '', price: '', promotionPrice: '', commission: '', duration: '' });
-    setEditingId(null);
-    setIsAdding(false);
   };
 
   const handleEditClick = (service: Service) => {
@@ -40,11 +68,15 @@ const Services: React.FC = () => {
       commission: service.commission.toString(),
       duration: service.duration ? service.duration.toString() : '30'
     });
+    setImagePreview(service.image || '');
+    setSelectedFile(null);
     setIsAdding(true);
   };
 
   const handleCancel = () => {
     setFormData({ name: '', description: '', price: '', promotionPrice: '', commission: '', duration: '' });
+    setImagePreview('');
+    setSelectedFile(null);
     setEditingId(null);
     setIsAdding(false);
   };
@@ -72,6 +104,45 @@ const Services: React.FC = () => {
             {editingId ? 'Editar Serviço' : 'Adicionar Serviço'}
           </h3>
           <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+            
+            {/* Upload de Foto do Serviço */}
+            <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ position: 'relative', width: '80px', height: '80px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Service Preview"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Scissors size={30} style={{ color: 'var(--accent-gold)', opacity: 0.3 }} />
+                )}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    position: 'absolute', bottom: '4px', right: '4px', background: 'var(--accent-gold)',
+                    border: 'none', borderRadius: '50%', width: '24px', height: '24px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                    color: 'black', boxShadow: '0 2px 5px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  <Camera size={12} />
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+              </div>
+              <div>
+                <span style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginBottom: '2px' }}>Foto do Serviço</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Anexe uma foto para exibir na vitrine. Convertida automaticamente para WebP.</span>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: '1 / -1' }}>
               <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Nome do Serviço</label>
               <input required type="text" placeholder="Ex: Corte Degradê" style={inputStyle}
@@ -103,10 +174,10 @@ const Services: React.FC = () => {
                 value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem' }}>
-              <button type="submit" className="gold-button" style={{ flex: 1 }}>
-                {editingId ? 'Salvar Alterações' : 'Salvar Serviço'}
+              <button type="submit" className="gold-button" style={{ flex: 1 }} disabled={isSaving}>
+                {isSaving ? 'Salvando...' : (editingId ? 'Salvar Alterações' : 'Salvar Serviço')}
               </button>
-              <button type="button" onClick={handleCancel} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
+              <button type="button" onClick={handleCancel} disabled={isSaving} style={{ padding: '0.85rem 1.5rem', borderRadius: '10px', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', cursor: 'pointer' }}>Cancelar</button>
             </div>
           </form>
         </div>
@@ -115,8 +186,28 @@ const Services: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
         {services.map(service => (
           <div key={service.id} className="premium-card" style={{ padding: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <div style={{ background: 'var(--accent-gold-soft)', padding: '14px', borderRadius: '14px', color: 'var(--accent-gold)', flexShrink: 0, border: '1px solid rgba(212,175,55,0.15)' }}>
-              <Scissors size={22} />
+            <div style={{ 
+              width: '50px', 
+              height: '50px', 
+              borderRadius: '14px', 
+              overflow: 'hidden',
+              flexShrink: 0,
+              background: 'var(--accent-gold-soft)', 
+              color: 'var(--accent-gold)', 
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid rgba(212,175,55,0.15)' 
+            }}>
+              {service.image ? (
+                <img
+                  src={service.image}
+                  alt={service.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <Scissors size={22} />
+              )}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <h4 style={{ fontWeight: '700', fontSize: '1rem', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{service.name}</h4>

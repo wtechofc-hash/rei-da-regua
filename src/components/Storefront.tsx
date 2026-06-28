@@ -839,9 +839,17 @@ const Storefront: React.FC = () => {
                           </div>
                         )}
 
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}>
-                           <Scissors size={48} style={{ opacity: 0.2, color: 'var(--accent-gold)' }} />
-                        </div>
+                        {service.image ? (
+                          <img 
+                            src={service.image} 
+                            alt={service.name} 
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+                          />
+                        ) : (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }}>
+                             <Scissors size={48} style={{ opacity: 0.2, color: 'var(--accent-gold)' }} />
+                          </div>
+                        )}
                         
                         {/* Gradient Overlay */}
                         <div style={{ 
@@ -941,9 +949,17 @@ const Storefront: React.FC = () => {
                               <Check size={12} strokeWidth={3} /> Ativo
                             </div>
                           )}
-                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)' }}>
-                             <Crown size={48} style={{ opacity: 0.2, color: 'var(--accent-gold)' }} />
-                          </div>
+                          {plan.image ? (
+                            <img 
+                              src={plan.image} 
+                              alt={plan.name} 
+                              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+                            />
+                          ) : (
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                               <Crown size={48} style={{ opacity: 0.2, color: 'var(--accent-gold)' }} />
+                            </div>
+                          )}
                           <div style={{ 
                             position: 'absolute', inset: 0, 
                             background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.95))',
@@ -1049,10 +1065,17 @@ const Storefront: React.FC = () => {
                             No Carrinho
                           </div>
                         )}
-
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                           <Package size={48} style={{ opacity: 0.15, color: 'var(--accent-gold)' }} />
-                        </div>
+                        {product.image ? (
+                          <img 
+                            src={product.image} 
+                            alt={product.name} 
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+                          />
+                        ) : (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                             <Package size={48} style={{ opacity: 0.15, color: 'var(--accent-gold)' }} />
+                          </div>
+                        )}
                         
                         {/* Gradient Overlay */}
                         <div style={{ 

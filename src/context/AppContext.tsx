@@ -24,6 +24,7 @@ export interface Service {
   promotionPrice?: number;
   commission: number;
   duration?: number;
+  image?: string;
 }
 
 export interface Product {
@@ -77,6 +78,7 @@ export interface SubscriptionPlan {
   servicesCount: number;
   price: number;
   active: boolean;
+  image?: string;
 }
 
 export interface Subscription {
@@ -308,7 +310,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Fetch Services
         const { data: servicesData } = await query(supabase.from('services').select('*'));
         if (servicesData) setServices(servicesData.map((s: any) => ({
-          id: s.id, name: s.name, description: s.category || '', price: s.price, promotionPrice: s.promotion_price ?? undefined, commission: s.commission_rate ?? 0, duration: s.duration || 30
+          id: s.id, name: s.name, description: s.category || '', price: s.price, promotionPrice: s.promotion_price ?? undefined, commission: s.commission_rate ?? 0, duration: s.duration || 30, image: s.image_url
         })));
 
         // Fetch Products
@@ -327,7 +329,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Fetch Subscription Plans
         const { data: plansData } = await query(supabase.from('subscription_plans').select('*'));
         if (plansData) setSubscriptionPlans(plansData.map((p: any) => ({
-          id: p.id, name: p.name, servicesCount: p.services_count, price: p.price, active: p.active
+          id: p.id, name: p.name, servicesCount: p.services_count, price: p.price, active: p.active, image: p.image_url
         })));
 
         // Fetch Subscriptions
@@ -614,19 +616,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const { data, error } = await supabase.from('services').insert([{ 
       name: s.name, price: s.price, duration: s.duration || 30, category: s.description,
       commission_rate: s.commission, shop_id: shopId,
-      promotion_price: s.promotionPrice ?? null
+      promotion_price: s.promotionPrice ?? null,
+      image_url: s.image || null
     }]).select();
+    if (error) console.error("Error adding service:", error);
     if (data) setServices(prev => [...prev, { ...s, id: data[0].id, duration: s.duration || 30 }]);
   };
   const updateService = async (id: string, s: Partial<Service>) => {
+    const oldServ = services.find(i => i.id === id);
+    if (s.image !== undefined && oldServ && oldServ.image && oldServ.image !== s.image) {
+      await deleteOldImage(oldServ.image);
+    }
     const updatePayload: any = { name: s.name, price: s.price };
     if (s.duration !== undefined) updatePayload.duration = s.duration;
     if (s.commission !== undefined) updatePayload.commission_rate = s.commission;
     updatePayload.promotion_price = s.promotionPrice ?? null;
+    if (s.image !== undefined) updatePayload.image_url = s.image;
     await supabase.from('services').update(updatePayload).eq('id', id);
     setServices(prev => prev.map(i => i.id === id ? {...i, ...s} : i));
   };
   const deleteService = async (id: string) => {
+    const serv = services.find(s => s.id === id);
+    if (serv?.image) {
+      await deleteOldImage(serv.image);
+    }
     await supabase.from('services').delete().eq('id', id);
     setServices(prev => prev.filter(s => s.id !== id));
   };
@@ -692,22 +705,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addSubscriptionPlan = async (p: Omit<SubscriptionPlan, 'id'>) => {
     const { data } = await supabase.from('subscription_plans').insert([{ 
-      name: p.name, services_count: p.servicesCount, price: p.price, active: p.active, shop_id: shopId 
+      name: p.name, services_count: p.servicesCount, price: p.price, active: p.active, shop_id: shopId,
+      image_url: p.image || null
     }]).select();
     if (data) setSubscriptionPlans(prev => [...prev, { ...p, id: data[0].id }]);
   };
 
   const updateSubscriptionPlan = async (id: string, p: Partial<SubscriptionPlan>) => {
+    const oldPlan = subscriptionPlans.find(i => i.id === id);
+    if (p.image !== undefined && oldPlan && oldPlan.image && oldPlan.image !== p.image) {
+      await deleteOldImage(oldPlan.image);
+    }
     const updatePayload: any = {};
     if (p.name !== undefined) updatePayload.name = p.name;
     if (p.servicesCount !== undefined) updatePayload.services_count = p.servicesCount;
     if (p.price !== undefined) updatePayload.price = p.price;
     if (p.active !== undefined) updatePayload.active = p.active;
+    if (p.image !== undefined) updatePayload.image_url = p.image;
     await supabase.from('subscription_plans').update(updatePayload).eq('id', id);
     setSubscriptionPlans(prev => prev.map(i => i.id === id ? {...i, ...p} : i));
   };
 
   const deleteSubscriptionPlan = async (id: string) => {
+    const plan = subscriptionPlans.find(p => p.id === id);
+    if (plan?.image) {
+      await deleteOldImage(plan.image);
+    }
     await supabase.from('subscription_plans').delete().eq('id', id);
     setSubscriptionPlans(prev => prev.filter(p => p.id !== id));
   };
