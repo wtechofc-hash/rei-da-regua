@@ -189,8 +189,15 @@ const AppContent: React.FC = () => {
     const handleNavigateToDashboard = () => {
       setPage('dashboard');
     };
+    const handleNavigateToStorefront = () => {
+      setPage('vitrine');
+    };
     window.addEventListener('navigate-to-dashboard', handleNavigateToDashboard);
-    return () => window.removeEventListener('navigate-to-dashboard', handleNavigateToDashboard);
+    window.addEventListener('navigate-to-storefront', handleNavigateToStorefront);
+    return () => {
+      window.removeEventListener('navigate-to-dashboard', handleNavigateToDashboard);
+      window.removeEventListener('navigate-to-storefront', handleNavigateToStorefront);
+    };
   }, []);
 
   if (!role) {

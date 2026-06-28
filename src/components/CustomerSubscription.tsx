@@ -3,7 +3,17 @@ import { Crown, Calendar, Ticket, AlertCircle, CheckCircle2 } from 'lucide-react
 import { useApp } from '../context/AppContext';
 
 const CustomerSubscription: React.FC = () => {
-  const { userId, subscriptions = [], subscriptionPlans = [] } = useApp();
+  const { userId, subscriptions = [], subscriptionPlans = [], config } = useApp();
+  const vipSettings = config?.layoutConfig?.vipSettings || {
+    title: 'Faça Parte do Nosso Clube VIP!',
+    description: 'Assine um dos nossos planos mensais e garanta seu visual sempre em dia com vantagens exclusivas. Com o plano VIP, você economiza no valor total dos serviços, tem facilidade de agendamento e atendimento preferencial.',
+    benefits: [
+      'Desconto exclusivo no valor unitário dos serviços',
+      'Créditos (Tickets) mensais acumulados na sua conta',
+      'Prioridade na marcação de horários concorridos',
+      'Pagamento mensal recorrente simplificado'
+    ]
+  };
 
   // Find active subscription for current customer
   const activeSub = subscriptions.find(
@@ -131,19 +141,14 @@ const CustomerSubscription: React.FC = () => {
           <div className="premium-card" style={{ padding: '2rem', border: '1px solid rgba(255,255,255,0.05)', background: 'radial-gradient(circle at top right, rgba(212,175,55,0.08) 0%, transparent 60%)' }}>
             <Crown size={36} color="var(--accent-gold)" style={{ marginBottom: '1rem' }} />
             <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem', color: 'white' }}>
-              Faça Parte do Nosso Clube VIP!
+              {vipSettings.title}
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-              Assine um dos nossos planos mensais e garanta seu visual sempre em dia com vantagens exclusivas. Com o plano VIP, você economiza no valor total dos serviços, tem facilidade de agendamento e atendimento preferencial.
+              {vipSettings.description}
             </p>
             <div style={{ display: 'grid', gap: '8px' }}>
-              {[
-                'Desconto exclusivo no valor unitário dos serviços',
-                'Créditos (Tickets) mensais acumulados na sua conta',
-                'Prioridade na marcação de horários concorridos',
-                'Pagamento mensal recorrente simplificado'
-              ].map(benefit => (
-                <div key={benefit} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#ccc' }}>
+              {vipSettings.benefits.map((benefit, index) => (
+                <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#ccc' }}>
                   <CheckCircle2 size={16} color="var(--accent-gold)" style={{ flexShrink: 0 }} />
                   <span>{benefit}</span>
                 </div>
@@ -163,28 +168,71 @@ const CustomerSubscription: React.FC = () => {
                 <p style={{ color: '#666', fontSize: '0.85rem', margin: 0 }}>Nenhum plano VIP ativo no momento. Fale com a equipe da barbearia.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gap: '1rem' }}>
-                {activePlans.map(p => (
-                  <div key={p.id} className="premium-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem', border: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                      <div style={{ background: 'rgba(212,175,55,0.1)', padding: '10px', borderRadius: '12px', color: 'var(--accent-gold)' }}>
-                        <Crown size={22} />
-                      </div>
-                      <div>
-                        <h4 style={{ margin: 0, fontWeight: '800', fontSize: '1rem', color: 'white' }}>{p.name}</h4>
-                        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                          Inclui <strong>{p.servicesCount}</strong> serviços/mês
-                        </span>
+              <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '1rem', scrollbarWidth: 'none' }}>
+                {activePlans.map(plan => {
+                  const hasActiveSub = subscriptions.some(s => s.clientId === userId && s.status === 'active' && s.planId === plan.id);
+                  return (
+                    <div 
+                      key={plan.id} 
+                      style={{ 
+                        flex: '0 0 240px', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        position: 'relative'
+                      }} 
+                      className="netflix-card"
+                    >
+                      <div style={{ 
+                        aspectRatio: '2/3', borderRadius: '16px', overflow: 'hidden', 
+                        background: 'linear-gradient(135deg, rgba(212,175,55,0.1) 0%, rgba(0,0,0,0.8) 100%)', 
+                        border: hasActiveSub ? '2px solid #00cc44' : '1px solid rgba(212,175,55,0.3)',
+                        position: 'relative', transition: 'all 0.3s'
+                      }}>
+                        {hasActiveSub && (
+                          <div style={{
+                            position: 'absolute', top: '12px', right: '12px',
+                            background: '#00cc44', color: '#fff', padding: '4px 10px',
+                            borderRadius: '20px', fontSize: '0.7rem', fontWeight: '900',
+                            display: 'flex', alignItems: 'center', gap: '4px', zIndex: 2
+                          }}>
+                            <CheckCircle2 size={12} strokeWidth={3} /> Ativo
+                          </div>
+                        )}
+                        {plan.image ? (
+                          <img 
+                            src={plan.image} 
+                            alt={plan.name} 
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+                          />
+                        ) : (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                             <Crown size={48} style={{ opacity: 0.2, color: 'var(--accent-gold)' }} />
+                          </div>
+                        )}
+                        <div style={{ 
+                          position: 'absolute', inset: 0, 
+                          background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.95))',
+                          display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '1.5rem'
+                        }}>
+                          {!hasActiveSub && (
+                            <button
+                              onClick={() => {
+                                window.dispatchEvent(new Event('navigate-to-storefront'));
+                              }}
+                              className="gold-button"
+                              style={{ padding: '0.6rem 1rem', fontSize: '0.85rem', borderRadius: '8px', marginBottom: '0.75rem', width: '100%' }}
+                            >
+                              Assinar
+                            </button>
+                          )}
+                          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '4px', color: 'var(--accent-gold)' }}>{plan.name}</h3>
+                          <p style={{ fontSize: '1.1rem', fontWeight: '900', color: 'white', margin: '0 0 8px 0' }}>R$ {plan.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês</p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#ccc' }}>
+                            <CheckCircle2 size={14} color="var(--accent-gold)" /> {plan.servicesCount} serviços
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: '1.15rem', fontWeight: '900', color: 'var(--accent-gold)', display: 'block' }}>
-                        R$ {p.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
-                      <span style={{ fontSize: '0.7rem', color: '#666' }}>por mês</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

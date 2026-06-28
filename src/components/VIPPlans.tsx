@@ -1,13 +1,71 @@
-import React, { useState, useRef } from 'react';
-import { Plus, Crown, Trash2, Edit2, Check, Camera, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Plus, Crown, Trash2, Edit2, Check, Camera, X, Settings } from 'lucide-react';
 import { useApp, SubscriptionPlan } from '../context/AppContext';
 import { convertToWebP, uploadImage } from '../utils/imageUtils';
 
 const VIPPlans: React.FC = () => {
-  const { subscriptionPlans = [], addSubscriptionPlan, updateSubscriptionPlan, deleteSubscriptionPlan, shopId } = useApp();
+  const { subscriptionPlans = [], addSubscriptionPlan, updateSubscriptionPlan, deleteSubscriptionPlan, shopId, config, updateConfig } = useApp();
+  const [activeTab, setActiveTab] = useState<'plans' | 'settings'>('plans');
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', servicesCount: '', price: '', active: true });
+  
+  // Settings Form State
+  const defaultVipSettings = {
+    title: 'Faça Parte do Nosso Clube VIP!',
+    description: 'Assine um dos nossos planos mensais e garanta seu visual sempre em dia com vantagens exclusivas. Com o plano VIP, você economiza no valor total dos serviços, tem facilidade de agendamento e atendimento preferencial.',
+    benefits: [
+      'Desconto exclusivo no valor unitário dos serviços',
+      'Créditos (Tickets) mensais acumulados na sua conta',
+      'Prioridade na marcação de horários concorridos',
+      'Pagamento mensal recorrente simplificado'
+    ]
+  };
+  const [settingsForm, setSettingsForm] = useState(config?.layoutConfig?.vipSettings || defaultVipSettings);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  useEffect(() => {
+    if (config?.layoutConfig?.vipSettings) {
+      setSettingsForm(config.layoutConfig.vipSettings);
+    }
+  }, [config?.layoutConfig?.vipSettings]);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingSettings(true);
+    try {
+      const newLayoutConfig = {
+        ...config?.layoutConfig,
+        vipSettings: settingsForm
+      } as any;
+      await updateConfig({ layoutConfig: newLayoutConfig });
+      alert('Configurações salvas com sucesso!');
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao salvar configurações: ' + (err.message || err));
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const handleAddBenefit = () => {
+    setSettingsForm(prev => ({ ...prev, benefits: [...prev.benefits, ''] }));
+  };
+
+  const handleRemoveBenefit = (index: number) => {
+    setSettingsForm(prev => ({
+      ...prev,
+      benefits: prev.benefits.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleBenefitChange = (index: number, value: string) => {
+    setSettingsForm(prev => {
+      const newBenefits = [...prev.benefits];
+      newBenefits[index] = value;
+      return { ...prev, benefits: newBenefits };
+    });
+  };
 
   // Image states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -84,17 +142,90 @@ const VIPPlans: React.FC = () => {
 
   return (
     <div className="animate-fade-in">
-      <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+      <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0 }}>Planos VIP</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '4px' }}>Gerencie pacotes de assinatura para seus clientes</p>
         </div>
-        <button className="gold-button" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => { handleCancel(); setIsAdding(true); }}>
-          <Plus size={18} /> Novo Plano
-        </button>
+        {activeTab === 'plans' && (
+          <button className="gold-button" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => { handleCancel(); setIsAdding(true); }}>
+            <Plus size={18} /> Novo Plano
+          </button>
+        )}
       </header>
 
-      {isAdding && (
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '2rem' }}>
+        <button
+          onClick={() => setActiveTab('plans')}
+          style={{
+            background: 'transparent', border: 'none', padding: '0.75rem 1rem', fontSize: '0.95rem', fontWeight: '700',
+            color: activeTab === 'plans' ? 'var(--accent-gold)' : '#888',
+            borderBottom: activeTab === 'plans' ? '2px solid var(--accent-gold)' : '2px solid transparent',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'
+          }}
+        >
+          <Crown size={16} /> Planos
+        </button>
+        <button
+          onClick={() => setActiveTab('settings')}
+          style={{
+            background: 'transparent', border: 'none', padding: '0.75rem 1rem', fontSize: '0.95rem', fontWeight: '700',
+            color: activeTab === 'settings' ? 'var(--accent-gold)' : '#888',
+            borderBottom: activeTab === 'settings' ? '2px solid var(--accent-gold)' : '2px solid transparent',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'
+          }}
+        >
+          <Settings size={16} /> Configurações da Aba
+        </button>
+      </div>
+
+      {activeTab === 'settings' ? (
+        <div className="premium-card" style={{ padding: '2rem', animation: 'fadeIn 0.3s' }}>
+          <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>Textos da Aba Cliente</h3>
+          <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Título Principal</label>
+              <input required type="text" style={inputStyle} value={settingsForm.title} onChange={e => setSettingsForm({ ...settingsForm, title: e.target.value })} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Descrição Completa</label>
+              <textarea required style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }} value={settingsForm.description} onChange={e => setSettingsForm({ ...settingsForm, description: e.target.value })} />
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Tópicos de Benefícios (Visíveis para o cliente)</label>
+                <button type="button" onClick={handleAddBenefit} style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--accent-gold)', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Plus size={12} /> Adicionar Tópico
+                </button>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {settingsForm.benefits.map((benefit, index) => (
+                  <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <input required type="text" style={{ ...inputStyle, flex: 1 }} placeholder="Descreva um benefício..." value={benefit} onChange={e => handleBenefitChange(index, e.target.value)} />
+                    <button type="button" onClick={() => handleRemoveBenefit(index)} style={{ background: 'transparent', border: 'none', color: '#ff1744', cursor: 'pointer', padding: '8px' }} title="Remover benefício">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ))}
+                {settingsForm.benefits.length === 0 && (
+                  <p style={{ fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>Nenhum tópico adicionado.</p>
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
+              <button type="submit" disabled={isSavingSettings} className="gold-button" style={{ width: 'auto', minWidth: '200px' }}>
+                {isSavingSettings ? 'Salvando...' : 'Salvar Configurações'}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        <>
+          {isAdding && (
         <div className="premium-card" style={{ marginBottom: '2rem', border: '1px solid var(--accent-gold)', animation: 'slideUp 0.3s ease-out' }}>
           <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>
             {editingId ? 'Editar Plano VIP' : 'Adicionar Plano VIP'}
@@ -234,6 +365,8 @@ const VIPPlans: React.FC = () => {
           </div>
         )}
       </div>
+        </>
+      )}
     </div>
   );
 };

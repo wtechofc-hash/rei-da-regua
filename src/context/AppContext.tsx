@@ -191,6 +191,11 @@ interface AppContextType {
           icon: string;
         }
       };
+      vipSettings?: {
+        title: string;
+        description: string;
+        benefits: string[];
+      };
     };
   };
   updateConfig: (config: Partial<AppContextType['config']>) => void;
@@ -232,7 +237,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           name: string;
           icon: string;
         }
-      }
+      };
+      vipSettings?: {
+        title: string;
+        description: string;
+        benefits: string[];
+      };
     };
   }>({
     businessName: 'Barbearia Premium',
@@ -247,6 +257,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         services: { name: 'Serviços', icon: 'Scissors' },
         vipplans: { name: 'Planos VIP', icon: 'Crown' },
         products: { name: 'Produtos', icon: 'Package' }
+      },
+      vipSettings: {
+        title: 'Faça Parte do Nosso Clube VIP!',
+        description: 'Assine um dos nossos planos mensais e garanta seu visual sempre em dia com vantagens exclusivas. Com o plano VIP, você economiza no valor total dos serviços, tem facilidade de agendamento e atendimento preferencial.',
+        benefits: [
+          'Desconto exclusivo no valor unitário dos serviços',
+          'Créditos (Tickets) mensais acumulados na sua conta',
+          'Prioridade na marcação de horários concorridos',
+          'Pagamento mensal recorrente simplificado'
+        ]
       }
     }
   });
@@ -470,6 +490,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 services: { name: 'Serviços', icon: 'Scissors' },
                 vipplans: { name: 'Planos VIP', icon: 'Crown' },
                 products: { name: 'Produtos', icon: 'Package' }
+              },
+              vipSettings: rawLayout.vipSettings || {
+                title: 'Faça Parte do Nosso Clube VIP!',
+                description: 'Assine um dos nossos planos mensais e garanta seu visual sempre em dia com vantagens exclusivas. Com o plano VIP, você economiza no valor total dos serviços, tem facilidade de agendamento e atendimento preferencial.',
+                benefits: [
+                  'Desconto exclusivo no valor unitário dos serviços',
+                  'Créditos (Tickets) mensais acumulados na sua conta',
+                  'Prioridade na marcação de horários concorridos',
+                  'Pagamento mensal recorrente simplificado'
+                ]
               }
             }
           });
