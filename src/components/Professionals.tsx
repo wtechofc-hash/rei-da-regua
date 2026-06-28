@@ -1,11 +1,11 @@
-import React, { useState, useRef } from 'react';
-import { Plus, Users, Trash2, Mail, Shield, Edit2, Camera, X } from 'lucide-react';
+import React, { useState, useRef, useMemo } from 'react';
+import { Plus, Users, Trash2, Mail, Shield, Edit2, Camera, X, TrendingUp } from 'lucide-react';
 import { useApp, Profile } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
 import { convertToWebP, uploadImage } from '../utils/imageUtils';
 
 const Professionals: React.FC = () => {
-  const { profiles = [], addProfile, updateProfile, deleteProfile, shopId } = useApp();
+  const { profiles = [], addProfile, updateProfile, deleteProfile, shopId, appointments = [], sales = [], services = [], abatements = [], abatementParticipants = [] } = useApp();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -123,6 +123,46 @@ const Professionals: React.FC = () => {
   };
 
   const staff = profiles.filter(p => p.role === 'professional');
+
+  // Calcula o saldo líquido de comissão por profissional (sem filtro de data — saldo total acumulado)
+  const netCommissionByPro = useMemo(() => {
+    const result: Record<string, number> = {};
+    staff.forEach(pro => {
+      const profId = pro.id;
+
+      // Agendamentos concluídos do profissional
+      const completedAppts = appointments.filter(
+        a => a.professionalId === profId && a.status === 'completed'
+      );
+
+      // Comissão de serviços
+      const commService = completedAppts.reduce((sum, a) => {
+        const svc = services.find(sv => sv.id === a.serviceId);
+        const rate = svc?.commission ?? 0;
+        return sum + (a.priceAtTime || 0) * (rate / 100);
+      }, 0);
+
+      // Comissão de produtos (vendas PDV)
+      const commProducts = sales
+        .filter(s => s.professionalId === profId)
+        .reduce((sum, s) => sum + (s.commissionAmount || 0), 0);
+
+      const grossComm = commService + commProducts;
+
+      // Abatimentos pendentes (não cancelados) do profissional
+      const pendingAbates = abatementParticipants
+        .filter(p => {
+          if (p.participantId !== profId) return false;
+          if (p.status === 'cancelado') return false;
+          const abt = abatements.find(a => a.id === p.abatementId);
+          return abt && abt.status !== 'cancelado';
+        })
+        .reduce((sum, p) => sum + p.amount, 0);
+
+      result[profId] = Math.max(0, grossComm - pendingAbates);
+    });
+    return result;
+  }, [staff, appointments, services, sales, abatements, abatementParticipants]);
   const inputStyle: React.CSSProperties = {
     padding: '0.85rem', borderRadius: '10px',
     background: '#1a1a1a', border: '1px solid var(--glass-border)', color: 'white', width: '100%'
@@ -221,6 +261,13 @@ const Professionals: React.FC = () => {
                 <div>
                   <h3 style={{ fontWeight: '700', fontSize: '0.95rem', margin: 0 }}>{pro.name}</h3>
                   <p style={{ color: 'var(--accent-gold)', fontSize: '0.75rem', margin: '3px 0 0', fontWeight: '600' }}>Barbeiro Especialista</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                    <TrendingUp size={11} style={{ color: '#00c853' }} />
+                    <span style={{ fontSize: '0.72rem', color: '#00c853', fontWeight: '700' }}>
+                      R$ {(netCommissionByPro[pro.id] ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>a receber</span>
+                  </div>
                 </div>
               </div>
               <button onClick={() => deleteProfile(pro.id)} style={{ background: 'transparent', border: 'none', color: '#ff1744', cursor: 'pointer', padding: '6px' }}>
